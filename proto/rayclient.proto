@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package ray;
+
+// The object service definition.
+service ObjectStore {
+    // Sends a content to the store and gets back an ID.
+    rpc Put(Content) returns (ObjectId);
+
+    // Retrieves content by ID.
+    rpc Get(ObjectId) returns (Content);
+}
+
+// The request message containing the content.
+message Content {
+    bytes data = 1;
+}
+
+// The response message containing the object ID.
+message ObjectId {
+    string id = 1;
+}

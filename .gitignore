@@ -1,3 +1,11 @@
+# custom stuff
+**/*_pb2.py
+**/*_pb2_grpc.py
+
+####
+# DEFAULT STUFF
+####
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
