@@ -2,21 +2,17 @@ syntax = "proto3";
 
 package ray;
 
-// The object service definition.
-service ObjectStore {
-    // Sends a content to the store and gets back an ID.
-    rpc Put(Content) returns (ObjectId);
+option go_package = "github.com/rodrigo-castellon/babyray/pkg/grpc;grpc";
 
-    // Retrieves content by ID.
-    rpc Get(ObjectId) returns (Content);
+service RayDriver {
+  rpc ExecuteCommand(CommandRequest) returns (CommandResponse);
 }
 
-// The request message containing the content.
-message Content {
-    bytes data = 1;
+message CommandRequest {
+  string command = 1;
 }
 
-// The response message containing the object ID.
-message ObjectId {
-    string id = 1;
+message CommandResponse {
+  string output = 1;
 }
+
