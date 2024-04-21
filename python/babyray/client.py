@@ -7,18 +7,18 @@ def run():
     # Assuming the server is running on localhost at port 50051
     with grpc.insecure_channel("localhost:50051") as channel:
         # Create a stub (client)
-        stub = rayclient_pb2_grpc.ObjectStoreStub(channel)
+        stub = rayclient_pb2_grpc.RayDriverStub(channel)
 
         # Create a Content message to send to the server
-        content = rayclient_pb2.Content(data=b"Hello, Ray!")
+        content = rayclient_pb2.CommandRequest(command=b"Hello, Ray!")
 
         # Call the Put method
-        object_id = stub.Put(content)
+        object_id = stub.ExecuteCommand(content)
         print(f"Object stored with ID: {object_id.id}")
 
         # Call the Get method
-        retrieved_content = stub.Get(rayclient_pb2.ObjectId(id=object_id.id))
-        print(f"Retrieved content: {retrieved_content.data}")
+        #retrieved_content = stub.Get(rayclient_pb2.ObjectId(id=object_id.id))
+        #print(f"Retrieved content: {retrieved_content.data}")
 
 
 if __name__ == "__main__":

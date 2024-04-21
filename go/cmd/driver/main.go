@@ -6,7 +6,9 @@ import (
     "net"
 
     "google.golang.org/grpc"
-    pb "path/to/your/generated/grpc/code"
+    //pb "path/to/your/generated/grpc/code"
+    //pb "go/pkg/rayclient.pb.go"
+    pb "github.com/rodrigo-castellon/babyray/pkg"
 )
 
 type server struct {
