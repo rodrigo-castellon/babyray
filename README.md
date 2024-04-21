@@ -27,6 +27,26 @@ python3 python/babyray/client.py
 This will run the Python client that will talk to the driver server.
 
 
+## Using the Python package
+
+Go to the `python/` directory and do `python3 -m pip install -e .` (or just `pip install -e .`, depending on whether you like the Python executable that your pip is attached to).
+
+
+Then, go to some arbitrary place on your computer, and you can run this script with Python and it should work.
+```
+import babyray
+babyray.init()  # initialize in the same way as the real Ray does
+
+@babyray.remote
+def f(x):
+    return x * x
+
+futures = [f.remote(i) for i in range(4)]
+print(babyray.get(futures))  # [0, 1, 4, 9]
+```
+
+
+## File structure
 
 file structure is kinda like:
 ```
