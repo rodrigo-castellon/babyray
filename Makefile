@@ -36,7 +36,7 @@ worker:
 
 clean:
 	@echo "Cleaning up..."
-	rm -f go/pkg/*.go
+	rm -f go/pkg/*.pb.go
 	rm -f python/babyray/*_pb2.py
 	rm -f python/babyray/*_pb2_grpc.py
 	rm -f go/bin/*

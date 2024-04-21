@@ -13,8 +13,8 @@ def run():
         content = rayclient_pb2.CommandRequest(command=b"Hello, Ray!")
 
         # Call the Put method
-        object_id = stub.ExecuteCommand(content)
-        print(f"Object stored with ID: {object_id.id}")
+        output = stub.ExecuteCommand(content)
+        print(f"output: {output}")
 
         # Call the Get method
         #retrieved_content = stub.Get(rayclient_pb2.ObjectId(id=object_id.id))

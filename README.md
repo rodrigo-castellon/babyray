@@ -1,5 +1,33 @@
 # baby🦈
 
+## Getting Started
+
+Install everything you need first.
+
+Then, run:
+```
+make all
+```
+
+This will compile all the Go server files and generate the Python/Go gRPC stub code.
+
+Then, run
+```
+./go/bin/driver
+```
+
+This will start up the driver server.
+
+Finally, run:
+
+```
+python3 python/babyray/client.py
+```
+
+This will run the Python client that will talk to the driver server.
+
+
+
 file structure is kinda like:
 ```
 babyray/
