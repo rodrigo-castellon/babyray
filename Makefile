@@ -9,6 +9,8 @@ go: proto
 py: proto
 	@echo "Generating Python gRPC code..."
 	python -m grpc_tools.protoc -I proto/ --python_out=python/babyray --grpc_python_out=python/babyray proto/rayclient.proto
+	@echo "Modifying import statements for relative imports..."
+	sed -i '' 's/import rayclient_pb2 as rayclient__pb2/from . import rayclient_pb2 as rayclient__pb2/' python/babyray/rayclient_pb2_grpc.py
 
 build: servers
 

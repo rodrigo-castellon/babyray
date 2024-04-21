@@ -1,6 +1,6 @@
 import grpc
-import rayclient_pb2
-import rayclient_pb2_grpc
+from . import rayclient_pb2
+from . import rayclient_pb2_grpc
 
 
 def run():
