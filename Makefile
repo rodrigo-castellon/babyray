@@ -14,19 +14,23 @@ py: proto
 
 build: servers
 
-servers: gcsfunc gcsobj globalscheduler localscheduler worker
+servers: gcsfunctable gcsobjtable globalscheduler localobjstore localscheduler worker
 
-gcsfunc:
+gcsfunctable:
 	@echo "Building GCS Function Table Server..."
-	cd go && go build -o bin/gcs cmd/gcsfunctable/main.go
+	cd go && go build -o bin/gcsfunctable cmd/gcsfunctable/main.go
 
-gcsobj:
+gcsobjtable:
 	@echo "Building GCS Object Table Server..."
-	cd go && go build -o bin/gcs cmd/gcsobjtable/main.go
+	cd go && go build -o bin/gcsobjtable cmd/gcsobjtable/main.go
 
 globalscheduler:
 	@echo "Building Global Scheduler Server..."
 	cd go && go build -o bin/globalscheduler cmd/globalscheduler/main.go
+
+localobjstore:
+	@echo "Building Local Object Store Server..."
+	cd go && go build -o bin/localobjstore cmd/localobjstore/main.go
 
 localscheduler:
 	@echo "Building Local Scheduler Server..."

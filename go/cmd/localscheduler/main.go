@@ -4,13 +4,18 @@ import (
     // "context"
     "log"
     "net"
+    "strconv"
 
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
+    "github.com/rodrigo-castellon/babyray/config"
 )
 
 func main() {
-    lis, err := net.Listen("tcp", ":50000")
+    cfg := config.LoadConfig() // Load configuration
+    address := ":" + strconv.Itoa(cfg.Ports.LocalScheduler) // Prepare the network address
+
+    lis, err := net.Listen("tcp", address)
     if err != nil {
         log.Fatalf("failed to listen: %v", err)
     }

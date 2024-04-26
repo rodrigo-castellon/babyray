@@ -1,0 +1,15 @@
+num_worker_nodes: 5
+cluster_size: 7
+node_ids:
+  gcs: 0
+  global_scheduler: 1
+  ourself: 2
+ports:
+  local_object_store: 50000
+  local_scheduler: 50001
+  local_worker_start: 50002
+  gcs_function_table: 50000
+  gcs_object_table: 50001
+  global_scheduler: 50000
+dns:
+  node_prefix: "node"
