@@ -2,6 +2,8 @@
 import dill as pickle
 import grpc
 
+from dataclasses import dataclass
+
 # local imports
 from .client import run
 from .utils import *
@@ -39,9 +41,9 @@ def init_all_stubs():
     return local_scheduler_gRPC, gcs_func_gRPC, local_object_store_gRPC
 
 
+@dataclass
 class Future:
-    def __init__(self, uid):
-        self.uid = uid
+    uid: int
 
     def get(self):
         # make a request to local object store
@@ -57,15 +59,16 @@ class RemoteFunction:
     def remote(self, *args, **kwargs) -> Future:
         # do gRPC here
 
-        out = local_scheduler_gRPC.Schedule(
+        uid = local_scheduler_gRPC.Schedule(
             rayclient_pb2.ScheduleRequest(
                 name=self.name, args=pickle.dumps(args), kwargs=pickle.dumps(kwargs)
             )
         )
-        return Future(out)
+        return Future(uid)
 
     def register(self):
         # do gRPC here
+
         gcs_func_gRPC.RegisterFunc(
             rayclient_pb2.RegisterRequest(
                 name=self.name, serializedFunc=pickle.dumps(self.func)
@@ -110,4 +113,7 @@ def demo():
         return x * x
 
     print("running f(3)")
-    print(f(3))
+    future = f.remote(3)
+    print("got future:", future)
+    out = future.get()
+    print("output is:", out)
