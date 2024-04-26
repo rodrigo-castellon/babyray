@@ -1,18 +1,98 @@
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
+
 package ray;
 
 option go_package = "github.com/rodrigo-castellon/babyray/pkg/grpc;grpc";
 
-service RayDriver {
-  rpc ExecuteCommand(CommandRequest) returns (CommandResponse);
+/* START GENERIC STUFF */
+
+// Success or failure
+message StatusResponse {
+  bool success = 1;
+  int32 errorCode = 2;
+  string errorMessage = 3;
+  string details = 4;
 }
 
-message CommandRequest {
-  string command = 1;
+/* END GENERIC STUFF */
+
+/* START WORKER NODE LOCAL SCHEDULER */
+service LocalScheduler {
+  rpc Schedule(ScheduleRequest) returns (ScheduleResponse);
 }
 
-message CommandResponse {
-  string output = 1;
+message ScheduleRequest {
+  string name = 1;
+  bytes args = 2;
+  bytes kwargs = 3;
 }
 
+// returns a Future, which is just the UID for
+// the generated object
+message ScheduleResponse {
+  uint32 uid = 1;
+}
+
+/* END WORKER NODE LOCAL SCHEDULER  */
+
+/* START WORKER NODE LOCAL OBJECT STORE */
+service LocalObjStore {
+  rpc Store(StoreRequest) returns (StatusResponse);
+  rpc Get(GetRequest) returns (GetResponse);
+}
+
+message StoreRequest {
+  uint32 uid = 1;
+  bytes objectBytes = 2;
+}
+
+message GetRequest {
+  uint32 uid = 1;
+}
+
+message GetResponse {
+  bytes objectBytes = 1;
+}
+
+/* END WORKER NODE LOCAL OBJECT STORE */
+
+/* START GCS OBJECT TABLE */
+service GCSObj {
+  rpc NotifyOwns(NotifyOwnsRequest) returns (StatusResponse);
+  rpc RequestLocation(RequestLocationRequest) returns (google.protobuf.Empty);
+}
+
+message NotifyOwnsRequest {
+  uint32 uid = 1;
+  uint32 nodeId = 2;
+}
+
+message RequestLocationRequest {
+  uint32 uid = 1;
+  uint32 nodeId = 2;
+}
+
+/* END GCS OBJECT TABLE */
+
+/* START GCS FUNCTION TABLE */
+service GCSFunc {
+  rpc RegisterFunc(RegisterRequest) returns (StatusResponse);
+  rpc FetchFunc(FetchRequest) returns (FetchResponse);
+}
+
+message RegisterRequest {
+  string name = 1;
+  bytes serializedFunc = 2;
+}
+
+message FetchRequest {
+  string name = 1;
+}
+
+message FetchResponse {
+  bytes serializedFunc = 1;
+}
+
+/* END GCS FUNCTION TABLE */
