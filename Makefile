@@ -14,15 +14,15 @@ py: proto
 
 build: servers
 
-servers: driver gcs globalscheduler localscheduler worker
+servers: gcsfunc gcsobj globalscheduler localscheduler worker
 
-driver:
-	@echo "Building Driver Server..."
-	cd go && go build -o bin/driver cmd/driver/main.go
+gcsfunc:
+	@echo "Building GCS Function Table Server..."
+	cd go && go build -o bin/gcs cmd/gcsfunctable/main.go
 
-gcs:
-	@echo "Building GCS Server..."
-	cd go && go build -o bin/gcs cmd/gcs/main.go
+gcsobj:
+	@echo "Building GCS Object Table Server..."
+	cd go && go build -o bin/gcs cmd/gcsobjtable/main.go
 
 globalscheduler:
 	@echo "Building Global Scheduler Server..."

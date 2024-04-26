@@ -11,13 +11,102 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
+
+const (
+	GlobalScheduler_Schedule_FullMethodName = "/ray.GlobalScheduler/schedule"
+)
+
+// GlobalSchedulerClient is the client API for GlobalScheduler service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type GlobalSchedulerClient interface {
+	Schedule(ctx context.Context, in *GlobalScheduleRequest, opts ...grpc.CallOption) (*StatusResponse, error)
+}
+
+type globalSchedulerClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewGlobalSchedulerClient(cc grpc.ClientConnInterface) GlobalSchedulerClient {
+	return &globalSchedulerClient{cc}
+}
+
+func (c *globalSchedulerClient) Schedule(ctx context.Context, in *GlobalScheduleRequest, opts ...grpc.CallOption) (*StatusResponse, error) {
+	out := new(StatusResponse)
+	err := c.cc.Invoke(ctx, GlobalScheduler_Schedule_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// GlobalSchedulerServer is the server API for GlobalScheduler service.
+// All implementations must embed UnimplementedGlobalSchedulerServer
+// for forward compatibility
+type GlobalSchedulerServer interface {
+	Schedule(context.Context, *GlobalScheduleRequest) (*StatusResponse, error)
+	mustEmbedUnimplementedGlobalSchedulerServer()
+}
+
+// UnimplementedGlobalSchedulerServer must be embedded to have forward compatible implementations.
+type UnimplementedGlobalSchedulerServer struct {
+}
+
+func (UnimplementedGlobalSchedulerServer) Schedule(context.Context, *GlobalScheduleRequest) (*StatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Schedule not implemented")
+}
+func (UnimplementedGlobalSchedulerServer) mustEmbedUnimplementedGlobalSchedulerServer() {}
+
+// UnsafeGlobalSchedulerServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to GlobalSchedulerServer will
+// result in compilation errors.
+type UnsafeGlobalSchedulerServer interface {
+	mustEmbedUnimplementedGlobalSchedulerServer()
+}
+
+func RegisterGlobalSchedulerServer(s grpc.ServiceRegistrar, srv GlobalSchedulerServer) {
+	s.RegisterService(&GlobalScheduler_ServiceDesc, srv)
+}
+
+func _GlobalScheduler_Schedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GlobalScheduleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GlobalSchedulerServer).Schedule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GlobalScheduler_Schedule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GlobalSchedulerServer).Schedule(ctx, req.(*GlobalScheduleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// GlobalScheduler_ServiceDesc is the grpc.ServiceDesc for GlobalScheduler service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var GlobalScheduler_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "ray.GlobalScheduler",
+	HandlerType: (*GlobalSchedulerServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "schedule",
+			Handler:    _GlobalScheduler_Schedule_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "rayclient.proto",
+}
 
 const (
 	LocalScheduler_Schedule_FullMethodName = "/ray.LocalScheduler/Schedule"
@@ -237,6 +326,96 @@ var LocalObjStore_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
+	Worker_Run_FullMethodName = "/ray.Worker/Run"
+)
+
+// WorkerClient is the client API for Worker service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type WorkerClient interface {
+	Run(ctx context.Context, in *RunRequest, opts ...grpc.CallOption) (*StatusResponse, error)
+}
+
+type workerClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewWorkerClient(cc grpc.ClientConnInterface) WorkerClient {
+	return &workerClient{cc}
+}
+
+func (c *workerClient) Run(ctx context.Context, in *RunRequest, opts ...grpc.CallOption) (*StatusResponse, error) {
+	out := new(StatusResponse)
+	err := c.cc.Invoke(ctx, Worker_Run_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// WorkerServer is the server API for Worker service.
+// All implementations must embed UnimplementedWorkerServer
+// for forward compatibility
+type WorkerServer interface {
+	Run(context.Context, *RunRequest) (*StatusResponse, error)
+	mustEmbedUnimplementedWorkerServer()
+}
+
+// UnimplementedWorkerServer must be embedded to have forward compatible implementations.
+type UnimplementedWorkerServer struct {
+}
+
+func (UnimplementedWorkerServer) Run(context.Context, *RunRequest) (*StatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Run not implemented")
+}
+func (UnimplementedWorkerServer) mustEmbedUnimplementedWorkerServer() {}
+
+// UnsafeWorkerServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to WorkerServer will
+// result in compilation errors.
+type UnsafeWorkerServer interface {
+	mustEmbedUnimplementedWorkerServer()
+}
+
+func RegisterWorkerServer(s grpc.ServiceRegistrar, srv WorkerServer) {
+	s.RegisterService(&Worker_ServiceDesc, srv)
+}
+
+func _Worker_Run_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RunRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkerServer).Run(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Worker_Run_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkerServer).Run(ctx, req.(*RunRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Worker_ServiceDesc is the grpc.ServiceDesc for Worker service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Worker_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "ray.Worker",
+	HandlerType: (*WorkerServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Run",
+			Handler:    _Worker_Run_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "rayclient.proto",
+}
+
+const (
 	GCSObj_NotifyOwns_FullMethodName      = "/ray.GCSObj/NotifyOwns"
 	GCSObj_RequestLocation_FullMethodName = "/ray.GCSObj/RequestLocation"
 )
@@ -246,7 +425,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GCSObjClient interface {
 	NotifyOwns(ctx context.Context, in *NotifyOwnsRequest, opts ...grpc.CallOption) (*StatusResponse, error)
-	RequestLocation(ctx context.Context, in *RequestLocationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RequestLocation(ctx context.Context, in *RequestLocationRequest, opts ...grpc.CallOption) (*StatusResponse, error)
 }
 
 type gCSObjClient struct {
@@ -266,8 +445,8 @@ func (c *gCSObjClient) NotifyOwns(ctx context.Context, in *NotifyOwnsRequest, op
 	return out, nil
 }
 
-func (c *gCSObjClient) RequestLocation(ctx context.Context, in *RequestLocationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *gCSObjClient) RequestLocation(ctx context.Context, in *RequestLocationRequest, opts ...grpc.CallOption) (*StatusResponse, error) {
+	out := new(StatusResponse)
 	err := c.cc.Invoke(ctx, GCSObj_RequestLocation_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -280,7 +459,7 @@ func (c *gCSObjClient) RequestLocation(ctx context.Context, in *RequestLocationR
 // for forward compatibility
 type GCSObjServer interface {
 	NotifyOwns(context.Context, *NotifyOwnsRequest) (*StatusResponse, error)
-	RequestLocation(context.Context, *RequestLocationRequest) (*emptypb.Empty, error)
+	RequestLocation(context.Context, *RequestLocationRequest) (*StatusResponse, error)
 	mustEmbedUnimplementedGCSObjServer()
 }
 
@@ -291,7 +470,7 @@ type UnimplementedGCSObjServer struct {
 func (UnimplementedGCSObjServer) NotifyOwns(context.Context, *NotifyOwnsRequest) (*StatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifyOwns not implemented")
 }
-func (UnimplementedGCSObjServer) RequestLocation(context.Context, *RequestLocationRequest) (*emptypb.Empty, error) {
+func (UnimplementedGCSObjServer) RequestLocation(context.Context, *RequestLocationRequest) (*StatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RequestLocation not implemented")
 }
 func (UnimplementedGCSObjServer) mustEmbedUnimplementedGCSObjServer() {}

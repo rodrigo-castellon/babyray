@@ -18,6 +18,21 @@ message StatusResponse {
 
 /* END GENERIC STUFF */
 
+/* START GLOBAL SCHEDULER */
+
+service GlobalScheduler {
+  rpc schedule(GlobalScheduleRequest) returns (StatusResponse);
+}
+
+message GlobalScheduleRequest {
+  uint32 uid = 1;
+  string name = 2;
+  bytes args = 3;
+  bytes kwargs = 4;
+}
+
+/* END GLOBAL SCHEDULER */
+
 /* START WORKER NODE LOCAL SCHEDULER */
 service LocalScheduler {
   rpc Schedule(ScheduleRequest) returns (ScheduleResponse);
@@ -58,10 +73,25 @@ message GetResponse {
 
 /* END WORKER NODE LOCAL OBJECT STORE */
 
+/* START WORKER SERVICE */
+service Worker {
+  rpc Run(RunRequest) returns (StatusResponse);
+}
+
+message RunRequest {
+  uint32 uid = 1;
+  string name = 2;
+  bytes args = 3;
+  bytes kwargs = 4;
+}
+
+
+/* END WORKER SERVICE */
+
 /* START GCS OBJECT TABLE */
 service GCSObj {
   rpc NotifyOwns(NotifyOwnsRequest) returns (StatusResponse);
-  rpc RequestLocation(RequestLocationRequest) returns (google.protobuf.Empty);
+  rpc RequestLocation(RequestLocationRequest) returns (StatusResponse);
 }
 
 message NotifyOwnsRequest {
