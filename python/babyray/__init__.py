@@ -1,3 +1,8 @@
+# generic libraries
+import pickle
+import grpc
+
+# local imports
 from .client import run
 from .utils import *
 
@@ -5,11 +10,19 @@ from . import rayclient_pb2
 from . import rayclient_pb2_grpc
 
 local_scheduler_gRPC = None
+gcs_func_gRPC = None
+local_object_store_gRPC = None
 
 
 def init_all_stubs():
     channel = grpc.insecure_channel("localhost:" + port)
     local_scheduler_gRPC = rayclient_pb2_grpc.LocalSchedulerStub(channel)
+
+    gcs_func_gRPC = rayclient_pb2_grpc.GCSFuncStub(channel)
+
+    local_object_store_gRPC = rayclient_pb2_grpc.LocalObjStoreStub(channel)
+
+    return local_scheduler_gRPC, gcs_func_gRPC, local_object_store_gRPC
 
 
 class LocalSchedulergRPC:
@@ -29,10 +42,12 @@ class GCSFuncgRPC:
 
 
 class Future:
-    def __init__(self, val=None):
-        self.val = val
+    def __init__(self, uid):
+        self.uid = uid
 
     def get(self):
+        # make a request to local object store
+        out = local_object_store_gRPC.get(future)
         return self.val
 
 
@@ -40,8 +55,6 @@ class RemoteFunction:
     def __init__(self, func):
         self.func = func
         self.name = self.func.__name__ + str(get_uuid())
-
-        # create the stub
 
     def remote(self, *args, **kwargs) -> Future:
         # do gRPC here
@@ -54,7 +67,7 @@ class RemoteFunction:
         # do gRPC here
         serialized = pickle.dumps(self.func)
 
-        gcs_func_gRPC.register(self.name, serialized)
+        gcs_func_gRPC.register_func(self.name, serialized)
 
 
 def init():
@@ -63,8 +76,8 @@ def init():
     # gcs function table
     # gcs object table
     # global scheduler
-    global local_scheduler_gRPC
-    local_scheduler_gRPC = init_all_stubs()
+    global local_scheduler_gRPC, gcs_func_gRPC
+    local_scheduler_gRPC, gcs_func_gRPC = init_all_stubs()
 
 
 # You can define decorators and functions for remote execution here.
@@ -77,7 +90,8 @@ def remote(func):
 
 
 def get(future):
-    # traverse
+    # TODO: traverse the entire tree. if it's a dict, traverse its values,
+    # if it's a list, traverse its elements, and so on.
     vals = [f.get() for f in future]
     return vals
 
