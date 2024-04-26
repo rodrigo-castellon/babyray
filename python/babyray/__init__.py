@@ -5,6 +5,7 @@ import grpc
 # local imports
 from .client import run
 from .utils import *
+from .constants import *
 
 from . import rayclient_pb2
 from . import rayclient_pb2_grpc
@@ -15,30 +16,27 @@ local_object_store_gRPC = None
 
 
 def init_all_stubs():
-    channel = grpc.insecure_channel("localhost:" + port)
-    local_scheduler_gRPC = rayclient_pb2_grpc.LocalSchedulerStub(channel)
+    # so boilerplate-y
+    local_scheduler_channel = grpc.insecure_channel(
+        f"localhost:{str(LOCAL_SCHEDULER_PORT)}"
+    )
+    local_scheduler_gRPC = rayclient_pb2_grpc.LocalSchedulerStub(
+        local_scheduler_channel
+    )
 
-    gcs_func_gRPC = rayclient_pb2_grpc.GCSFuncStub(channel)
+    gcs_func_channel = grpc.insecure_channel(
+        f"node{GCS_NODE_ID}:{GCS_FUNCTION_TABLE_PORT}"
+    )
+    gcs_func_gRPC = rayclient_pb2_grpc.GCSFuncStub(gcs_func_channel)
 
-    local_object_store_gRPC = rayclient_pb2_grpc.LocalObjStoreStub(channel)
+    local_object_store_channel = grpc.insecure_channel(
+        f"localhost:{str(LOCAL_OBJECT_STORE_PORT)}"
+    )
+    local_object_store_gRPC = rayclient_pb2_grpc.LocalObjStoreStub(
+        local_object_store_channel
+    )
 
     return local_scheduler_gRPC, gcs_func_gRPC, local_object_store_gRPC
-
-
-class LocalSchedulergRPC:
-    def __init__(self):
-        pass
-
-    def schedule(self):
-        pass
-
-
-class GCSFuncgRPC:
-    def __init__(self):
-        pass
-
-    def schedule(self, name, args, kwargs):
-        pass
 
 
 class Future:
@@ -47,8 +45,8 @@ class Future:
 
     def get(self):
         # make a request to local object store
-        out = local_object_store_gRPC.get(future)
-        return self.val
+        out = local_object_store_gRPC.get(self.uid)
+        return out
 
 
 class RemoteFunction:
@@ -76,8 +74,8 @@ def init():
     # gcs function table
     # gcs object table
     # global scheduler
-    global local_scheduler_gRPC, gcs_func_gRPC
-    local_scheduler_gRPC, gcs_func_gRPC = init_all_stubs()
+    global local_scheduler_gRPC, gcs_func_gRPC, local_object_store_gRPC
+    local_scheduler_gRPC, gcs_func_gRPC, local_object_store_gRPC = init_all_stubs()
 
 
 # You can define decorators and functions for remote execution here.
