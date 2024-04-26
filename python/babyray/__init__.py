@@ -1,5 +1,5 @@
 # generic libraries
-import pickle
+import dill as pickle
 import grpc
 
 # local imports
@@ -45,7 +45,7 @@ class Future:
 
     def get(self):
         # make a request to local object store
-        out = local_object_store_gRPC.get(self.uid)
+        out = local_object_store_gRPC.Get(rayclient_pb2.GetRequest(uid=self.uid))
         return out
 
 
@@ -57,15 +57,20 @@ class RemoteFunction:
     def remote(self, *args, **kwargs) -> Future:
         # do gRPC here
 
-        # returns a future
-        out = local_scheduler_gRPC.schedule(self.name, args, kwargs)
+        out = local_scheduler_gRPC.Schedule(
+            rayclient_pb2.ScheduleRequest(
+                name=self.name, args=pickle.dumps(args), kwargs=pickle.dumps(kwargs)
+            )
+        )
         return Future(out)
 
     def register(self):
         # do gRPC here
-        serialized = pickle.dumps(self.func)
-
-        gcs_func_gRPC.register_func(self.name, serialized)
+        gcs_func_gRPC.RegisterFunc(
+            rayclient_pb2.RegisterRequest(
+                name=self.name, serializedFunc=pickle.dumps(self.func)
+            )
+        )
 
 
 def init():
@@ -98,7 +103,11 @@ def get(futures):
         return futures.get() if hasattr(futures, "get") else futures
 
 
-# Example function to simulate Ray's behavior
-@remote
-def f(x):
-    return x * x
+def demo():
+    # Example function to simulate Ray's behavior
+    @remote
+    def f(x):
+        return x * x
+
+    print("running f(3)")
+    print(f(3))
