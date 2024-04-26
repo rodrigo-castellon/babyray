@@ -4,8 +4,24 @@ package ray;
 
 option go_package = "github.com/rodrigo-castellon/babyray/pkg/grpc;grpc";
 
+service LocalScheduler {
+  rpc Schedule(ScheduleRequest) returns (ScheduleResponse);
+}
+
 service RayDriver {
   rpc ExecuteCommand(CommandRequest) returns (CommandResponse);
+}
+
+message ScheduleRequest {
+  string name = 1;
+  bytes args = 2;
+  bytes kwargs = 3;
+}
+
+// returns a Future, which is just the UUID for
+// the generated object
+message ScheduleResponse {
+  uint32 uuid;
 }
 
 message CommandRequest {
