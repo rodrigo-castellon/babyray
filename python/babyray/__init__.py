@@ -84,14 +84,18 @@ def init():
 
 def remote(func):
     rem = RemoteFunction(func)
+    rem.register()
     return rem
 
 
-def get(future):
-    # TODO: traverse the entire tree. if it's a dict, traverse its values,
-    # if it's a list, traverse its elements, and so on.
-    vals = [f.get() for f in future]
-    return vals
+def get(futures):
+    # recursive function
+    if isinstance(futures, list):
+        return [get(future) for future in futures]
+    elif isinstance(futures, dict):
+        return {k: get(future) for k, future in futures.items()}
+    else:
+        return futures.get() if hasattr(futures, "get") else futures
 
 
 # Example function to simulate Ray's behavior

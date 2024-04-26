@@ -78,8 +78,8 @@ message RequestLocationRequest {
 
 /* START GCS FUNCTION TABLE */
 service GCSFunc {
-  rpc RegisterFunc(RegisterRequest) return (StatusResponse);
-  rpc FetchFunc(FetchRequest) return (FetchResponse);
+  rpc RegisterFunc(RegisterRequest) returns (StatusResponse);
+  rpc FetchFunc(FetchRequest) returns (FetchResponse);
 }
 
 message RegisterRequest {
