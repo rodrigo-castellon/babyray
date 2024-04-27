@@ -36,33 +36,12 @@ RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
 RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 
 
-# Build the Go app
-# Assuming your go.mod file is in the same directory as your Dockerfile,
-# otherwise, you'll need to adjust the paths accordingly.
-#RUN make all
-#RUN go build -o bin/worker cmd/worker/main.go
-#RUN go build -o bin/localscheduler cmd/localscheduler/main.go
-#RUN go build -o bin/localobjstore cmd/localobjstore/main.go
+# now that we've installed pre-reqs, build everything
+RUN make clean && make all
 
-# Use a Docker multi-stage build to minimize the size of the final image by not including the build environment.
-#FROM debian:buster-slim
-#
-## Set the Current Working Directory inside the container
-#WORKDIR /app
-#
-## Copy the Pre-built binary file from the previous stage
-#COPY --from=builder /app/bin /app/bin
-#
-## Install any needed packages specified in requirements.txt
-## Install necessary packages
-#RUN apt-get update && apt-get install -y \
-#    ca-certificates \
-#    && rm -rf /var/lib/apt/lists/*
-#
-## Expose ports (match the ports your apps are listening on)
-#EXPOSE 50000 50001 50002
-#
-## Command to run the executable
-## This CMD command starts your workers and scheduler. Adjust if your setup requires starting them differently.
+# expose all the ports we may use
+#EXPOSE 50000-69999
+
+# placeholder commands
 #CMD ["./bin/localobjstore", "&", "./bin/localscheduler", "&", "./bin/worker"]
 

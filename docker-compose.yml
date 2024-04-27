@@ -1,25 +1,33 @@
-# docker-compose.yml
 version: '3'
+
 services:
+  gcs:
+    image: ray-node
+    command: ["/bin/sh", "-c", "./go/bin/gcsfunctable & ./go/bin/gcsobjtable"]
+    ports:
+      - "50000:50000"
+
+  global_scheduler:
+    image: ray-node
+    command: ["/bin/sh", "-c", "./go/bin/globalscheduler &"]
+    ports:
+      - "50001:50001"
+
   worker1:
-    build: .
-    container_name: node1
-    hostname: node1
-    networks:
-      customnetwork:
-        aliases:
-          - node1
+    image: ray-node
+    command: ["/bin/sh", "-c", "./go/bin/localscheduler & ./go/bin/localobjstore"]
+    ports:
+      - "50002:50002"
 
   worker2:
-    build: .
-    container_name: node2
-    hostname: node2
-    networks:
-      customnetwork:
-        aliases:
-          - node2
+    image: ray-node
+    command: ["/bin/sh", "-c", "./go/bin/localscheduler & ./go/bin/localobjstore"]
+    ports:
+      - "50003:50003"
 
-networks:
-  customnetwork:
-    driver: bridge
+  worker3:
+    image: ray-node
+    command: ["/bin/sh", "-c", "./go/bin/localscheduler & ./go/bin/localobjstore"]
+    ports:
+      - "50004:50004"
 
