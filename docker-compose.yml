@@ -1,0 +1,25 @@
+# docker-compose.yml
+version: '3'
+services:
+  worker1:
+    build: .
+    container_name: node1
+    hostname: node1
+    networks:
+      customnetwork:
+        aliases:
+          - node1
+
+  worker2:
+    build: .
+    container_name: node2
+    hostname: node2
+    networks:
+      customnetwork:
+        aliases:
+          - node2
+
+networks:
+  customnetwork:
+    driver: bridge
+

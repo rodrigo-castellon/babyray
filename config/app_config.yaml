@@ -1,5 +1,4 @@
 num_worker_nodes: 5
-cluster_size: 7
 node_ids:
   gcs: 0
   global_scheduler: 1
