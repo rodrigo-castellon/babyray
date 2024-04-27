@@ -1,6 +1,35 @@
 # baby🦈
 
-## Getting Started
+## Automatic deployment
+
+You can automatically deploy the worker + GCS + global scheduler nodes by doing:
+
+```bash
+docker-compose up
+```
+
+Reset by doing ^C and then running `docker-compose down` to make sure all the containers are killed.
+
+
+## Run a single node
+
+To run a single Ray node, just do `./run.sh`. This will put you into a shell, and then you can run something like:
+
+```bash
+./go/bin/worker
+```
+
+and this will just launch the "worker" Go service. You should see something like:
+
+```
+root@fc8df146bfc1:/app# ./go/bin/worker
+2024/04/27 00:55:59 server listening at [::]:50002
+```
+
+Remember to do ^D to exit the Docker container interactive session.
+
+
+## Getting Started (manual)
 
 Install everything you need first.
 
@@ -43,7 +72,7 @@ This will run the Python client that will talk to the driver server.
 Go to the `python/` directory and do `python3 -m pip install -e .` (or just `pip install -e .`, depending on whether you like the Python executable that your pip is attached to).
 
 
-Then, go to some arbitrary place on your computer, and you can run this script with Python and it should work.
+Then, go to some arbitrary place on your computer, and you can run this script with Python.
 ```
 import babyray
 babyray.init()  # initialize in the same way as the real Ray does
@@ -55,6 +84,9 @@ def f(x):
 futures = [f.remote(i) for i in range(4)]
 print(babyray.get(futures))  # [0, 1, 4, 9]
 ```
+
+It doesn't work right now because it hits an error when it tries to query the local scheduler (which doesn't exist),
+but this will start working once we implement all the Go stuff.
 
 
 ## File structure
