@@ -5,6 +5,7 @@ import (
     "net"
     "testing"
 	"log"
+	"reflect"
     //"time"
 
     "google.golang.org/grpc"
@@ -67,7 +68,11 @@ func TestFetchFunc(t *testing.T) {
 
     // Now, test fetching
     fetchResp, err := client.FetchFunc(ctx, &pb.FetchRequest{Name: testName})
-    if err != nil || fetchResp.SerializedFunc == nil {
-        t.Errorf("FetchFunc failed: %v, response: %v", err, fetchResp)
+    if err != nil {
+        t.Errorf("FetchFunc failed: %v", err)
+    } else if fetchResp.SerializedFunc == nil {
+        t.Errorf("FetchFunc returned nil for SerializedFunc")
+    } else if !reflect.DeepEqual(fetchResp.SerializedFunc, testFunc) {
+        t.Errorf("FetchFunc returned incorrect data: got %v, want %v", fetchResp.SerializedFunc, testFunc)
     }
 }
