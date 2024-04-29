@@ -71,7 +71,7 @@ class RemoteFunction:
         # get our unique name from GCS
         self.name = gcs_func_gRPC.RegisterFunc(
             rayclient_pb2.RegisterRequest(
-                name=self.name, serializedFunc=pickle.dumps(self.func)
+                serializedFunc=pickle.dumps(self.func)
             )
         )
 

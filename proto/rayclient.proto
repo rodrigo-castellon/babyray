@@ -113,12 +113,11 @@ service GCSFunc {
 }
 
 message RegisterRequest {
-  string name = 1;
-  bytes serializedFunc = 2;
+  bytes serializedFunc = 1;
 }
 
 message FetchRequest {
-  string name = 1;
+  uint64 name = 1;
 }
 
 message FetchResponse {
