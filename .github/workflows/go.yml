@@ -37,6 +37,10 @@ jobs:
         go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
         echo "PATH=$PATH:$(go env GOPATH)/bin" >> $GITHUB_ENV
 
+    - name: Call the makefile (on Go only) - E.g. this generates protobuf code
+      run: 
+        make go
+
     - name: Build
       run: go build -v ./...
   
