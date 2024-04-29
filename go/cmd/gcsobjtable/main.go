@@ -23,7 +23,7 @@ func main() {
     }
     _ = lis;
     s := grpc.NewServer()
-    pb.RegisterGCSObjServer(s, &server{})
+    pb.RegisterGCSObjServer(s, &GCSObjServer{}) // TODO: do i need to do a create for the map instead of a raw struct?
     log.Printf("server listening at %v", lis.Addr())
     if err := s.Serve(lis); err != nil {
        log.Fatalf("failed to serve: %v", err)
@@ -31,14 +31,14 @@ func main() {
 }
 
 // server is used to implement your gRPC service.
-type server struct {
+type GCSObjServer struct {
     pb.UnimplementedGCSObjServer
     objectLocations map[uint32][]uint32
     mu              sync.Mutex
 }
 
 // Implement your service methods here.
-func (s *server) NotifyOwns(ctx context.Context, req *pb.NotifyOwnsRequest) (*pb.StatusResponse, error) {
+func (s *GCSObjServer) NotifyOwns(ctx context.Context, req *pb.NotifyOwnsRequest) (*pb.StatusResponse, error) {
     s.mu.Lock()
     defer s.mu.Unlock()
 
@@ -49,7 +49,10 @@ func (s *server) NotifyOwns(ctx context.Context, req *pb.NotifyOwnsRequest) (*pb
     return &pb.StatusResponse{Success: true}, nil
 }
 
-func (s *server) RequestLocation(ctx context.Context, req *pb.RequestLocationRequest) (*pb.StatusResponse, error) {
+
+// TODO: Actually needs to match the pseudocode from our project architecture -- like it should
+// be hanging out with the channels thing
+func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocationRequest) (*pb.StatusResponse, error) {
     s.mu.Lock()
     nodeIds, exists := s.objectLocations[req.Uid]
     s.mu.Unlock()

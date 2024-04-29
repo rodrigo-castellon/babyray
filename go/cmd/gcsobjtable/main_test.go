@@ -18,7 +18,7 @@ var lis *bufconn.Listener
 func init() {
     lis = bufconn.Listen(bufSize)
     s := grpc.NewServer()
-    pb.RegisterGCSObjServer(s, &server{objectLocations: make(map[uint32][]uint32)})
+    pb.RegisterGCSObjServer(s, &GCSObjServer{objectLocations: make(map[uint32][]uint32)})
     go func() {
         if err := s.Serve(lis); err != nil {
             log.Fatalf("Server exited with error: %v", err)
