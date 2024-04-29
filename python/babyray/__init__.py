@@ -54,22 +54,22 @@ class Future:
 class RemoteFunction:
     def __init__(self, func):
         self.func = func
-        self.name = self.func.__name__ + str(get_uuid())
+        self.name = None
 
-    def remote(self, *args, **kwargs) -> Future:
+    def remote(self, *args, **kwargs):
         # do gRPC here
 
-        uid = local_scheduler_gRPC.Schedule(
-            rayclient_pb2.ScheduleRequest(
-                name=self.name, args=pickle.dumps(args), kwargs=pickle.dumps(kwargs)
+        if self.name is not None:
+            uid = local_scheduler_gRPC.Schedule(
+                rayclient_pb2.ScheduleRequest(
+                    name=self.name, args=pickle.dumps(args), kwargs=pickle.dumps(kwargs)
+                )
             )
-        )
-        return Future(uid)
+            return Future(uid)
 
     def register(self):
-        # do gRPC here
-
-        gcs_func_gRPC.RegisterFunc(
+        # get our unique name from GCS
+        self.name = gcs_func_gRPC.RegisterFunc(
             rayclient_pb2.RegisterRequest(
                 name=self.name, serializedFunc=pickle.dumps(self.func)
             )
