@@ -66,7 +66,15 @@ python3 python/babyray/client.py
 
 This will run the Python client that will talk to the driver server.
 
-## Info for contributors
+## Info for contributors (naming / standards)
+
+### Usage Example
+
+See [here in this file](https://github.com/rodrigo-castellon/babyray/blob/43848c2210b6b55912c873fdd4d749255190ab7f/go/cmd/worker/main.go#L58) for how to load DNS name + port number for a particular service in Go (in this case, GCS function table).
+
+Note: that code is untested, so it may not work, but should give you something to work off of.
+
+### Overview
 
 Set up some global naming standards so that we can all follow along.
 
@@ -92,6 +100,8 @@ For GCS:
 - 50001: object table service
 
 For the global scheduler: port 50000.
+
+All of this information is kept in [this config file](https://github.com/rodrigo-castellon/babyray/blob/main/config/app_config.yaml), so pull from it in your code.
 
 ## Using the Python package
 
