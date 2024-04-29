@@ -15,10 +15,6 @@ jobs:
   setup-and-test:
     runs-on: ubuntu-latest
 
-    defaults:
-        run:
-          working-directory: go
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -43,6 +39,8 @@ jobs:
 
     - name: Build
       run: go build -v ./...
+      working-directory: go
   
     - name: Test
       run: go test -v ./...
+      working-directory: go
