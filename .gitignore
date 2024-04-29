@@ -193,3 +193,6 @@ cython_debug/
 
 # Go workspace file
 go.work
+go/cmd/gcsfunctable/main
+go/cmd/gcsobjtable/gcsobjtable
+python/babyray/rayclient_pb2_grpc.py-e

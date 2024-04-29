@@ -1,6 +1,6 @@
 module github.com/rodrigo-castellon/babyray
 
-go 1.22.2
+go 1.22
 
 require (
 	google.golang.org/grpc v1.63.2
