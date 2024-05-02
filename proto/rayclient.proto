@@ -21,7 +21,7 @@ message StatusResponse {
 /* START GLOBAL SCHEDULER */
 
 service GlobalScheduler {
-  rpc schedule(GlobalScheduleRequest) returns (StatusResponse);
+  rpc Schedule(GlobalScheduleRequest) returns (StatusResponse);
 }
 
 message GlobalScheduleRequest {
@@ -69,6 +69,21 @@ message GetRequest {
 
 message GetResponse {
   bytes objectBytes = 1;
+}
+
+message LocationFound {
+  uint32 uid = 1; 
+  uint32 location = 2; 
+}
+
+message CopyRequest {
+  uint32 uid = 1; 
+  uint32 requester = 2; 
+}
+
+message CopyResponse {
+  uint32 uid = 1; 
+  bytes objectBytes = 2; 
 }
 
 /* END WORKER NODE LOCAL OBJECT STORE */
