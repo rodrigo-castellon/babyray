@@ -70,7 +70,7 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
 
 }
 
-func (s* server) CopyRequest(ctx context.Context req *pb.CopyRequest) (*pb.CopyResponse, error) {
+func (s* server) CopyRequest(ctx context.Context, req *pb.CopyRequest) (*pb.CopyResponse, error) {
     data, ok = localObjectStore[req.uid]; ok {
         return &pb.CopyResponse{uid = req.uid, objectBytes = data}
     }
