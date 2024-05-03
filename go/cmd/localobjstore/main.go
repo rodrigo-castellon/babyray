@@ -52,7 +52,7 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
     c := NewGCSObjClient(); 
     c.RequestLocation(&pb.RequestLocationRequest{req.uid, nodeId})
     localObjectStore[req.uid] <- localObjectChannels[req.uid]
-    return localObjectStore[req.uid]
+    return &pb.GetResponse(uid = req.uid, objectBytes = localObjectStore[req.uid])
 
 }
 
@@ -66,51 +66,14 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
     c.NotifyOwns(ctx, &pb.NotifyOwnsRequest{req.uid})
     localObjectChannels[resp.uid] <- x.objectBytes
     return &pb.StatusResponse{Success: true}
-    
 
 }
 
-func (s* server) CopyRequest(ctx context.Context, req *pb.CopyRequest) (*pb.CopyResponse, error) {
+func (s* server) Copy(ctx context.Context, req *pb.CopyRequest) (*pb.CopyResponse, error) {
     data, ok = localObjectStore[req.uid]; ok {
         return &pb.CopyResponse{uid = req.uid, objectBytes = data}
     }
 
 }
 
-// Implement your service methods here.
-
-// func (s *server) NotifyOwns(ctx context.Context, req *pb.NotifyOwnsRequest) (*pb.StatusResponse, error) {
-//     s.mu.Lock()
-//     defer s.mu.Unlock()
-
-//     // Append the nodeId to the list for the given uid
-//     s.objectLocations[req.Uid] = append(s.objectLocations[req.Uid], req.NodeId)
-//     //log.Printf("NotifyOwns: Added Node %d to UID %d", req.NodeId, req.Uid)
-
-//     return &pb.StatusResponse{Success: true}, nil
-// }
-
-// func (s *server) RequestLocation(ctx context.Context, req *pb.RequestLocationRequest) (*pb.StatusResponse, error) {
-//     s.mu.Lock()
-//     nodeIds, exists := s.objectLocations[req.Uid]
-//     s.mu.Unlock()
-
-//     if !exists || len(nodeIds) == 0 {
-//         log.Printf("RequestLocation: No locations found for UID %d", req.Uid)
-//         // Returning a StatusResponse indicating failure, instead of nil and a Go error
-//         return &pb.StatusResponse{
-//             Success:      false,
-//             ErrorCode:    404, // Or another appropriate error code
-//             ErrorMessage: "no locations found for given UID",
-//             Details:      "The requested UID does not exist in the object locations map.",
-//         }, nil // No error returned here; encoding the failure in the response message
-//     }
-
-//     // Assume successful case
-//     //log.Printf("RequestLocation: Returning location for UID %d: Node %d", req.Uid, nodeIds[0])
-//     return &pb.StatusResponse{
-//         Success: true,
-//         Details: strconv.Itoa(int(nodeIds[0])),
-//     }, nil
-// }
 
