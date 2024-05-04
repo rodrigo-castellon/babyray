@@ -45,7 +45,8 @@ func executeFunction(f []byte, args []byte, kwargs []byte) ([]byte, error) {
     // cmd := exec.Command("python3", "execute.py")
     // cmd := exec.Command("which", "python3")
     // cmd := exec.Command("command", "-v", "python3", ">/dev/null", "&&", "echo", "$(which", "python3)", "||", "echo", `"not found"`)
-    cmd := exec.Command("which", "python3", ">/dev/null", "&&", "echo", "$(which", "python3)", "||", "echo", `"not found"`)
+    // cmd := exec.Command("which", "python3", ">/dev/null", "&&", "echo", "$(which", "python3)", "||", "echo", `"not found"`)
+    cmd := exec.Command("echo `hello world`")
 
     // Create a buffer to hold the serialized data
     // inputBuffer := bytes.NewBuffer(nil)
