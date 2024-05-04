@@ -6,7 +6,10 @@ import (
     "net"
     "strconv"
     "fmt"
-    "encoding/json"
+    // "encoding/json"
+    "bytes"
+    "os/exec"
+    "encoding/base64"
 
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -17,7 +20,7 @@ import (
 var cfg *config.Config
 
 func main() {
-    cfg := config.LoadConfig()
+    cfg := config.GetConfig()
     address := ":" + strconv.Itoa(cfg.Ports.LocalWorkerStart)
 
     lis, err := net.Listen("tcp", address)
@@ -37,24 +40,45 @@ type server struct {
     pb.UnimplementedWorkerServer
 }
 
-// Implement your service methods here.
+func executeFunction(f []byte, args []byte, kwargs []byte) ([]byte, error) {
+    // Prepare the command to run the Python script
+    cmd := exec.Command("python3", "execute.py")
 
-// executeFunction is a stub that simulates the execution of a Python function and returns a byte slice.
-func executeFunction(f []byte, args []byte, kwargs []byte) []byte {
-    // Placeholder result as a simple string, to be converted into bytes.
-    result := "Placeholder result from Python function execution"
-    
-    // Convert the string result to a byte slice to satisfy the gRPC byte type requirement.
-    resultBytes, _ := json.Marshal(result)
-    return resultBytes
+    // Create a buffer to hold the serialized data
+    inputBuffer := bytes.NewBuffer(nil)
+
+    // Write the function, args, and kwargs to the buffer
+    inputBuffer.Write(f)
+    inputBuffer.WriteByte('\n')
+    inputBuffer.Write(args)
+    inputBuffer.WriteByte('\n')
+    inputBuffer.Write(kwargs)
+
+    // Set the stdin to our input buffer
+    cmd.Stdin = inputBuffer
+
+    // Capture the output
+    output, err := cmd.Output()
+    if err != nil {
+        log.Fatalf("Error executing function: %v", err)
+    }
+
+    // Decode the Base64 output to get the original pickled data
+    data, err := base64.StdEncoding.DecodeString(string(output))
+    if err != nil {
+        log.Fatalf("Error decoding Base64: %v", err)
+    }
+
+    // Return the output from the Python script
+    return data, nil
 }
-
 
 // run executes the function by fetching it, running it, and storing the result.
 func (s *server) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusResponse, error) {
     // Assuming RunRequest contains uid, name, args, and kwargs
 
     // Connect to the gcs_func_gRPC service
+    cfg := config.GetConfig()
     funcServiceAddr := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSFunctionTable)
 
     funcConn, err := grpc.Dial(funcServiceAddr, grpc.WithInsecure())
@@ -69,7 +93,8 @@ func (s *server) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusRespons
     if err != nil {
         return nil, err
     }
-    output := executeFunction(funcResponse.SerializedFunc, req.Args, req.Kwargs) // executeFunction is a placeholder for actual function execution
+
+    output, _ := executeFunction(funcResponse.SerializedFunc, req.Args, req.Kwargs)
 
     // Connect to the local_object_store_gRPC service
     // localObjStoreAddr := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSFunctionTable)

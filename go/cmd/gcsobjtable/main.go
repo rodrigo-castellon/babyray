@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-    cfg := config.LoadConfig() // Load configuration
+    cfg := config.GetConfig() // Load configuration
     address := ":" + strconv.Itoa(cfg.Ports.GCSObjectTable) // Prepare the network address
 
     lis, err := net.Listen("tcp", address)
