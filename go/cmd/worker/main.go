@@ -49,17 +49,17 @@ func executeFunction(f []byte, args []byte, kwargs []byte) ([]byte, error) {
     // cmd := exec.Command("sh", "-c", "which python3")
 
     // Create a buffer to hold the serialized data
-    // inputBuffer := bytes.NewBuffer(nil)
+    inputBuffer := bytes.NewBuffer(nil)
 
-    // // Write the function, args, and kwargs to the buffer
-    // inputBuffer.Write(f)
-    // inputBuffer.WriteByte('\n')
-    // inputBuffer.Write(args)
-    // inputBuffer.WriteByte('\n')
-    // inputBuffer.Write(kwargs)
+    // Write the function, args, and kwargs to the buffer
+    inputBuffer.Write(f)
+    inputBuffer.WriteByte('\n')
+    inputBuffer.Write(args)
+    inputBuffer.WriteByte('\n')
+    inputBuffer.Write(kwargs)
 
-    // // Set the stdin to our input buffer
-    // cmd.Stdin = inputBuffer
+    // Set the stdin to our input buffer
+    cmd.Stdin = inputBuffer
 
     // Capture the output
     output, err := cmd.Output()
