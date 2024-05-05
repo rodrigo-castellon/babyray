@@ -39,7 +39,7 @@ jobs:
       run: python3 --version
 
     - name: Check Python installed packages
-      run: python3 -m pip list
+      run: python3 -m pip install dill
 
     - name: Call the makefile (on Go only) - E.g., this generates protobuf code
       run: make go

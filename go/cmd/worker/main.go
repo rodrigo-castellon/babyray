@@ -42,35 +42,26 @@ type server struct {
 
 func executeFunction(f []byte, args []byte, kwargs []byte) ([]byte, error) {
     // Prepare the command to run the Python script
-    // cmd := exec.Command("sh", "-c", "python3 execute.py")
-    cmd := exec.Command("sh", "-c", "python3 exec2.py")
-    // cmd := exec.Command("which", "python3")
-    // cmd := exec.Command("command", "-v", "python3", ">/dev/null", "&&", "echo", "$(which", "python3)", "||", "echo", `"not found"`)
-    // cmd := exec.Command("which", "python3", ">/dev/null", "&&", "echo", "$(which", "python3)", "||", "echo", `"not found"`)
-    // cmd := exec.Command("sh", "-c", "which python3")
+    cmd := exec.Command("sh", "-c", "python3 execute.py")
 
     // Create a buffer to hold the serialized data
-    _ = bytes.NewBuffer(nil)
-    // inputBuffer := bytes.NewBuffer(nil)
+    inputBuffer := bytes.NewBuffer(nil)
 
-    // // Write the function, args, and kwargs to the buffer
-    // inputBuffer.Write(f)
-    // inputBuffer.WriteByte('\n')
-    // inputBuffer.Write(args)
-    // inputBuffer.WriteByte('\n')
-    // inputBuffer.Write(kwargs)
+    // Write the function, args, and kwargs to the buffer
+    inputBuffer.Write(f)
+    inputBuffer.WriteByte('\n')
+    inputBuffer.Write(args)
+    inputBuffer.WriteByte('\n')
+    inputBuffer.Write(kwargs)
 
-    // // Set the stdin to our input buffer
-    // cmd.Stdin = inputBuffer
+    // Set the stdin to our input buffer
+    cmd.Stdin = inputBuffer
 
     // Capture the output
     output, err := cmd.Output()
     if err != nil {
         log.Fatalf("Error executing function: %v", err)
     }
-
-    log.Printf("output: %v", output)
-    log.Printf("output: %s", output)
 
     // Decode the Base64 output to get the original pickled data
     data, err := base64.StdEncoding.DecodeString(string(output))
