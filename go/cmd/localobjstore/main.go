@@ -13,6 +13,7 @@ import (
 )
 var localObjectStore map[uint32][]byte
 var localObjectChannels map[uint32]chan uint32
+var gcsObjClient GCSObjClient
 func main() {
     cfg := config.LoadConfig() // Load configuration
     address := ":" + strconv.Itoa(cfg.Ports.LocalObjectStore) // Prepare the network address
@@ -30,6 +31,10 @@ func main() {
     }
     localObjectStore = make(map[uint32][]byte)
     localObjectChannels = make(map[uint32]chan uint32)
+
+    gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCS)
+    conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
+    gcsObjClient = NewGCSObjClient(conn); 
 }
 
 // server is used to implement your gRPC service.
@@ -38,39 +43,38 @@ type server struct {
 }
 
 func (s *server) Store(ctx context.Context, req *pb.StoreRequest) (*pb.StatusResponse, error) {
-    localObjectStore[req.uid] = req.objectBytes
-    c := NewGCSObjClient(); 
-    c.NotifyOwns(ctx, &pb.NotifyOwnsRequest{req.uid})
+    localObjectStore[req.Uid] = req.ObjectBytes
+    
+    gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{req.Uid})
 
 }
 
 func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, error) {
-    if val, ok = localObjectStore[req.uid]; ok {
+    if val, ok = localObjectStore[req.Uid]; ok {
         return val
     }
     nodeId := 1
-    localObjectChannels[req.uid] = make(chan uint32)
-    c := NewGCSObjClient(); 
-    c.RequestLocation(&pb.RequestLocationRequest{uid: req.uid, nodeId: nodeId})
-    localObjectStore[req.uid] <- localObjectChannels[req.uid]
-    return &pb.GetResponse{uid : req.uid, objectBytes : localObjectStore[req.uid]}
+    localObjectChannels[req.Uid] = make(chan uint32)
+    gcsObjClient.RequestLocation(&pb.RequestLocationRequest{uid: req.Uid, nodeId: nodeId})
+    localObjectStore[req.Uid] <- localObjectChannels[req.Uid]
+    return &pb.GetResponse{uid : req.Uid, ObjectBytes : localObjectStore[req.Uid]}
 }
 
 func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundResponse) (*pb.StatusResponse, error) {
     nodeID := resp.NodeId; 
-    otherLocalAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.LocalScheduler)
+    otherLocalAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, nodeID, cfg.Ports.LocalScheduler)
     conn, _ := grpc.Dial(otherLocalAddress, grpc.WithInsecure())
     x := conn.Copy(ctx, &pb.CopyRequest{uid : resp.uid, requester : nodeID})
-    c := NewGCSObjClient(); 
-    c.NotifyOwns(ctx, &pb.NotifyOwnsRequest{req.uid})
-    localObjectChannels[resp.uid] <- x.objectBytes
+    
+    gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{req.Uid})
+    localObjectChannels[resp.uid] <- x.ObjectBytes
     return &pb.StatusResponse{Success: true}
 
 }
 
 func (s* server) Copy(ctx context.Context, req *pb.CopyRequest) (*pb.CopyResponse, error) {
-    data, _ = localObjectStore[req.uid];
-    return &pb.CopyResponse{uid : req.uid, objectBytes : data}
+    data, _ = localObjectStore[req.Uid];
+    return &pb.CopyResponse{uid : req.Uid, ObjectBytes : data}
 }
 
 
