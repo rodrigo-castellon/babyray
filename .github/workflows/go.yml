@@ -38,6 +38,9 @@ jobs:
     - name: Check Python version
       run: python3 --version
 
+    - name: Check Python installed packages
+      run: python3 -m pip list
+
     - name: Call the makefile (on Go only) - E.g., this generates protobuf code
       run: make go
 
