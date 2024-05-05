@@ -5,12 +5,13 @@ import (
     "log"
     "net"
     "strconv"
+    "bytes"
 
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
     "github.com/rodrigo-castellon/babyray/config"
 )
-var localObjectStore map[uint32]bytes
+var localObjectStore map[uint32][]byte
 var localObjectChannels map[uint32]chan uint32
 func main() {
     cfg := config.LoadConfig() // Load configuration
@@ -27,7 +28,7 @@ func main() {
     if err := s.Serve(lis); err != nil {
        log.Fatalf("failed to serve: %v", err)
     }
-    localObjectStore = make(map[uint32]bytes)
+    localObjectStore = make(map[uint32][]byte)
     localObjectChannels = make(map[uint32]chan uint32)
 }
 
