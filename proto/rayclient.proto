@@ -70,7 +70,8 @@ message GetRequest {
 }
 
 message GetResponse {
-  bytes objectBytes = 1;
+  uint32 uid = 1
+  bytes objectBytes = 2;
 }
 
 message LocationFoundResponse {

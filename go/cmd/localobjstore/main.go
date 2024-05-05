@@ -53,15 +53,13 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
     c.RequestLocation(&pb.RequestLocationRequest{req.uid, nodeId})
     localObjectStore[req.uid] <- localObjectChannels[req.uid]
     return &pb.GetResponse{uid = req.uid, objectBytes = localObjectStore[req.uid]}
-
 }
 
 func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundResponse) (*pb.StatusResponse, error) {
     nodeID := resp.NodeId; 
     otherLocalAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.LocalScheduler)
-    conn, err := grpc.Dial(otherLocalAddress, grpc.WithInsecure())
+    conn, _ := grpc.Dial(otherLocalAddress, grpc.WithInsecure())
     x := conn.Copy(ctx, &pb.CopyRequest{uid = resp.uid, requester = nodeID})
-    
     c := NewGCSObjClient(); 
     c.NotifyOwns(ctx, &pb.NotifyOwnsRequest{req.uid})
     localObjectChannels[resp.uid] <- x.objectBytes
@@ -71,8 +69,7 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
 
 func (s* server) Copy(ctx context.Context, req *pb.CopyRequest) (*pb.CopyResponse, error) {
     data, _ = localObjectStore[req.uid];
-    return &pb.CopyResponse{uid = req.uid, objectBytes = data}, ok
-
+    return &pb.CopyResponse{uid = req.uid, objectBytes = data}
 }
 
 
