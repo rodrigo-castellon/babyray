@@ -16,7 +16,7 @@ import (
 var localObjectStore map[uint32][]byte
 var localObjectChannels map[uint32]chan uint32
 var gcsObjClient GCSObjClient
-var localNodeID
+var localNodeID uint32
 func main() {
     cfg := config.LoadConfig() // Load configuration
     address := ":" + strconv.Itoa(cfg.Ports.LocalObjectStore) // Prepare the network address
