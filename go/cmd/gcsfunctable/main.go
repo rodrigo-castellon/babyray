@@ -58,7 +58,7 @@ func generateUID() (uint64, error) {
 }
 
 // Implement your service methods here.
-func (s *GCSFuncServer) RegisterFunc(ctx context.Context, req *pb.RegisterRequest) (*pb.StatusResponse, error) {
+func (s *GCSFuncServer) RegisterFunc(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
     // Lock and unlock the mutex to handle concurrent writes safely
     s.mu.Lock()
     defer s.mu.Unlock()
@@ -67,15 +67,13 @@ func (s *GCSFuncServer) RegisterFunc(ctx context.Context, req *pb.RegisterReques
     uid, err := generateUID()
 	if err != nil {
 		log.Println("Failed to generate UID:", err)
-	} else {
-		log.Println("Generated UID:", uid)
+        return nil, status.Errorf(codes.Internal, "Internal failed to generate UID")
 	}
 
     // Logic to register the function in the server's function store
-    // log.Printf("Registered function with UID: %d", uid)
     s.functionStore[uid] = req.SerializedFunc
     
-    return &pb.StatusResponse{Success: true}, nil // TODO change to return UID
+    return &pb.RegisterResponse{Name: uid}, nil
 }
 
 func (s *GCSFuncServer) FetchFunc(ctx context.Context, req *pb.FetchRequest) (*pb.FetchResponse, error) {

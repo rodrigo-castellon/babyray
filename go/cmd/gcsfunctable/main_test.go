@@ -41,10 +41,9 @@ func TestRegisterFunc(t *testing.T) {
     defer conn.Close()
     client := pb.NewGCSFuncClient(conn)
 
-    testName := "testFunc"
     testFunc := []byte("function data")
-    resp, err := client.RegisterFunc(ctx, &pb.RegisterRequest{Name: testName, SerializedFunc: testFunc})
-    if err != nil || !resp.Success {
+    resp, err := client.RegisterFunc(ctx, &pb.RegisterRequest{SerializedFunc: testFunc})
+    if err != nil {
         t.Errorf("RegisterFunc failed: %v, response: %v", err, resp)
     }
 }
@@ -59,15 +58,14 @@ func TestFetchFunc(t *testing.T) {
     client := pb.NewGCSFuncClient(conn)
 
     // First, register a function to fetch
-    testName := "testFetch"
     testFunc := []byte("fetch data")
-    _, err = client.RegisterFunc(ctx, &pb.RegisterRequest{Name: testName, SerializedFunc: testFunc})
+    resp, err := client.RegisterFunc(ctx, &pb.RegisterRequest{SerializedFunc: testFunc})
     if err != nil {
         t.Fatalf("Setup failure: could not register function: %v", err)
     }
 
     // Now, test fetching
-    fetchResp, err := client.FetchFunc(ctx, &pb.FetchRequest{Name: testName})
+    fetchResp, err := client.FetchFunc(ctx, &pb.FetchRequest{Name: resp.Name})
     if err != nil {
         t.Errorf("FetchFunc failed: %v", err)
     } else if fetchResp.SerializedFunc == nil {
