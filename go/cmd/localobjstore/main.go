@@ -14,7 +14,7 @@ import (
 
 )
 var localObjectStore map[uint32][]byte
-var localObjectChannels map[uint32]chan uint32
+var localObjectChannels map[uint32]chan []byte
 var gcsObjClient pb.GCSObjClient
 var localNodeID uint32
 var cfg config.Config
@@ -58,7 +58,7 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
     if val, ok := localObjectStore[req.Uid]; ok {
         return &pb.GetResponse{Uid : req.Uid, ObjectBytes : val}, nil
     }
-    nodeId := 1
+    nodeId uint32 = 1
     localObjectChannels[req.Uid] = make(chan uint32)
     gcsObjClient.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: req.Uid, NodeId: nodeId})
     val := <- localObjectChannels[req.Uid]
