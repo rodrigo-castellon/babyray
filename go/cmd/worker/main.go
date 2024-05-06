@@ -19,6 +19,17 @@ import (
 // Declare the global config variable
 var cfg *config.Config
 
+type ClientConstructor[T any] func(grpc.ClientConnInterface) T
+
+func createGRPCClient[T any](address string, constructor ClientConstructor[T]) T {
+    conn, err := grpc.Dial(address, grpc.WithInsecure())
+    if err != nil {
+        log.Fatalf("failed to connect to %s: %v", address, err)
+    }
+    defer conn.Close()
+    return constructor(conn)
+}
+
 func main() {
     cfg := config.GetConfig()
     address := ":" + strconv.Itoa(cfg.Ports.LocalWorkerStart)
@@ -28,23 +39,10 @@ func main() {
         log.Fatalf("failed to listen: %v", err)
     }
 
-    // instantiate the GCS function table client
+    // Set up the clients
     funcServiceAddr := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSFunctionTable)
-
-    funcConn, err := grpc.Dial(funcServiceAddr, grpc.WithInsecure())
-    if err != nil {
-        log.Fatalf("failed to connect to func service: %v", err)
-    }
-    defer funcConn.Close()
-    funcClient := pb.NewGCSFuncClient(funcConn)
-
-    // instantiate the local storage client
-    storeConn, err := grpc.Dial("localhost:50000", grpc.WithInsecure())
-    if err != nil {
-        log.Fatalf("failed to connect to store service: %v", err)
-    }
-    defer storeConn.Close()
-    storeClient := pb.NewLocalObjStoreClient(storeConn)
+    funcClient := createGRPCClient[pb.GCSFuncClient](funcServiceAddr, pb.NewGCSFuncClient)
+    storeClient := createGRPCClient[pb.LocalObjStoreClient]("localhost:50000", pb.NewLocalObjStoreClient)
 
     s := grpc.NewServer()
     pb.RegisterWorkerServer(s, &workerServer{
