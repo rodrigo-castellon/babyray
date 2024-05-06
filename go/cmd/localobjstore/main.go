@@ -34,7 +34,7 @@ func main() {
        log.Fatalf("failed to serve: %v", err)
     }
     localObjectStore = make(map[uint32][]byte)
-    localObjectChannels = make(map[uint32]chan uint32)
+    localObjectChannels = make(map[uint32]chan []byte)
 
     gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
     conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
@@ -58,7 +58,7 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
     if val, ok := localObjectStore[req.Uid]; ok {
         return &pb.GetResponse{Uid : req.Uid, ObjectBytes : val}, nil
     }
-    var nodeId uin32 = 1 
+    var nodeId uint32 = 1 
     localObjectChannels[req.Uid] = make(chan uint32)
     gcsObjClient.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: req.Uid, NodeId: nodeId})
     val := <- localObjectChannels[req.Uid]
