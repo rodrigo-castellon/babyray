@@ -4,7 +4,11 @@ import (
     "io/ioutil"
     "gopkg.in/yaml.v3"
     "log"
+    "os"
+    "path/filepath"
 )
+
+var cfg *Config
 
 type Config struct {
     NumWorkerNodes int `yaml:"num_worker_nodes"`
@@ -27,9 +31,21 @@ type Config struct {
     } `yaml:"dns"`
 }
 
-func LoadConfig() Config {
+func LoadConfig() *Config {
     var config Config
-    yamlFile, err := ioutil.ReadFile("config/app_config.yaml")
+
+    // Get the working directory of the executable. Key assumption here is that
+    // the executable is located at go/cmd/*/[executable]. Otherwise this will
+    // break.
+    cwd, err := os.Getwd()
+    if err != nil {
+        log.Fatalf("Failed to get current working directory: %v", err)
+    }
+
+    // Construct the path to the configuration file
+    configFile := filepath.Join(cwd, "..", "..", "..", "config", "app_config.yaml")
+
+    yamlFile, err := ioutil.ReadFile(configFile)
     if err != nil {
         log.Fatalf("error: %v", err)
     }
@@ -37,6 +53,13 @@ func LoadConfig() Config {
     if err != nil {
         log.Fatalf("Unmarshal: %v", err)
     }
-    return config
+    return &config
 }
 
+func init() {
+    cfg = LoadConfig()
+}
+
+func GetConfig() *Config {
+    return cfg
+}
