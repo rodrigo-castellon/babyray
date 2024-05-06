@@ -49,36 +49,36 @@ type server struct {
 func (s *server) Store(ctx context.Context, req *pb.StoreRequest) (*pb.StatusResponse, error) {
     localObjectStore[req.Uid] = req.ObjectBytes
     
-    gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{uid: req.Uid, nodeId: localNodeID})
-    return &pb.StatusResponse{Success: true}
+    gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: req.Uid, NodeId: localNodeID})
+    return &pb.StatusResponse{Success: true}, nil
 }
 
 func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, error) {
-    if val, ok = localObjectStore[req.Uid]; ok {
+    if val, ok := localObjectStore[req.Uid]; ok {
         return val
     }
     nodeId := 1
     localObjectChannels[req.Uid] = make(chan uint32)
-    gcsObjClient.RequestLocation(&pb.RequestLocationRequest{uid: req.Uid, nodeId: nodeId})
+    gcsObjClient.RequestLocation(&pb.RequestLocationRequest{Uid: req.Uid, nodeId: NodeId})
     localObjectStore[req.Uid] <- localObjectChannels[req.Uid]
-    return &pb.GetResponse{uid : req.Uid, ObjectBytes : localObjectStore[req.Uid]}
+    return &pb.GetResponse{Uid : req.Uid, ObjectBytes : localObjectStore[req.Uid]}
 }
 
 func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundResponse) (*pb.StatusResponse, error) {
     nodeID := resp.NodeId; 
     otherLocalAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, nodeID, cfg.Ports.LocalScheduler)
     conn, _ := grpc.Dial(otherLocalAddress, grpc.WithInsecure())
-    x := conn.Copy(ctx, &pb.CopyRequest{uid : resp.uid, requester : nodeID})
+    x := conn.Copy(ctx, &pb.CopyRequest{Uid : resp.Uid, requester : nodeID})
     
-    gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{uid: req.Uid, nodeId: localNodeID})
-    localObjectChannels[resp.uid] <- x.ObjectBytes
+    gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: req.Uid, nodeId: localNodeID})
+    localObjectChannels[resp.Uid] <- x.ObjectBytes
     return &pb.StatusResponse{Success: true}
 
 }
 
 func (s* server) Copy(ctx context.Context, req *pb.CopyRequest) (*pb.CopyResponse, error) {
     data, _ = localObjectStore[req.Uid];
-    return &pb.CopyResponse{uid : req.Uid, ObjectBytes : data}
+    return &pb.CopyResponse{Uid : req.Uid, ObjectBytes : data}
 }
 
 
