@@ -28,16 +28,48 @@ func main() {
         log.Fatalf("failed to listen: %v", err)
     }
 
+    // instantiate the GCS function table client
+    funcServiceAddr := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSFunctionTable)
+
+    funcConn, err := grpc.Dial(funcServiceAddr, grpc.WithInsecure())
+    if err != nil {
+        log.Fatalf("failed to connect to func service: %v", err)
+    }
+    defer funcConn.Close()
+    funcClient := pb.NewGCSFuncClient(funcConn)
+
+    // instantiate the local storage client
+    storeConn, err := grpc.Dial("localhost:50000", grpc.WithInsecure())
+    if err != nil {
+        log.Fatalf("failed to connect to store service: %v", err)
+    }
+    defer storeConn.Close()
+    storeClient := pb.NewLocalObjStoreClient(storeConn)
+
     s := grpc.NewServer()
-    pb.RegisterWorkerServer(s, &server{})
+    pb.RegisterWorkerServer(s, &workerServer{
+        funcClient: funcClient,
+        storeClient: storeClient,
+    })
+
     log.Printf("server listening at %v", lis.Addr())
     if err := s.Serve(lis); err != nil {
         log.Fatalf("failed to serve: %v", err)
     }
 }
 
-type server struct {
+type workerServer struct {
     pb.UnimplementedWorkerServer
+    funcClient FuncClient
+    storeClient StoreClient
+}
+
+type FuncClient interface {
+    FetchFunc(ctx context.Context, in *pb.FetchRequest, opts ...grpc.CallOption) (*pb.FetchResponse, error)
+}
+
+type StoreClient interface {
+    Store(ctx context.Context, in *pb.StoreRequest, opts ...grpc.CallOption) (*pb.StatusResponse, error)
 }
 
 func executeFunction(f []byte, args []byte, kwargs []byte) ([]byte, error) {
@@ -47,11 +79,19 @@ func executeFunction(f []byte, args []byte, kwargs []byte) ([]byte, error) {
     // Create a buffer to hold the serialized data
     inputBuffer := bytes.NewBuffer(nil)
 
+    // Assume data is the serialized data you want to encode in base64
+    // fB64 := base64.StdEncoding.EncodeToString(f)
+    // argsB64 := base64.StdEncoding.EncodeToString(args)
+    // kwargsB64 := base64.StdEncoding.EncodeToString(kwargs)
+
     // Write the function, args, and kwargs to the buffer
     inputBuffer.Write(f)
+    // inputBuffer.writes(fB64)
     inputBuffer.WriteByte('\n')
+    // inputBuffer.Write(argsB64)
     inputBuffer.Write(args)
     inputBuffer.WriteByte('\n')
+    // inputBuffer.Write(kwargsB64)
     inputBuffer.Write(kwargs)
 
     // Set the stdin to our input buffer
@@ -74,39 +114,21 @@ func executeFunction(f []byte, args []byte, kwargs []byte) ([]byte, error) {
 }
 
 // run executes the function by fetching it, running it, and storing the result.
-func (s *server) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusResponse, error) {
+func (s *workerServer) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusResponse, error) {
     // Assuming RunRequest contains uid, name, args, and kwargs
 
     // Connect to the gcs_func_gRPC service
-    cfg := config.GetConfig()
-    funcServiceAddr := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSFunctionTable)
-
-    funcConn, err := grpc.Dial(funcServiceAddr, grpc.WithInsecure())
-    if err != nil {
-        log.Fatalf("failed to connect to func service: %v", err)
-    }
-    defer funcConn.Close()
-    funcClient := pb.NewGCSFuncClient(funcConn)
 
     // Fetch function using gRPC call
-    funcResponse, err := funcClient.FetchFunc(ctx, &pb.FetchRequest{Name: req.Name})
+    funcResponse, err := s.funcClient.FetchFunc(ctx, &pb.FetchRequest{Name: req.Name})
     if err != nil {
         return nil, err
     }
 
     output, _ := executeFunction(funcResponse.SerializedFunc, req.Args, req.Kwargs)
 
-    // Connect to the local_object_store_gRPC service
-    // localObjStoreAddr := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSFunctionTable)
-    storeConn, err := grpc.Dial("localhost:50000", grpc.WithInsecure())
-    if err != nil {
-        log.Fatalf("failed to connect to store service: %v", err)
-    }
-    defer storeConn.Close()
-    storeClient := pb.NewLocalObjStoreClient(storeConn)
-
     // Store output using gRPC call
-    _, err = storeClient.Store(ctx, &pb.StoreRequest{Uid: req.Uid, ObjectBytes: output})
+    _, err = s.storeClient.Store(ctx, &pb.StoreRequest{Uid: req.Uid, ObjectBytes: output})
     if err != nil {
         return nil, err
     }

@@ -20,13 +20,33 @@ var lis *bufconn.Listener
 func init() {
     lis = bufconn.Listen(bufSize)
     s := grpc.NewServer()
-    pb.RegisterWorkerServer(s, &server{
-    })
+    pb.RegisterWorkerServer(s, &workerServer{})
     go func() {
         if err := s.Serve(lis); err != nil {
             log.Fatalf("Server exited with error: %v", err)
         }
     }()
+}
+
+type mockFuncClient struct {
+    pb.GCSFuncClient // Embedding the interface for forward compatibility
+    resp *pb.FetchResponse
+    err  error
+}
+
+func (m *mockFuncClient) FetchFunc(ctx context.Context, in *pb.FetchRequest, opts ...grpc.CallOption) (*pb.FetchResponse, error) {
+    return m.resp, m.err
+}
+
+type mockStoreClient struct {
+    pb.LocalObjStoreClient // Embedding the interface for forward compatibility
+    statusResp *pb.StatusResponse
+    resp *pb.GetResponse
+    err  error
+}
+
+func (m *mockStoreClient) Store(ctx context.Context, in *pb.StoreRequest, opts ...grpc.CallOption) (*pb.StatusResponse, error) {
+    return m.statusResp, m.err
 }
 
 func bufDialer(context.Context, string) (net.Conn, error) {
@@ -71,19 +91,27 @@ func TestWorkerRun(t *testing.T) {
 
     ctx := context.Background()
 
-    conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
-    if err != nil {
-        t.Fatalf("Failed to dial bufnet: %v", err)
+    // Set up mocks
+    mockFunc := &mockFuncClient{
+        resp: &pb.FetchResponse{SerializedFunc: []byte("gASVBgEAAAAAAACMCmRpbGwuX2RpbGyUjBBfY3JlYXRlX2Z1bmN0aW9ulJOUKGgAjAxfY3JlYXRlX2NvZGWUk5QoSwJLAEsASwJLAktTQwh8AHwBFwBTAJROhZQpjAF4lIwBeZSGlIwtL1VzZXJzL3JvZHJpZ28tY2FzdGVsbG9uL2JhYnlyYXkvZ28vc2NyaXB0LnB5lIwIPGxhbWJkYT6USwZDAJQpKXSUUpRjX19idWlsdGluX18KX19tYWluX18KaAtOTnSUUpR9lH2UKIwPX19hbm5vdGF0aW9uc19flH2UjAxfX3F1YWxuYW1lX1+UjBZtYWluLjxsb2NhbHM+LjxsYW1iZGE+lHWGlGIu")},
+        err:  nil,
     }
-    defer conn.Close()
-    client := pb.NewWorkerClient(conn)
+    mockStore := &mockStoreClient{
+        statusResp: &pb.StatusResponse{},
+        resp: &pb.GetResponse{},
+        err: nil,
+    }
 
+    s := workerServer{
+        funcClient: mockFunc,
+        storeClient: mockStore,
+    }
 
     // Setup test data
     uid := uint32(383838)
     funcName := "testFunction"
-    args := []byte("args data")
-    kwargs := []byte("kwargs data")
+    args := []byte("gASVBwAAAAAAAABLBUsDhpQu")
+    kwargs := []byte("gAR9lC4=")
 
     // Mock setup: Register the function and prepare the expected output
     // expectedOutput := []byte("function output")
@@ -91,8 +119,11 @@ func TestWorkerRun(t *testing.T) {
     // storeServer.Store(ctx, &storepb.StoreRequest{Uid: uid, Output: expectedOutput})
 
     // Run the worker service
-    resp, err := client.Run(ctx, &pb.RunRequest{Uid: uid, Name: funcName, Args: args, Kwargs: kwargs})
+    resp, err := s.Run(ctx, &pb.RunRequest{Uid: uid, Name: funcName, Args: args, Kwargs: kwargs})
     _ = resp
+    _ = err
+
+    log.Printf("%v", resp)
     // if err != nil {
     //     t.Errorf("Run failed: %v", err)
     // } else if !resp.Success {
