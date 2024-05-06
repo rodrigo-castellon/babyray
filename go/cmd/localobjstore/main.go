@@ -59,19 +59,19 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
     }
     nodeId := 1
     localObjectChannels[req.Uid] = make(chan uint32)
-    gcsObjClient.RequestLocation(&pb.RequestLocationRequest{Uid: req.Uid, NodeId: NodeId})
+    gcsObjClient.RequestLocation(&pb.RequestLocationRequest{Uid: req.Uid, NodeId: nodeId})
     localObjectStore[req.Uid] <- localObjectChannels[req.Uid]
     return &pb.GetResponse{Uid : req.Uid, ObjectBytes : localObjectStore[req.Uid]}, nil
 }
 
 func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundResponse) (*pb.StatusResponse, error) {
-    nodeID := resp.NodeId; 
+    nodeID := resp.Location; 
     otherLocalAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, nodeID, cfg.Ports.LocalScheduler)
     conn, _ := grpc.Dial(otherLocalAddress, grpc.WithInsecure())
     x := conn.Copy(ctx, &pb.CopyRequest{Uid : resp.Uid, requester : nodeID})
     
     gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: req.Uid, NodeId: localNodeID})
-    localObjectChannels[resp.Uid] <- x.ObjectBytes
+    localObjectChannels[resp.Uid] = <- x.ObjectBytes
     return &pb.StatusResponse{Success: true}, nil
 
 }
