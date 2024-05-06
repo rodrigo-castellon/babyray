@@ -5,7 +5,6 @@ import (
     "log"
     "net"
     "strconv"
-    "bytes"
     "fmt"
     context "context"
 
@@ -18,7 +17,7 @@ var localObjectStore map[uint32][]byte
 var localObjectChannels map[uint32]chan uint32
 var gcsObjClient GCSObjClient
 var localNodeID uint32
-var cfg Config
+var cfg config.Config
 func main() {
     cfg = config.LoadConfig() // Load configuration
     address := ":" + strconv.Itoa(cfg.Ports.LocalObjectStore) // Prepare the network address
@@ -70,7 +69,7 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
     nodeID := resp.Location; 
     otherLocalAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, nodeID, cfg.Ports.LocalObjectStore)
     conn, _ := grpc.Dial(otherLocalAddress, grpc.WithInsecure())
-    c := NewLocalObjStoreClient(conn)
+    c := pb.NewLocalObjStoreClient(conn)
     x := c.Copy(ctx, &pb.CopyRequest{Uid : resp.Uid, Requester : nodeID})
     
     gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: resp.Uid, NodeId: localNodeID})
