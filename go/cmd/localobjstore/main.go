@@ -6,14 +6,17 @@ import (
     "net"
     "strconv"
     "bytes"
+    "fmt"
 
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
     "github.com/rodrigo-castellon/babyray/config"
+
 )
 var localObjectStore map[uint32][]byte
 var localObjectChannels map[uint32]chan uint32
 var gcsObjClient GCSObjClient
+var localNodeID
 func main() {
     cfg := config.LoadConfig() // Load configuration
     address := ":" + strconv.Itoa(cfg.Ports.LocalObjectStore) // Prepare the network address
@@ -32,9 +35,10 @@ func main() {
     localObjectStore = make(map[uint32][]byte)
     localObjectChannels = make(map[uint32]chan uint32)
 
-    gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCS)
+    gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
     conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
-    gcsObjClient = NewGCSObjClient(conn); 
+    gcsObjClient = NewGCSObjClient(conn)
+    localNodeID = 0
 }
 
 // server is used to implement your gRPC service.
@@ -45,7 +49,7 @@ type server struct {
 func (s *server) Store(ctx context.Context, req *pb.StoreRequest) (*pb.StatusResponse, error) {
     localObjectStore[req.Uid] = req.ObjectBytes
     
-    gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{req.Uid})
+    gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{req.Uid, localNodeID})
 
 }
 
@@ -66,7 +70,7 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
     conn, _ := grpc.Dial(otherLocalAddress, grpc.WithInsecure())
     x := conn.Copy(ctx, &pb.CopyRequest{uid : resp.uid, requester : nodeID})
     
-    gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{req.Uid})
+    gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{req.Uid, localNodeID})
     localObjectChannels[resp.uid] <- x.ObjectBytes
     return &pb.StatusResponse{Success: true}
 
