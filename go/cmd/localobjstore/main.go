@@ -60,8 +60,8 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
     }
     nodeId := 1
     localObjectChannels[req.Uid] = make(chan uint32)
-    gcsObjClient.RequestLocation(&pb.RequestLocationRequest{Uid: req.Uid, NodeId: nodeId})
-    val = <- localObjectChannels[req.Uid]
+    gcsObjClient.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: req.Uid, NodeId: nodeId})
+    val := <- localObjectChannels[req.Uid]
     localObjectStore[req.Uid] = val
     return &pb.GetResponse{Uid : req.Uid, ObjectBytes : localObjectStore[req.Uid]}, nil
 }
@@ -74,7 +74,7 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
     x, _ := c.Copy(ctx, &pb.CopyRequest{Uid : resp.Uid, Requester : nodeID})
     
     gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: resp.Uid, NodeId: localNodeID})
-    localObjectChannels[resp.Uid] = <- x.ObjectBytes
+    localObjectChannels[resp.Uid] <- x.ObjectBytes
     return &pb.StatusResponse{Success: true}, nil
 
 }
