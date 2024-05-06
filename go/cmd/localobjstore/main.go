@@ -49,8 +49,8 @@ type server struct {
 func (s *server) Store(ctx context.Context, req *pb.StoreRequest) (*pb.StatusResponse, error) {
     localObjectStore[req.Uid] = req.ObjectBytes
     
-    gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{req.Uid, localNodeID})
-
+    gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{uid: req.Uid, nodeId: localNodeID})
+    return &pb.StatusResponse{Success: true}
 }
 
 func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, error) {
@@ -70,7 +70,7 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
     conn, _ := grpc.Dial(otherLocalAddress, grpc.WithInsecure())
     x := conn.Copy(ctx, &pb.CopyRequest{uid : resp.uid, requester : nodeID})
     
-    gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{req.Uid, localNodeID})
+    gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{uid: req.Uid, nodeId: localNodeID})
     localObjectChannels[resp.uid] <- x.ObjectBytes
     return &pb.StatusResponse{Success: true}
 
