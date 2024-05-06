@@ -71,16 +71,16 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
     otherLocalAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, nodeID, cfg.Ports.LocalObjectStore)
     conn, _ := grpc.Dial(otherLocalAddress, grpc.WithInsecure())
     c := NewLocalObjStoreClient(conn)
-    x := c.Copy(ctx, &pb.CopyRequest{Uid : resp.Uid, requester : nodeID})
+    x := c.Copy(ctx, &pb.CopyRequest{Uid : resp.Uid, Requester : nodeID})
     
-    gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: req.Uid, NodeId: localNodeID})
+    gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: resp.Uid, NodeId: localNodeID})
     localObjectChannels[resp.Uid] = <- x.ObjectBytes
     return &pb.StatusResponse{Success: true}, nil
 
 }
 
 func (s* server) Copy(ctx context.Context, req *pb.CopyRequest) (*pb.CopyResponse, error) {
-    data, _ = localObjectStore[req.Uid];
+    data, _ := localObjectStore[req.Uid];
     return &pb.CopyResponse{Uid : req.Uid, ObjectBytes : data}, nil
 }
 
