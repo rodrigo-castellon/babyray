@@ -33,6 +33,7 @@ func main() {
     if err := s.Serve(lis); err != nil {
        log.Fatalf("failed to serve: %v", err)
     }
+
     localObjectStore = make(map[uint32][]byte)
     localObjectChannels = make(map[uint32]chan []byte)
 
@@ -59,7 +60,7 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
         return &pb.GetResponse{Uid : req.Uid, ObjectBytes : val}, nil
     }
     var nodeId uint32 = 1 
-    localObjectChannels[req.Uid] = make(chan uint32)
+    localObjectChannels[req.Uid] = make(chan []byte)
     gcsObjClient.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: req.Uid, NodeId: nodeId})
     val := <- localObjectChannels[req.Uid]
     localObjectStore[req.Uid] = val
