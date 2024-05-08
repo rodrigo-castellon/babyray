@@ -6,8 +6,11 @@ import (
     "testing"
 	"log"
 	"reflect"
-    //"time"
+    // "time"
+    // "sync"
 
+    // "google.golang.org/grpc/status"
+    // "google.golang.org/grpc/codes"
     "google.golang.org/grpc"
     "google.golang.org/grpc/test/bufconn"
     pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -58,7 +61,7 @@ func TestFetchFunc(t *testing.T) {
     client := pb.NewGCSFuncClient(conn)
 
     // First, register a function to fetch
-    testFunc := []byte("fetch data")
+    testFunc := []byte("fetch data alskfjlaskdfnlaskfnlaskdnfl;asjdfn")
     resp, err := client.RegisterFunc(ctx, &pb.RegisterRequest{SerializedFunc: testFunc})
     if err != nil {
         t.Fatalf("Setup failure: could not register function: %v", err)
@@ -74,3 +77,4 @@ func TestFetchFunc(t *testing.T) {
         t.Errorf("FetchFunc returned incorrect data: got %v, want %v", fetchResp.SerializedFunc, testFunc)
     }
 }
+
