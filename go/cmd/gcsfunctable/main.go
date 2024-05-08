@@ -47,6 +47,8 @@ func NewGCSFuncServer() *GCSFuncServer {
     }
 }
 
+// Note: This is cryptographically random, whereas basic random might be sufficient for our needs
+// If this slows things down, change the implementation to basic rangom
 func generateUID() (uint64, error) {
 	var n uint64
 	err := binary.Read(rand.Reader, binary.BigEndian, &n)
