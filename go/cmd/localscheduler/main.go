@@ -1,11 +1,12 @@
 package main
 
 import (
-    // "context"
+    "context"
     "log"
     "net"
     "strconv"
-
+    "math/rand"
+    "math"
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
     "github.com/rodrigo-castellon/babyray/config"
@@ -49,13 +50,13 @@ type server struct {
 
 func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.ScheduleResponse, error) {
     // worker_id = check_resources()
-    worker_id = nil; 
-    uid = int.rand(); 
+    worker_id := nil; 
+    uid = randomInt := rand.Intn(100)
     if worker_id != nil {
 
         workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.Ourself, cfg.Ports.LocalWorkerStart + worker_id)
         conn, _ := grpc.Dial(workerAddress, grpc.WithInsecure())
-        workerClient = pb.NewGCSObjClient(conn)
+        workerClient := pb.NewGCSObjClient(conn)
         r, err = workerClient.Run(&pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
         if err != nil {
             log.Printf("cannot contact worker %d", worker_id)
