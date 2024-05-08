@@ -38,16 +38,12 @@ func main() {
 type GCSFuncServer struct {
    pb.UnimplementedGCSFuncServer
    functionStore map[uint64][]byte
-   mu            sync.Mutex 
-   cond          *sync.Cond
+   mu            sync.Mutex // Use a mutex to manage concurrent access
 }
 
 func NewGCSFuncServer() *GCSFuncServer {
-    mu := sync.Mutex{}
     return &GCSFuncServer{
         functionStore: make(map[uint64][]byte),
-        mu:    mu,
-        cond:  sync.NewCond(&mu),
     }
 }
 
@@ -79,29 +75,17 @@ func (s *GCSFuncServer) RegisterFunc(ctx context.Context, req *pb.RegisterReques
     // Logic to register the function in the server's function store
     s.functionStore[uid] = req.SerializedFunc
     
-    // Broadcast to all waiting goroutines that a new function has been registered
-    s.cond.Broadcast()
-
     return &pb.RegisterResponse{Name: uid}, nil
 }
 
 func (s *GCSFuncServer) FetchFunc(ctx context.Context, req *pb.FetchRequest) (*pb.FetchResponse, error) {
     s.mu.Lock()
-    defer s.mu.Unlock()
     serializedFunc, ok := s.functionStore[req.Name]
-
-    for !ok {
-        s.cond.Wait() // Wait will temporarily unlock s.mu and lock it again when it returns
-
-        // Re-check the function store after waiting
-        serializedFunc, ok = s.functionStore[req.Name]
-
-        // Check if context is done while waiting -- NOTE context might not yet be implemented
-        if ctx.Err() != nil {
-            return nil, ctx.Err() // Properly pass the context error, e.g., cancellation or deadline exceeded
-        }
+    s.mu.Unlock()
+    
+    if !ok {
+        return nil, status.Errorf(codes.NotFound, "function not found")
     }
-
-    // If we break out of the loop, it means 'ok' is true
+    
     return &pb.FetchResponse{SerializedFunc: serializedFunc}, nil
 }
