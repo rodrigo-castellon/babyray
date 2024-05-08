@@ -25,7 +25,7 @@ service GlobalScheduler {
 }
 
 message GlobalScheduleRequest {
-  uint32 uid = 1;
+  uint64 uid = 1;
   string name = 2;
   bytes args = 3;
   bytes kwargs = 4;
@@ -47,7 +47,7 @@ message ScheduleRequest {
 // returns a Future, which is just the UID for
 // the generated object
 message ScheduleResponse {
-  uint32 uid = 1;
+  uint64 uid = 1;
 }
 
 /* END WORKER NODE LOCAL SCHEDULER  */
@@ -59,12 +59,12 @@ service LocalObjStore {
 }
 
 message StoreRequest {
-  uint32 uid = 1;
+  uint64 uid = 1;
   bytes objectBytes = 2;
 }
 
 message GetRequest {
-  uint32 uid = 1;
+  uint64 uid = 1;
 }
 
 message GetResponse {
@@ -79,7 +79,7 @@ service Worker {
 }
 
 message RunRequest {
-  uint32 uid = 1;
+  uint64 uid = 1;
   uint64 name = 2;
   bytes args = 3;
   bytes kwargs = 4;
@@ -95,13 +95,16 @@ service GCSObj {
 }
 
 message NotifyOwnsRequest {
-  uint32 uid = 1;
-  uint32 nodeId = 2;
+  uint64 uid = 1;
+  uint64 nodeId = 2;
 }
 
 message RequestLocationRequest {
-  uint32 uid = 1;
-  uint32 nodeId = 2;
+  uint64 uid = 1;
+}
+
+message RequestLocationResponse {
+  uint64 nodeId = 1;
 }
 
 /* END GCS OBJECT TABLE */
