@@ -50,10 +50,9 @@ type server struct {
 
 func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.ScheduleResponse, error) {
     // worker_id = check_resources()
-    worker_id := nil; 
-    uid = randomInt := rand.Intn(100)
+    var worker_id uint32 
+    uid := uint32(rand.Intn(100))
     if worker_id != nil {
-
         workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.Ourself, cfg.Ports.LocalWorkerStart + worker_id)
         conn, _ := grpc.Dial(workerAddress, grpc.WithInsecure())
         workerClient := pb.NewGCSObjClient(conn)
