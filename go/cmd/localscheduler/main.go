@@ -34,7 +34,7 @@ func main() {
 
     globalSchedulerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GlobalScheduler, cfg.Ports.GlobalScheduler)
     conn, _ := grpc.Dial(globalSchedulerAddress, grpc.WithInsecure())
-    globalSchedulerClient = pb.NewGlobalScheduluerClient(conn)
+    globalSchedulerClient = pb.NewGlobalSchedulerClient(conn)
     localNodeID = 0
 
 
@@ -56,8 +56,8 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
     if worker_id != -1 {
         workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.Ourself, cfg.Ports.LocalWorkerStart + worker_id)
         conn, _ := grpc.Dial(workerAddress, grpc.WithInsecure())
-        workerClient, _ := pb.NewWorkerClient(conn)
-        r, err := workerClient.Run(&pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
+        workerClient := pb.NewWorkerClient(conn)
+        _, err := workerClient.Run(&pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
         if err != nil {
             log.Printf("cannot contact worker %d", worker_id)
         }
