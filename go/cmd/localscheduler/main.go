@@ -15,7 +15,7 @@ import (
 
 var globalSchedulerClient pb.GlobalSchedulerClient
 var localNodeID uint32
-var cfg config.Config
+var cfg *config.Config
 func main() {
     cfg = config.GetConfig() // Load configuration
     address := ":" + strconv.Itoa(cfg.Ports.LocalScheduler) // Prepare the network address
