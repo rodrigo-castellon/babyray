@@ -18,7 +18,7 @@ var lis *bufconn.Listener
 func init() {
     lis = bufconn.Listen(bufSize)
     s := grpc.NewServer()
-    pb.RegisterGCSObjServer(s, &GCSObjServer{objectLocations: make(map[uint64][]uint64)})
+    pb.RegisterGCSObjServer(s, NewGCSObjServer())
     go func() {
         if err := s.Serve(lis); err != nil {
             log.Fatalf("Server exited with error: %v", err)
@@ -39,7 +39,7 @@ func TestNotifyOwns(t *testing.T) {
     defer conn.Close()
     client := pb.NewGCSObjClient(conn)
 
-    // Test NotifyOwns
+    // Testing NotifyOwns
     resp, err := client.NotifyOwns(ctx, &pb.NotifyOwnsRequest{
         Uid:    1,
         NodeId: 100,
@@ -69,10 +69,12 @@ func TestRequestLocation(t *testing.T) {
 
     // Test RequestLocation
     resp, err := client.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: 1})
-    if err != nil || !resp.Success {
-        t.Errorf("RequestLocation failed: %v, response: %v", err, resp)
+    if err != nil {
+        t.Errorf("RequestLocation failed: %v", err)
+        return
     }
-    if resp.Details != "100" {
-        t.Errorf("RequestLocation returned incorrect node ID: got %s, want %s", resp.Details, "100")
+    if resp.NodeId != 100 {
+        t.Errorf("RequestLocation returned incorrect node ID: got %d, want %d", resp.NodeId, 100)
     }
 }
+

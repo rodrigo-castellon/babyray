@@ -12,6 +12,9 @@ import (
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
     "github.com/rodrigo-castellon/babyray/config"
+
+    "google.golang.org/grpc/status"
+    "google.golang.org/grpc/codes"
 )
 
 func main() {
@@ -40,12 +43,12 @@ type GCSObjServer struct {
 }
 
 func NewGCSObjServer() *GCSObjServer {
-    mu := sync.Mutex{} // Create a mutex.
-    return &GCSObjServer{
-        objectLocations: make(map[uint64][]uint64), 
-        mu:              mu,        
-        cond:            sync.NewCond(&mu),  
+    server := &GCSObjServer{
+        objectLocations: make(map[uint64][]uint64),
+        mu:              sync.Mutex{}, // Mutex initialized here.
     }
+    server.cond = sync.NewCond(&server.mu) // Properly pass the address of the struct's mutex.
+    return server
 }
 
 // Implement your service methods here.
@@ -76,7 +79,7 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
     // Assume successful case
     randomIndex := rand.Intn(len(nodeIds))
     return &pb.RequestLocationResponse{
-        NodeId : nodeIds[randomIndex] 
+        NodeId : nodeIds[randomIndex], 
     }, nil
 }
 

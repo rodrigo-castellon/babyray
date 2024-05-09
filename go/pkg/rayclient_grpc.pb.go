@@ -425,7 +425,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GCSObjClient interface {
 	NotifyOwns(ctx context.Context, in *NotifyOwnsRequest, opts ...grpc.CallOption) (*StatusResponse, error)
-	RequestLocation(ctx context.Context, in *RequestLocationRequest, opts ...grpc.CallOption) (*StatusResponse, error)
+	RequestLocation(ctx context.Context, in *RequestLocationRequest, opts ...grpc.CallOption) (*RequestLocationResponse, error)
 }
 
 type gCSObjClient struct {
@@ -445,8 +445,8 @@ func (c *gCSObjClient) NotifyOwns(ctx context.Context, in *NotifyOwnsRequest, op
 	return out, nil
 }
 
-func (c *gCSObjClient) RequestLocation(ctx context.Context, in *RequestLocationRequest, opts ...grpc.CallOption) (*StatusResponse, error) {
-	out := new(StatusResponse)
+func (c *gCSObjClient) RequestLocation(ctx context.Context, in *RequestLocationRequest, opts ...grpc.CallOption) (*RequestLocationResponse, error) {
+	out := new(RequestLocationResponse)
 	err := c.cc.Invoke(ctx, GCSObj_RequestLocation_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -459,7 +459,7 @@ func (c *gCSObjClient) RequestLocation(ctx context.Context, in *RequestLocationR
 // for forward compatibility
 type GCSObjServer interface {
 	NotifyOwns(context.Context, *NotifyOwnsRequest) (*StatusResponse, error)
-	RequestLocation(context.Context, *RequestLocationRequest) (*StatusResponse, error)
+	RequestLocation(context.Context, *RequestLocationRequest) (*RequestLocationResponse, error)
 	mustEmbedUnimplementedGCSObjServer()
 }
 
@@ -470,7 +470,7 @@ type UnimplementedGCSObjServer struct {
 func (UnimplementedGCSObjServer) NotifyOwns(context.Context, *NotifyOwnsRequest) (*StatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifyOwns not implemented")
 }
-func (UnimplementedGCSObjServer) RequestLocation(context.Context, *RequestLocationRequest) (*StatusResponse, error) {
+func (UnimplementedGCSObjServer) RequestLocation(context.Context, *RequestLocationRequest) (*RequestLocationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RequestLocation not implemented")
 }
 func (UnimplementedGCSObjServer) mustEmbedUnimplementedGCSObjServer() {}

@@ -91,7 +91,7 @@ message RunRequest {
 /* START GCS OBJECT TABLE */
 service GCSObj {
   rpc NotifyOwns(NotifyOwnsRequest) returns (StatusResponse);
-  rpc RequestLocation(RequestLocationRequest) returns (StatusResponse);
+  rpc RequestLocation(RequestLocationRequest) returns (RequestLocationResponse);
 }
 
 message NotifyOwnsRequest {
