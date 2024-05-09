@@ -6,6 +6,8 @@ import (
     "net"
     "strconv"
     "sync"
+    "crypto/rand"
+	"encoding/binary"
 
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -35,27 +37,45 @@ func main() {
 // server is used to implement your gRPC service.
 type GCSFuncServer struct {
    pb.UnimplementedGCSFuncServer
-   functionStore map[string][]byte
+   functionStore map[uint64][]byte
    mu            sync.Mutex // Use a mutex to manage concurrent access
 }
 
 func NewGCSFuncServer() *GCSFuncServer {
     return &GCSFuncServer{
-        functionStore: make(map[string][]byte),
+        functionStore: make(map[uint64][]byte),
     }
 }
 
+// Note: This is cryptographically random, whereas basic random might be sufficient for our needs
+// If this slows things down, change the implementation to basic rangom
+func generateUID() (uint64, error) {
+	var n uint64
+	err := binary.Read(rand.Reader, binary.BigEndian, &n)
+	if err != nil {
+		log.Println("Error generating random number:", err)
+		return 0, err  // Return 0 and the error
+	}
+	return n, nil  // Return the generated number and nil for the error
+}
+
 // Implement your service methods here.
-func (s *GCSFuncServer) RegisterFunc(ctx context.Context, req *pb.RegisterRequest) (*pb.StatusResponse, error) {
+func (s *GCSFuncServer) RegisterFunc(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
     // Lock and unlock the mutex to handle concurrent writes safely
     s.mu.Lock()
     defer s.mu.Unlock()
 
+    // Generate UID for this newly registered function
+    uid, err := generateUID()
+	if err != nil {
+		log.Println("Failed to generate UID:", err)
+        return nil, status.Errorf(codes.Internal, "Internal failed to generate UID")
+	}
+
     // Logic to register the function in the server's function store
-    log.Printf("Registering function: %s", req.Name)
-    s.functionStore[req.Name] = req.SerializedFunc
+    s.functionStore[uid] = req.SerializedFunc
     
-    return &pb.StatusResponse{Success: true}, nil
+    return &pb.RegisterResponse{Name: uid}, nil
 }
 
 func (s *GCSFuncServer) FetchFunc(ctx context.Context, req *pb.FetchRequest) (*pb.FetchResponse, error) {

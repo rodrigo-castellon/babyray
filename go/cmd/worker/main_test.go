@@ -108,8 +108,8 @@ func TestWorkerRun(t *testing.T) {
     }
 
     // Setup test data
-    uid := uint32(383838)
-    funcName := "testFunction"
+    uid := uint64(383838)
+    funcName := uint64(557379)
     args := []byte("gASVBwAAAAAAAABLBUsDhpQu")
     kwargs := []byte("gAR9lC4=")
 
