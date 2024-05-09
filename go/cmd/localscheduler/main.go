@@ -17,9 +17,8 @@ var globalSchedulerClient pb.GlobalSchedulerClient
 var localNodeID uint32
 var cfg config.Config
 func main() {
-    cfg = config.LoadConfig() // Load configuration
+    cfg = config.GetConfig() // Load configuration
     address := ":" + strconv.Itoa(cfg.Ports.LocalScheduler) // Prepare the network address
-
     lis, err := net.Listen("tcp", address)
     if err != nil {
         log.Fatalf("failed to listen: %v", err)
