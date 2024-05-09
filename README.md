@@ -1,5 +1,10 @@
 # baby🦈
 
+[Baby Ray](https://www.youtube.com/watch?v=WkCecpH2GAo) is a minimal yet fully-functioning (fault-tolerance included!) implementation of [Ray](https://arxiv.org/abs/1712.05889) in Go. 
+
+Currently a work in progress. By the end of this project, you should be able to simulate a full Ray cluster using Docker Compose and launch CPU jobs using Python, using exactly the same API exposed by the real Ray Core library.
+
+
 ## Automatic deployment
 
 You can automatically deploy the worker + GCS + global scheduler nodes by doing:
