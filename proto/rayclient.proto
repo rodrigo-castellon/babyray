@@ -25,7 +25,7 @@ service GlobalScheduler {
 }
 
 message GlobalScheduleRequest {
-  uint32 uid = 1;
+  uint64 uid = 1;
   string name = 2;
   bytes args = 3;
   bytes kwargs = 4;
@@ -47,7 +47,7 @@ message ScheduleRequest {
 // returns a Future, which is just the UID for
 // the generated object
 message ScheduleResponse {
-  uint32 uid = 1;
+  uint64 uid = 1;
 }
 
 /* END WORKER NODE LOCAL SCHEDULER  */
@@ -61,12 +61,12 @@ service LocalObjStore {
 }
 
 message StoreRequest {
-  uint32 uid = 1;
+  uint64 uid = 1;
   bytes objectBytes = 2;
 }
 
 message GetRequest {
-  uint32 uid = 1;
+  uint64 uid = 1;
 }
 
 message GetResponse {
@@ -97,8 +97,8 @@ service Worker {
 }
 
 message RunRequest {
-  uint32 uid = 1;
-  string name = 2;
+  uint64 uid = 1;
+  uint64 name = 2;
   bytes args = 3;
   bytes kwargs = 4;
 }
@@ -109,34 +109,40 @@ message RunRequest {
 /* START GCS OBJECT TABLE */
 service GCSObj {
   rpc NotifyOwns(NotifyOwnsRequest) returns (StatusResponse);
-  rpc RequestLocation(RequestLocationRequest) returns (StatusResponse);
+  rpc RequestLocation(RequestLocationRequest) returns (RequestLocationResponse);
 }
 
 message NotifyOwnsRequest {
-  uint32 uid = 1;
-  uint32 nodeId = 2;
+  uint64 uid = 1;
+  uint64 nodeId = 2;
 }
 
 message RequestLocationRequest {
-  uint32 uid = 1;
-  uint32 nodeId = 2;
+  uint64 uid = 1;
+}
+
+message RequestLocationResponse {
+  uint64 nodeId = 1;
 }
 
 /* END GCS OBJECT TABLE */
 
 /* START GCS FUNCTION TABLE */
 service GCSFunc {
-  rpc RegisterFunc(RegisterRequest) returns (StatusResponse);
+  rpc RegisterFunc(RegisterRequest) returns (RegisterResponse);
   rpc FetchFunc(FetchRequest) returns (FetchResponse);
 }
 
 message RegisterRequest {
-  string name = 1;
-  bytes serializedFunc = 2;
+  bytes serializedFunc = 1;
+}
+
+message RegisterResponse {
+  uint64 name = 1;
 }
 
 message FetchRequest {
-  string name = 1;
+  uint64 name = 1;
 }
 
 message FetchResponse {

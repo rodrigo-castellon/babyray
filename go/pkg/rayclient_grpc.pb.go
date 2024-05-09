@@ -425,7 +425,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GCSObjClient interface {
 	NotifyOwns(ctx context.Context, in *NotifyOwnsRequest, opts ...grpc.CallOption) (*StatusResponse, error)
-	RequestLocation(ctx context.Context, in *RequestLocationRequest, opts ...grpc.CallOption) (*StatusResponse, error)
+	RequestLocation(ctx context.Context, in *RequestLocationRequest, opts ...grpc.CallOption) (*RequestLocationResponse, error)
 }
 
 type gCSObjClient struct {
@@ -445,8 +445,8 @@ func (c *gCSObjClient) NotifyOwns(ctx context.Context, in *NotifyOwnsRequest, op
 	return out, nil
 }
 
-func (c *gCSObjClient) RequestLocation(ctx context.Context, in *RequestLocationRequest, opts ...grpc.CallOption) (*StatusResponse, error) {
-	out := new(StatusResponse)
+func (c *gCSObjClient) RequestLocation(ctx context.Context, in *RequestLocationRequest, opts ...grpc.CallOption) (*RequestLocationResponse, error) {
+	out := new(RequestLocationResponse)
 	err := c.cc.Invoke(ctx, GCSObj_RequestLocation_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -459,7 +459,7 @@ func (c *gCSObjClient) RequestLocation(ctx context.Context, in *RequestLocationR
 // for forward compatibility
 type GCSObjServer interface {
 	NotifyOwns(context.Context, *NotifyOwnsRequest) (*StatusResponse, error)
-	RequestLocation(context.Context, *RequestLocationRequest) (*StatusResponse, error)
+	RequestLocation(context.Context, *RequestLocationRequest) (*RequestLocationResponse, error)
 	mustEmbedUnimplementedGCSObjServer()
 }
 
@@ -470,7 +470,7 @@ type UnimplementedGCSObjServer struct {
 func (UnimplementedGCSObjServer) NotifyOwns(context.Context, *NotifyOwnsRequest) (*StatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifyOwns not implemented")
 }
-func (UnimplementedGCSObjServer) RequestLocation(context.Context, *RequestLocationRequest) (*StatusResponse, error) {
+func (UnimplementedGCSObjServer) RequestLocation(context.Context, *RequestLocationRequest) (*RequestLocationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RequestLocation not implemented")
 }
 func (UnimplementedGCSObjServer) mustEmbedUnimplementedGCSObjServer() {}
@@ -551,7 +551,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GCSFuncClient interface {
-	RegisterFunc(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*StatusResponse, error)
+	RegisterFunc(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
 	FetchFunc(ctx context.Context, in *FetchRequest, opts ...grpc.CallOption) (*FetchResponse, error)
 }
 
@@ -563,8 +563,8 @@ func NewGCSFuncClient(cc grpc.ClientConnInterface) GCSFuncClient {
 	return &gCSFuncClient{cc}
 }
 
-func (c *gCSFuncClient) RegisterFunc(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*StatusResponse, error) {
-	out := new(StatusResponse)
+func (c *gCSFuncClient) RegisterFunc(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
+	out := new(RegisterResponse)
 	err := c.cc.Invoke(ctx, GCSFunc_RegisterFunc_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -585,7 +585,7 @@ func (c *gCSFuncClient) FetchFunc(ctx context.Context, in *FetchRequest, opts ..
 // All implementations must embed UnimplementedGCSFuncServer
 // for forward compatibility
 type GCSFuncServer interface {
-	RegisterFunc(context.Context, *RegisterRequest) (*StatusResponse, error)
+	RegisterFunc(context.Context, *RegisterRequest) (*RegisterResponse, error)
 	FetchFunc(context.Context, *FetchRequest) (*FetchResponse, error)
 	mustEmbedUnimplementedGCSFuncServer()
 }
@@ -594,7 +594,7 @@ type GCSFuncServer interface {
 type UnimplementedGCSFuncServer struct {
 }
 
-func (UnimplementedGCSFuncServer) RegisterFunc(context.Context, *RegisterRequest) (*StatusResponse, error) {
+func (UnimplementedGCSFuncServer) RegisterFunc(context.Context, *RegisterRequest) (*RegisterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterFunc not implemented")
 }
 func (UnimplementedGCSFuncServer) FetchFunc(context.Context, *FetchRequest) (*FetchResponse, error) {
