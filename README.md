@@ -66,6 +66,42 @@ python3 python/babyray/client.py
 
 This will run the Python client that will talk to the driver server.
 
+## Info for contributors (naming / standards)
+
+### Usage Example
+
+See [here in this file](https://github.com/rodrigo-castellon/babyray/blob/43848c2210b6b55912c873fdd4d749255190ab7f/go/cmd/worker/main.go#L58) for how to load DNS name + port number for a particular service in Go (in this case, GCS function table).
+
+Note: that code is untested, so it may not work, but should give you something to work off of.
+
+### Overview
+
+Set up some global naming standards so that we can all follow along.
+
+We assign each node a non-negative integer:
+- 0: GCS
+- 1: global scheduler
+- 2 and above: worker nodes
+
+We take advantage of DNS to avoid having to address nodes by their IP addresses. Specifically, name each container a separate name, "nodeX" where "X" is the node's integer ID. For example, "node0" for GCS.
+
+Standard Docker allows us to do this: create a network with `docker network create mynetwork` and then any time you do `docker run` you add `--network mynetwork --network-alias myname` (replace `myname` with the DNS name). Also works in Docker Compose. So for now, just assume these names are there and Go's gRPC library will handle DNS resolution + the actual communication under the hood.
+
+We also decide on port numbers for services. For local worker nodes:
+- 50000: local object store
+- 50001: local scheduler
+- 50002: 0th worker
+- 50003: 1st worker
+- 50004: 2nd worker
+- ...
+
+For GCS:
+- 50000: function table service
+- 50001: object table service
+
+For the global scheduler: port 50000.
+
+All of this information is kept in [this config file](https://github.com/rodrigo-castellon/babyray/blob/main/config/app_config.yaml), so pull from it in your code.
 
 ## Using the Python package
 

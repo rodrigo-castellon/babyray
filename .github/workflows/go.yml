@@ -1,0 +1,53 @@
+name: Go Build and Test
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  setup-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22' # The Go version can be updated as needed
+
+    - name: Install Protobuf Compiler
+      run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+
+    - name: Install Go protobuf plugins
+      run: |
+        go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+        go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+        echo "PATH=$PATH:$(go env GOPATH)/bin" >> $GITHUB_ENV
+
+    - name: Install Python 3
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3 python3-pip
+
+    - name: Check Python version
+      run: python3 --version
+
+    - name: Check Python installed packages
+      run: python3 -m pip install dill
+
+    - name: Call the makefile (on Go only) - E.g., this generates protobuf code
+      run: make go
+
+    - name: Build
+      run: go build -v ./...
+      working-directory: go
+  
+    - name: Test
+      run: go test -v ./...
+      working-directory: go
