@@ -17,7 +17,7 @@ var localObjectStore map[uint32][]byte
 var localObjectChannels map[uint32]chan []byte
 var gcsObjClient pb.GCSObjClient
 var localNodeID uint32
-var cfg config.Config
+var cfg *config.Config
 func main() {
     cfg = config.GetConfig() // Load configuration
     address := ":" + strconv.Itoa(cfg.Ports.LocalObjectStore) // Prepare the network address
