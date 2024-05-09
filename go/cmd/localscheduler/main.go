@@ -7,6 +7,7 @@ import (
     "strconv"
     "math/rand"
     "math"
+    "fmt"
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
     "github.com/rodrigo-castellon/babyray/config"
@@ -34,7 +35,7 @@ func main() {
 
     globalSchedulerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GlobalScheduler, cfg.Ports.GlobalScheduler)
     conn, _ := grpc.Dial(globalSchedulerAddress, grpc.WithInsecure())
-    globalSchedulerClient = pb.NewGCSObjClient(conn)
+    globalSchedulerClient = pb.NewGlobalScheduluerClient(conn)
     localNodeID = 0
 
 
@@ -49,14 +50,15 @@ type server struct {
 
 
 func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.ScheduleResponse, error) {
+    var worker_id int 
     // worker_id = check_resources()
-    var worker_id uint32 
+    worker_id = -1
     uid := uint32(rand.Intn(100))
-    if worker_id != nil {
+    if worker_id != -1 {
         workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.Ourself, cfg.Ports.LocalWorkerStart + worker_id)
         conn, _ := grpc.Dial(workerAddress, grpc.WithInsecure())
-        workerClient := pb.NewGCSObjClient(conn)
-        r, err = workerClient.Run(&pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
+        workerClient, _ := pb.NewWorkerClient(conn)
+        r, err := workerClient.Run(&pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
         if err != nil {
             log.Printf("cannot contact worker %d", worker_id)
         }
