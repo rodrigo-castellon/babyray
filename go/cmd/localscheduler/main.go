@@ -6,7 +6,6 @@ import (
     "net"
     "strconv"
     "math/rand"
-    "math"
     "fmt"
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -14,7 +13,7 @@ import (
 )
 
 
-var globalSchedulerClient pb.GCSObjClient
+var globalSchedulerClient pb.GlobalSchedulerClient
 var localNodeID uint32
 var cfg config.Config
 func main() {
@@ -64,7 +63,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
         }
     } else {
       
-        _, err = globalSchedulerClient.Schedule(ctx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
+        _, err := globalSchedulerClient.Schedule(ctx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
         if err != nil {
             log.Printf("cannot contact global scheduler")
         }
