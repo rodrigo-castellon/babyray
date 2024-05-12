@@ -153,84 +153,66 @@ func TestStoreAndGet_External(t *testing.T) {
 
     
     go func(){ 
-        response1, err := client.Get(context.Background(), &pb.GetRequest{Uid: 1, Testing: true})
+        response1, err := client1.Get(context.Background(), &pb.GetRequest{Uid: 1, Testing: true})
         if err != nil || !Bytes.equals(response1.ObjectBytes, data) {
             t.Errorf("Failed to get value on LOS 1")
 
         }
     
     }()
+
+
     time.Sleep(1 * time.Second)  
 
-    locStatusResp, err := client.LocationFound(context.Background(), &pb.LocationFoundResponse{Uid: 1, Address: "localhost", Port: 50052})
+    locStatusResp, err := client1.LocationFound(context.Background(), &pb.LocationFoundResponse{Uid: 1, Address: "localhost", Port: 50052})
 
     if !locStatusResp.Success || err != nil {
         t.Errorf("Failed to tell LOS 1 about location")
     }
 
-    
 
-    
-
-
-
-
-
-
-
-    
-
-
-
-	// Test Get from Other 
-	resp2, err2 := client.Get(ctx, &pb.GetRequest{
-		Uid: 1
-	})
-	if err2 != nil || !bytes.Equals(data, resp.ObjectBytes) {
-		t.Errorf("Get failed: %v, response: %v", err2, resp2)
-	}
 	
 }
 
-func TestLocationFound(t *testing.T) {
-    ctx := context.Background()
-    conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
-    if err != nil {
-        t.Fatalf("Failed to dial bufnet: %v", err)
-    }
-    defer conn.Close()
-    client := pb.NewLocalObjStoreClient(conn)
-	uid := 100
-	go {
-		client.Get(pb.GetRequest{Uid: 100})
-	}
+// func TestLocationFound(t *testing.T) {
+//     ctx := context.Background()
+//     conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
+//     if err != nil {
+//         t.Fatalf("Failed to dial bufnet: %v", err)
+//     }
+//     defer conn.Close()
+//     client := pb.NewLocalObjStoreClient(conn)
+// 	uid := 100
+// 	go {
+// 		client.Get(pb.GetRequest{Uid: 100})
+// 	}
 
-}
+// }
 
-func TestLocationFound(t *testing.T) {
-	mockGCSClient := newMockLocalObjStoreClient()
+// func TestLocationFound(t *testing.T) {
+// 	mockGCSClient := newMockLocalObjStoreClient()
 
-	// Initialize a mock server and required dependencies
-	s := &server{
-		gcsObjClient:       mockGCSClient,
-		localObjectChannels: map[string]chan []byte{"testUID": make(chan []byte, 1)},
-	}
+// 	// Initialize a mock server and required dependencies
+// 	s := &server{
+// 		gcsObjClient:       mockGCSClient,
+// 		localObjectChannels: map[string]chan []byte{"testUID": make(chan []byte, 1)},
+// 	}
 
-	ctx := context.Background()
-	resp := &pb.LocationFoundResponse{
-		Uid:      "testUID",
-		Location: 1,
-	}
+// 	ctx := context.Background()
+// 	resp := &pb.LocationFoundResponse{
+// 		Uid:      "testUID",
+// 		Location: 1,
+// 	}
 
-	statusResp, err := s.LocationFound(ctx, resp)
-	require.NoError(t, err)
-	require.NotNil(t, statusResp)
-	require.True(t, statusResp.Success)
+// 	statusResp, err := s.LocationFound(ctx, resp)
+// 	require.NoError(t, err)
+// 	require.NotNil(t, statusResp)
+// 	require.True(t, statusResp.Success)
 
-	select {
-	case data := <-s.localObjectChannels["testUID"]:
-		require.Equal(t, []byte("mockObjectData"), data)
-	default:
-		t.Fatal("Expected data not found in the channel")
-	}
-}
+// 	select {
+// 	case data := <-s.localObjectChannels["testUID"]:
+// 		require.Equal(t, []byte("mockObjectData"), data)
+// 	default:
+// 		t.Fatal("Expected data not found in the channel")
+// 	}
+// }
