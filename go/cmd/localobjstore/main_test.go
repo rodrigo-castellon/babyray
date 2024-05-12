@@ -94,7 +94,7 @@ func TestStoreAndGet_Local(t *testing.T) {
 	// Test Get
 	resp2, err2 := client.Get(ctx, &pb.GetRequest{
 		Uid: 1
-        Testing: True
+        Testing: true
 	})
 	if err2 != nil || !bytes.Equals(data, resp.ObjectBytes) {
 		t.Errorf("Get failed: %v, response: %v", err2, resp2)
@@ -145,20 +145,23 @@ func TestStoreAndGet_External(t *testing.T) {
     if !sresp.Success || err != nil {
         t.Errorf("Failed to store value on LOS 2")
     } 
-    response2, err := client2.Get(context.Background, &pb.GetRequest{Uid: 1, Testing: True})
+    response2, err := client2.Get(context.Background, &pb.GetRequest{Uid: 1, Testing: true})
 
     if err != nil || !Bytes.equals(response2.ObjectBytes, data) {
         t.Errorf("Failed to get value on LOS 2")
     }
 
     
-        response1, err := client.Get(context.Background(), &pb.GetRequest{Uid: 1, Testing: True})
+    go { 
+        response1, err := client.Get(context.Background(), &pb.GetRequest{Uid: 1, Testing: true})
         if err != nil || !Bytes.equals(response1.ObjectBytes, data) {
             t.Errorf("Failed to get value on LOS 1")
 
         }
     
-    
+    }
+    time.Sleep(1 * time.Second)  
+
     locStatusResp, err := client.LocationFound(context.Background(), &pb.LocationFoundResponse{Uid: 1, Address: "localhost", Port: 50052})
 
     if !locStatusResp.Success || err != nil {
