@@ -26,7 +26,7 @@ service GlobalScheduler {
 
 message GlobalScheduleRequest {
   uint64 uid = 1;
-  string name = 2;
+  uint64 name = 2;
   bytes args = 3;
   bytes kwargs = 4;
 }
@@ -39,7 +39,7 @@ service LocalScheduler {
 }
 
 message ScheduleRequest {
-  string name = 1;
+  uint64 name = 1;
   bytes args = 2;
   bytes kwargs = 3;
 }
