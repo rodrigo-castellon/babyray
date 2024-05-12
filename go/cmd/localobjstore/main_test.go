@@ -71,7 +71,7 @@ func (m *mockStoreClient) Get(ctx context.Context, in *pb.GetRequest, opts ...gr
 }
 
 func TestStoreAndGet_Local(t *testing.T) {
-    // ctx := context.Background()
+     ctx := context.Background()
     // conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
 
     // if err != nil {
@@ -96,7 +96,7 @@ func TestStoreAndGet_Local(t *testing.T) {
 		Uid: 1, 
         Testing: true,
 	})
-	if err2 != nil || !bytes.Equals(data, resp.ObjectBytes) {
+	if err2 != nil || !bytes.Equal(data, resp2.ObjectBytes) {
 		t.Errorf("Get failed: %v, response: %v", err2, resp2)
 	}
 
@@ -141,20 +141,20 @@ func TestStoreAndGet_External(t *testing.T) {
     //     err: nil
     // }   
     
-    sresp, err := client2.Store(context.Background(), &pb.StoreRequest{Uid: 1, ObjectBytes: data})
+    sresp, err := client2.Store(ctx, &pb.StoreRequest{Uid: 1, ObjectBytes: data})
     if !sresp.Success || err != nil {
         t.Errorf("Failed to store value on LOS 2")
     } 
-    response2, err := client2.Get(context.Background, &pb.GetRequest{Uid: 1, Testing: true})
+    response2, err := client2.Get(ctx, &pb.GetRequest{Uid: 1, Testing: true})
 
-    if err != nil || !Bytes.equals(response2.ObjectBytes, data) {
+    if err != nil || !bytes.Equal(response2.ObjectBytes, data) {
         t.Errorf("Failed to get value on LOS 2")
     }
 
     
     go func(){ 
-        response1, err := client1.Get(context.Background(), &pb.GetRequest{Uid: 1, Testing: true})
-        if err != nil || !Bytes.equals(response1.ObjectBytes, data) {
+        response1, err := client1.Get(ctx, &pb.GetRequest{Uid: 1, Testing: true})
+        if err != nil || !bytes.Equal(response1.ObjectBytes, data) {
             t.Errorf("Failed to get value on LOS 1")
 
         }
@@ -164,7 +164,7 @@ func TestStoreAndGet_External(t *testing.T) {
 
     time.Sleep(1 * time.Second)  
 
-    locStatusResp, err := client1.LocationFound(context.Background(), &pb.LocationFoundResponse{Uid: 1, Address: "localhost", Port: 50052})
+    locStatusResp, err := client1.LocationFound(ctx, &pb.LocationFoundResponse{Uid: 1, Address: "localhost", Port: 50052})
 
     if !locStatusResp.Success || err != nil {
         t.Errorf("Failed to tell LOS 1 about location")
