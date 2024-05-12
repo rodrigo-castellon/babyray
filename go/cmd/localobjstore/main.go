@@ -86,8 +86,11 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
     if err != nil {
         return &pb.StatusResponse{Success: false}, errors.New(fmt.Sprintf("failed to dial other LOS @:%s ", otherLocalAddress))
     }
+
     c := pb.NewLocalObjStoreClient(conn)
+    log.Println("starting copy")
     x, err := c.Copy(ctx, &pb.CopyRequest{Uid : resp.Uid, Requester : localNodeID})
+    log.Println("finished copy")
     if x == nil || err != nil {
         return &pb.StatusResponse{Success: false}, errors.New(fmt.Sprintf("failed to copy from other LOS @:%s ", otherLocalAddress))
     }
