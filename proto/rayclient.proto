@@ -80,8 +80,6 @@ message GetResponse {
 message LocationFoundCallback { 
   uint64 uid = 1; // this is the uid of the object that was originally asked for
   uint64 location = 2; // this is the node number of the node who has this object
-  string address = 3; //For testing
-  uint64 port = 4; //For testing
 }
 
 message CopyRequest {
