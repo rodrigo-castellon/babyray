@@ -36,9 +36,9 @@ func startServer(port string) (*grpc.Server, error) {
     s := grpc.NewServer()
     pb.RegisterLocalObjStoreServer(s, &server{})
     go func() {
-        server.Serve(lis)
+        s.Serve(lis)
     }()
-    return server, nil
+    return s, nil
 }
 
 func bufDialer(context.Context, string) (net.Conn, error) {
