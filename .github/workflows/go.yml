@@ -49,9 +49,13 @@ jobs:
     - name: Build
       run: go build -v ./...
       working-directory: go
+
+    - name: Set Project Root
+      run: echo "PROJECT_ROOT=$(pwd)" >> $GITHUB_ENV
+
+    - name: Use Project Root
+      run: echo "The project root is $PROJECT_ROOT"
   
     - name: Test
-      env:
-        PROJECT_ROOT: /app/
       run: go test -v ./...
       working-directory: go
