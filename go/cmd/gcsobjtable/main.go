@@ -50,13 +50,12 @@ type GCSObjServer struct {
 func NewGCSObjServer() *GCSObjServer {
 	server := &GCSObjServer{
 		objectLocations: make(map[uint64][]uint64),
-		mu:              sync.Mutex{}, // Mutex initialized here.
+		mu:              sync.Mutex{},
 	}
 	server.cond = sync.NewCond(&server.mu) // Properly pass the address of the struct's mutex.
 	return server
 }
 
-// Implement your service methods here.
 func (s *GCSObjServer) NotifyOwns(ctx context.Context, req *pb.NotifyOwnsRequest) (*pb.StatusResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -68,6 +67,11 @@ func (s *GCSObjServer) NotifyOwns(ctx context.Context, req *pb.NotifyOwnsRequest
 	return &pb.StatusResponse{Success: true}, nil
 }
 
+/*
+Returns a nodeId that has object uid. If it doesn't exist anywhere,
+then the second return value will be false.
+Assumes that s's mutex is locked.
+*/
 func (s *GCSObjServer) getNodeId(uid uint64) (*uint64, bool) {
 	nodeIds, exists := s.objectLocations[uid]
 	if !exists || len(nodeIds) == 0 {
@@ -107,6 +111,7 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 	if !exists {
 		// TODO: Add client to waiting list - also should be lock-based waiting list
 
+		// Reply to this gRPC request
 		return &pb.RequestLocationResponse{
 			ImmediatelyFound: false,
 		}, nil
@@ -118,6 +123,8 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 		defer cancel()
 		localObjStoreClient.LocationFound(ctx, &pb.LocationFoundCallback{Uid: req.Uid, Location: *nodeId})
 	}()
+
+	// Reply to this gRPC request
 	return &pb.RequestLocationResponse{
 		ImmediatelyFound: true,
 	}, nil
