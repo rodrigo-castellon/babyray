@@ -9,13 +9,13 @@ Currently a work in progress. By the end of this project, you should be able to 
 
 You can automatically deploy the entire cluster (workers, GCS, global scheduler nodes) by following these instructions.
 
-First, build the `ray-node` Docker image:
+First, build everything:
 
 ```bash
-docker build -t ray-node .
+make all
 ```
 
-You should see Docker successively build each layer of the image, ending with something like `[+] Building 39.0s (19/19) FINISHED`.
+This will generate the Go and Python gRPC stub files, compile the Go server code, and build the Docker images we need to deploy the cluster.
 
 Next, spin up the cluster:
 

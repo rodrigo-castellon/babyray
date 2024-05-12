@@ -2,7 +2,7 @@ version: '3'
 
 services:
   gcs:
-    image: ray-node
+    image: ray-node:base
     command: ["/bin/sh", "-c", "./go/bin/gcsfunctable & ./go/bin/gcsobjtable"]
     networks:
         mynetwork:
@@ -12,7 +12,7 @@ services:
       - "50000:50000"
 
   global_scheduler:
-    image: ray-node
+    image: ray-node:base
     command: ["/bin/sh", "-c", "./go/bin/globalscheduler"]
     networks:
         mynetwork:
@@ -22,7 +22,7 @@ services:
       - "50001:50001"
 
   worker1:
-    image: ray-node
+    image: ray-node:driver
     command: ["/bin/sh", "-c", "./go/bin/localscheduler & ./go/bin/localobjstore"]
     networks:
         mynetwork:
@@ -35,7 +35,7 @@ services:
       - "50002:50002"
 
   worker2:
-    image: ray-node
+    image: ray-node:driver
     command: ["/bin/sh", "-c", "./go/bin/localscheduler & ./go/bin/localobjstore"]
     networks:
         mynetwork:
@@ -45,7 +45,7 @@ services:
       - "50003:50003"
 
   worker3:
-    image: ray-node
+    image: ray-node:driver
     command: ["/bin/sh", "-c", "./go/bin/localscheduler & ./go/bin/localobjstore"]
     networks:
         mynetwork:
