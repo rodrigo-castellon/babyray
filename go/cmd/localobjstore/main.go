@@ -85,7 +85,7 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
     c := pb.NewLocalObjStoreClient(conn)
     x, err := c.Copy(ctx, &pb.CopyRequest{Uid : resp.Uid, Requester : localNodeID})
     if x == nil || err != nil {
-        return &pb.StatusResponse{Success: false}, errors.New(fmt.Sprintf("failed to hit other LOS @:%s ", otherLocalAddress))
+        return &pb.StatusResponse{Success: false}, errors.New(fmt.Sprintf("failed to copy from other LOS @:%s ", otherLocalAddress))
     }
     if resp.Port == 0 {
         gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: resp.Uid, NodeId: localNodeID})
@@ -97,7 +97,10 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
 }
 
 func (s* server) Copy(ctx context.Context, req *pb.CopyRequest) (*pb.CopyResponse, error) {
-    data, _ := localObjectStore[req.Uid];
+    data, ok:= localObjectStore[req.Uid];
+    if !ok {
+        return &pb.CopyResponse{Uid: req.Uid, ObjectBytes : nil}, errors.New("object was not in LOS")
+    }
     return &pb.CopyResponse{Uid : req.Uid, ObjectBytes : data}, nil
 }
 
