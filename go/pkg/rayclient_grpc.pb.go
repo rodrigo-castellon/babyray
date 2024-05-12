@@ -203,6 +203,7 @@ const (
 	LocalObjStore_Get_FullMethodName           = "/ray.LocalObjStore/Get"
 	LocalObjStore_LocationFound_FullMethodName = "/ray.LocalObjStore/LocationFound"
 	LocalObjStore_Copy_FullMethodName          = "/ray.LocalObjStore/Copy"
+	LocalObjStore_Init_FullMethodName          = "/ray.LocalObjStore/Init"
 )
 
 // LocalObjStoreClient is the client API for LocalObjStore service.
@@ -213,6 +214,7 @@ type LocalObjStoreClient interface {
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
 	LocationFound(ctx context.Context, in *LocationFoundCallback, opts ...grpc.CallOption) (*StatusResponse, error)
 	Copy(ctx context.Context, in *CopyRequest, opts ...grpc.CallOption) (*CopyResponse, error)
+	Init(ctx context.Context, in *StatusResponse, opts ...grpc.CallOption) (*StatusResponse, error)
 }
 
 type localObjStoreClient struct {
@@ -259,6 +261,15 @@ func (c *localObjStoreClient) Copy(ctx context.Context, in *CopyRequest, opts ..
 	return out, nil
 }
 
+func (c *localObjStoreClient) Init(ctx context.Context, in *StatusResponse, opts ...grpc.CallOption) (*StatusResponse, error) {
+	out := new(StatusResponse)
+	err := c.cc.Invoke(ctx, LocalObjStore_Init_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LocalObjStoreServer is the server API for LocalObjStore service.
 // All implementations must embed UnimplementedLocalObjStoreServer
 // for forward compatibility
@@ -267,6 +278,7 @@ type LocalObjStoreServer interface {
 	Get(context.Context, *GetRequest) (*GetResponse, error)
 	LocationFound(context.Context, *LocationFoundCallback) (*StatusResponse, error)
 	Copy(context.Context, *CopyRequest) (*CopyResponse, error)
+	Init(context.Context, *StatusResponse) (*StatusResponse, error)
 	mustEmbedUnimplementedLocalObjStoreServer()
 }
 
@@ -285,6 +297,9 @@ func (UnimplementedLocalObjStoreServer) LocationFound(context.Context, *Location
 }
 func (UnimplementedLocalObjStoreServer) Copy(context.Context, *CopyRequest) (*CopyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Copy not implemented")
+}
+func (UnimplementedLocalObjStoreServer) Init(context.Context, *StatusResponse) (*StatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Init not implemented")
 }
 func (UnimplementedLocalObjStoreServer) mustEmbedUnimplementedLocalObjStoreServer() {}
 
@@ -371,6 +386,24 @@ func _LocalObjStore_Copy_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LocalObjStore_Init_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StatusResponse)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LocalObjStoreServer).Init(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LocalObjStore_Init_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LocalObjStoreServer).Init(ctx, req.(*StatusResponse))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LocalObjStore_ServiceDesc is the grpc.ServiceDesc for LocalObjStore service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -393,6 +426,10 @@ var LocalObjStore_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Copy",
 			Handler:    _LocalObjStore_Copy_Handler,
+		},
+		{
+			MethodName: "Init",
+			Handler:    _LocalObjStore_Init_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

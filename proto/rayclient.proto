@@ -58,6 +58,7 @@ service LocalObjStore {
   rpc Get(GetRequest) returns (GetResponse);
   rpc LocationFound(LocationFoundCallback) returns (StatusResponse); 
   rpc Copy(CopyRequest) returns (CopyResponse); 
+  rpc Init(StatusResponse) returns (StatusResponse); 
 }
 
 message StoreRequest {
@@ -67,11 +68,13 @@ message StoreRequest {
 
 message GetRequest {
   uint64 uid = 1;
+  bool testing = 2; 
 }
 
 message GetResponse {
   uint64 uid = 1; 
   bytes objectBytes = 2;
+  bool local = 3; 
 }
 
 message LocationFoundCallback { 
@@ -119,6 +122,7 @@ message NotifyOwnsRequest {
 
 message RequestLocationRequest {
   uint64 uid = 1;
+  uint64 requester = 2; 
 }
 
 message RequestLocationResponse { 
