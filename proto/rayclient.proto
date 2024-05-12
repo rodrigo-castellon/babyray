@@ -67,6 +67,7 @@ message StoreRequest {
 
 message GetRequest {
   uint64 uid = 1;
+  bool testing = 2; 
 }
 
 message GetResponse {

@@ -94,6 +94,7 @@ func TestStoreAndGet_Local(t *testing.T) {
 	// Test Get
 	resp2, err2 := client.Get(ctx, &pb.GetRequest{
 		Uid: 1
+        Testing: True
 	})
 	if err2 != nil || !bytes.Equals(data, resp.ObjectBytes) {
 		t.Errorf("Get failed: %v, response: %v", err2, resp2)
@@ -144,14 +145,14 @@ func TestStoreAndGet_External(t *testing.T) {
     if !sresp.Success || err != nil {
         t.Errorf("Failed to store value on LOS 2")
     } 
-    response2, err := client2.Get(context.Background, &pb.GetRequest{Uid: 1})
+    response2, err := client2.Get(context.Background, &pb.GetRequest{Uid: 1, Testing: True})
 
     if err != nil || !Bytes.equals(response2.ObjectBytes, data) {
         t.Errorf("Failed to get value on LOS 2")
     }
 
     
-        response1, err := client.Get(context.Background(), &pb.GetRequest{Uid: 1})
+        response1, err := client.Get(context.Background(), &pb.GetRequest{Uid: 1, Testing: True})
         if err != nil || !Bytes.equals(response1.ObjectBytes, data) {
             t.Errorf("Failed to get value on LOS 1")
 

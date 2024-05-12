@@ -13,10 +13,10 @@ import (
     "github.com/rodrigo-castellon/babyray/config"
 
 )
-var localObjectStore map[uint32][]byte
-var localObjectChannels map[uint32]chan []byte
+var localObjectStore map[uint64][]byte
+var localObjectChannels map[uint64]chan []byte
 var gcsObjClient pb.GCSObjClient
-var localNodeID uint32
+var localNodeID uint64
 var cfg *config.Config
 func main() {
     cfg = config.GetConfig() // Load configuration
@@ -34,8 +34,8 @@ func main() {
        log.Fatalf("failed to serve: %v", err)
     }
 
-    localObjectStore = make(map[uint32][]byte)
-    localObjectChannels = make(map[uint32]chan []byte)
+    localObjectStore = make(map[uint64][]byte)
+    localObjectChannels = make(map[uint64]chan []byte)
 
     gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
     conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
@@ -59,9 +59,12 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
     if val, ok := localObjectStore[req.Uid]; ok {
         return &pb.GetResponse{Uid : req.Uid, ObjectBytes : val}, nil
     }
-    var nodeId uint32 = 1 
+    var nodeId uint64 = 1 
     localObjectChannels[req.Uid] = make(chan []byte)
-    gcsObjClient.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: req.Uid, NodeId: nodeId})
+    if req.Testing == False {
+        gcsObjClient.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: req.Uid, NodeId: nodeId})
+    }
+    
     val := <- localObjectChannels[req.Uid]
     localObjectStore[req.Uid] = val
     return &pb.GetResponse{Uid : req.Uid, ObjectBytes : localObjectStore[req.Uid]}, nil

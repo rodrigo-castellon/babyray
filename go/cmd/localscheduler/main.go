@@ -14,7 +14,7 @@ import (
 
 
 var globalSchedulerClient pb.GlobalSchedulerClient
-var localNodeID uint32
+var localNodeID uint64
 var cfg *config.Config
 func main() {
     cfg = config.GetConfig() // Load configuration
@@ -51,7 +51,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
     var worker_id int 
     // worker_id = check_resources()
     worker_id = -1
-    uid := uint32(rand.Intn(100))
+    uid := uint64(rand.Intn(100))
     if worker_id != -1 {
         workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.Ourself, cfg.Ports.LocalWorkerStart + worker_id)
         conn, _ := grpc.Dial(workerAddress, grpc.WithInsecure())
