@@ -209,6 +209,7 @@ const (
 type LocalObjStoreClient interface {
 	Store(ctx context.Context, in *StoreRequest, opts ...grpc.CallOption) (*StatusResponse, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
+	Init(ctx context.Context)
 }
 
 type localObjStoreClient struct {
