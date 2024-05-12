@@ -17,7 +17,8 @@ const bufSize = 1024 * 1024
 var lis *bufconn.Listener
 
 func init() {
-    startServer("50051")
+    //startServer("50051")
+    main()
     // lis = bufconn.Listen(bufSize)
     // s := grpc.NewServer()
     // pb.RegisterLocalObjStoreServer(s, &server{})
