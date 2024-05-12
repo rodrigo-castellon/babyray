@@ -79,6 +79,7 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
         otherLocalAddress = fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, nodeID, cfg.Ports.LocalObjectStore)     
     } else {
         otherLocalAddress = fmt.Sprintf("%s:%d", resp.Address, resp.Port)
+        fmt.Sprintf("trying to hit los 2 @: %s", otherLocalAddress)
     }
    
     conn, _ := grpc.Dial(otherLocalAddress, grpc.WithInsecure())
