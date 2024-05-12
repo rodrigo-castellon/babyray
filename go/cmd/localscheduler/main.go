@@ -56,7 +56,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
         workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.Ourself, cfg.Ports.LocalWorkerStart + worker_id)
         conn, _ := grpc.Dial(workerAddress, grpc.WithInsecure())
         workerClient := pb.NewWorkerClient(conn)
-        _, err := workerClient.Run(ctx, &pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
+        _, err := workerClient.Run(ctx, &pb.RunRequest{Uid: uid, Args: req.Args, Kwargs: req.Kwargs})
         if err != nil {
             log.Printf("cannot contact worker %d", worker_id)
         }
