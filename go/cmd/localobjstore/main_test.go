@@ -152,14 +152,14 @@ func TestStoreAndGet_External(t *testing.T) {
     }
 
     
-    go { 
+    go func(){ 
         response1, err := client.Get(context.Background(), &pb.GetRequest{Uid: 1, Testing: true})
         if err != nil || !Bytes.equals(response1.ObjectBytes, data) {
             t.Errorf("Failed to get value on LOS 1")
 
         }
     
-    }
+    }()
     time.Sleep(1 * time.Second)  
 
     locStatusResp, err := client.LocationFound(context.Background(), &pb.LocationFoundResponse{Uid: 1, Address: "localhost", Port: 50052})
