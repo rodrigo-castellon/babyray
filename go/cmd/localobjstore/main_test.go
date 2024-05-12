@@ -77,6 +77,7 @@ func TestStoreAndGet_Local(t *testing.T) {
     // if err != nil {
     //     t.Fatalf("Failed to dial bufnet: %v", err)
     // }
+    startServer("50051")
     conn, err := grpc.DialContext(ctx, "localhost:50051", grpc.WithInsecure())
     defer conn.Close()
 	data := []byte{72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100}
