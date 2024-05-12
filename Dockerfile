@@ -39,6 +39,11 @@ RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 # now that we've installed pre-reqs, build everything
 RUN make clean && make all
 
+# just to test things out
+RUN apt update && apt install -y iputils-ping
+
+ENV PROJECT_ROOT=/app
+
 # expose all the ports we may use
 #EXPOSE 50000-69999
 
