@@ -166,19 +166,27 @@ func TestStoreAndGet_External(t *testing.T) {
 
     
     go func(){ 
-        response1, err := client1.Get(ctx, &pb.GetRequest{Uid: 1, Testing: true})
+        timeout, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+        defer cancel()
+        response1, err := client1.Get(timeout, &pb.GetRequest{Uid: 1, Testing: true})
         if err != nil || !bytes.Equal(response1.ObjectBytes, data) {
+            if timeout.Err() == context.DeadlineExceeded {
+                t.Errorf("Timeout on client1 get call")
+            }
             t.Errorf("Failed to get value on LOS 1")
-
         }
     
     }()
 
 
     time.Sleep(1 * time.Second)  
-
-    locStatusResp, err := client1.LocationFound(ctx, &pb.LocationFoundResponse{Uid: 1, Address: "localhost", Port: 50052})
+    timeout, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+    defer cancel() 
+    locStatusResp, err := client1.LocationFound(timeout, &pb.LocationFoundResponse{Uid: 1, Address: "localhost", Port: 50052})
     if err != nil || locStatusResp == nil || !locStatusResp.Success  {
+        if timeout.Err() == context.DeadlineExceeded {
+            t.Errorf("Timeout on client1 location call")
+        }
         t.Errorf("Failed to tell LOS 1 about location: %v", err)
     }
 	
