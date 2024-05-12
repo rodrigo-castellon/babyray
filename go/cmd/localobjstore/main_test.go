@@ -169,6 +169,9 @@ func TestStoreAndGet_External(t *testing.T) {
         timeout, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
         defer cancel()
         response1, err := client1.Get(timeout, &pb.GetRequest{Uid: 1, Testing: true})
+        if response1.Local {
+            t.Errorf("found on local")
+        }
         if err != nil || !bytes.Equal(response1.ObjectBytes, data) {
             if timeout.Err() == context.DeadlineExceeded {
                 t.Errorf("Timeout on client1 get call")
