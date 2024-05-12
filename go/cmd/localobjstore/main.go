@@ -83,8 +83,10 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
    
     conn, _ := grpc.Dial(otherLocalAddress, grpc.WithInsecure())
     c := pb.NewLocalObjStoreClient(conn)
-    x, _ := c.Copy(ctx, &pb.CopyRequest{Uid : resp.Uid, Requester : localNodeID})
-    
+    x, err := c.Copy(ctx, &pb.CopyRequest{Uid : resp.Uid, Requester : localNodeID})
+    if x == nil || err != nil {
+        return &pb.StatusResponse{Success: false}, errors.New("failed to hit other LOS")
+    }
     gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: resp.Uid, NodeId: localNodeID})
     localObjectChannels[resp.Uid] <- x.ObjectBytes
     return &pb.StatusResponse{Success: true}, nil
