@@ -77,6 +77,8 @@ message GetResponse {
 message LocationFoundResponse {
   uint32 uid = 1; 
   uint32 location = 2; 
+  uint64 address = 3; //For testing
+  uint64 port = 4; //For testing
 }
 
 message CopyRequest {
