@@ -58,7 +58,7 @@ service LocalObjStore {
   rpc Get(GetRequest) returns (GetResponse);
   rpc LocationFound(LocationFoundResponse) returns (StatusResponse); 
   rpc Copy(CopyRequest) returns (CopyResponse); 
-  rpc Init() returns (StatusResponse); 
+  rpc Init(StatusResponse) returns (StatusResponse); 
 }
 
 message StoreRequest {

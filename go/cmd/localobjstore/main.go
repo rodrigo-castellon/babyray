@@ -54,7 +54,7 @@ type server struct {
    localNodeID uint64
 }
 
-func (s* server) Init(ctx context.Context) {
+func (s* server) Init(ctx context.Context, req *pb.StatusResponse) (*pb.StatusResponse, error) {
     s.localObjectStore = make(map[uint64][]byte)
     s.localObjectChannels = make(map[uint64]chan []byte)
     s.localNodeID = 1
@@ -62,7 +62,7 @@ func (s* server) Init(ctx context.Context) {
     conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
     s.gcsObjClient = pb.NewGCSObjClient(conn)
 
-    return &pb.StatusResponse{Success: true}
+    return &pb.StatusResponse{Success: true}, nil
     
 }
 func (s *server) Store(ctx context.Context, req *pb.StoreRequest) (*pb.StatusResponse, error) {

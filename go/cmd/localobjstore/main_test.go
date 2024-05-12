@@ -88,7 +88,7 @@ func TestStoreAndGet_Local(t *testing.T) {
     defer conn.Close()
 	data := []byte{72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100}
     client := pb.NewLocalObjStoreClient(conn)
-    client.Init()
+    client.Init(&pb.StatusResponse{})
 
     // Test Store
     resp, err := client.Store(ctx, &pb.StoreRequest{
@@ -140,8 +140,8 @@ func TestStoreAndGet_External(t *testing.T) {
     defer conn2.Close()
     client1 := pb.NewLocalObjStoreClient(conn1)
     client2 := pb.NewLocalObjStoreClient(conn2)
-    client1.Init()
-    client2.Init()
+    client1.Init(&pb.StatusResponse{})
+    client2.Init(&pb.StatusResponse{})
 	data := []byte{72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100}
     
     // mockStore := &mockStoreClient{
