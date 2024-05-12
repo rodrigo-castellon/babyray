@@ -57,7 +57,7 @@ type server struct {
 func (s* server) InitLOS(ctx context.Context) {
     s.localObjectStore = make(map[uint64][]byte)
     s.localObjectChannels = make(map[uint64]chan []byte)
-    s.localNodeID = -1
+    s.localNodeID = 1
     gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
     conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
     s.gcsObjClient = pb.NewGCSObjClient(conn)
@@ -66,7 +66,7 @@ func (s* server) InitLOS(ctx context.Context) {
 func (s *server) Store(ctx context.Context, req *pb.StoreRequest) (*pb.StatusResponse, error) {
     s.localObjectStore[req.Uid] = req.ObjectBytes
     
-    s.gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: req.Uid, NodeId: localNodeID})
+    s.gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: req.Uid, NodeId: s.localNodeID})
     return &pb.StatusResponse{Success: true}, nil
 }
 
@@ -77,7 +77,7 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
     log.Println(fmt.Sprintf("Creating channel for: %d", req.Uid))
     s.localObjectChannels[req.Uid] = make(chan []byte)
     if req.Testing == false {
-        s.gcsObjClient.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: req.Uid, Requester: localNodeID})
+        s.gcsObjClient.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: req.Uid, Requester: s.localNodeID})
     }
     
     val := <- s.localObjectChannels[req.Uid]
