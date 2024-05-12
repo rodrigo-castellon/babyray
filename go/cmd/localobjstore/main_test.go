@@ -185,7 +185,7 @@ func TestStoreAndGet_External(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	timeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	locStatusResp, err := client1.LocationFound(timeout, &pb.LocationFoundResponse{Uid: 3, Address: "localhost", Port: 50052})
+	locStatusResp, err := client1.LocationFound(timeout, &pb.LocationFoundCallback{Uid: 3, Address: "localhost", Port: 50052})
 	if err != nil || locStatusResp == nil || !locStatusResp.Success {
 		if timeout.Err() == context.DeadlineExceeded {
 			t.Errorf("Timeout on client1 location call")
