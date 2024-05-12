@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"sync"
 	"testing"
 	"time"
 
@@ -32,106 +33,59 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 	return lis.Dial()
 }
 
-func TestNotifyOwns(t *testing.T) {
-	ctx := context.Background()
-	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
-	if err != nil {
-		t.Fatalf("Failed to dial bufnet: %v", err)
-	}
-	defer conn.Close()
-	client := pb.NewGCSObjClient(conn)
+func TestGetNodeId(t *testing.T) {
+	// Seed the random number generator for reproducibility in tests
+	rand.Seed(1)
 
-	// Testing NotifyOwns
-	resp, err := client.NotifyOwns(ctx, &pb.NotifyOwnsRequest{
-		Uid:    1,
-		NodeId: 100,
-	})
-	if err != nil || !resp.Success {
-		t.Errorf("NotifyOwns failed: %v, response: %v", err, resp)
+	// Initialize the GCSObjServer
+	server := &GCSObjServer{
+		objectLocations: make(map[uint64][]uint64),
+		waitlist:        make(map[uint64][]string),
+		mu:              sync.Mutex{},
+	}
+
+	// Test case: UID exists with multiple NodeIds
+	server.objectLocations[1] = []uint64{100, 101, 102}
+	nodeId, exists := server.getNodeId(1)
+	if !exists {
+		t.Errorf("Expected UID 1 to exist")
+	}
+	if nodeId == nil || (*nodeId != 100 && *nodeId != 101 && *nodeId != 102) {
+		t.Errorf("Expected nodeId to be one of [100, 101, 102], got %v", nodeId)
+	}
+
+	// Test case: UID exists with a single NodeId
+	server.objectLocations[2] = []uint64{200}
+	nodeId, exists = server.getNodeId(2)
+	if !exists {
+		t.Errorf("Expected UID 2 to exist")
+	}
+	if nodeId == nil || *nodeId != 200 {
+		t.Errorf("Expected nodeId to be 200, got %v", nodeId)
+	}
+
+	// Test case: UID does not exist
+	nodeId, exists = server.getNodeId(3)
+	if exists {
+		t.Errorf("Expected UID 3 to not exist")
+	}
+	if nodeId != nil {
+		t.Errorf("Expected nodeId to be nil, got %v", nodeId)
+	}
+
+	// Test case: UID exists but with an empty NodeId list
+	server.objectLocations[4] = []uint64{}
+	nodeId, exists = server.getNodeId(4)
+	if exists {
+		t.Errorf("Expected UID 4 to not exist due to empty NodeId list")
+	}
+	if nodeId != nil {
+		t.Errorf("Expected nodeId to be nil, got %v", nodeId)
 	}
 }
 
-// func TestRequestLocation(t *testing.T) {
-// 	ctx := context.Background()
-// 	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
-// 	if err != nil {
-// 		t.Fatalf("Failed to dial bufnet: %v", err)
-// 	}
-// 	defer conn.Close()
-// 	client := pb.NewGCSObjClient(conn)
-
-// 	// First, ensure the object is registered to test retrieval
-// 	_, err = client.NotifyOwns(ctx, &pb.NotifyOwnsRequest{
-// 		Uid:    1,
-// 		NodeId: 100,
-// 	})
-// 	if err != nil {
-// 		t.Fatalf("Setup failure: could not register UID: %v", err)
-// 	}
-
-// 	// Test RequestLocation
-// 	resp, err := client.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: 1})
-// 	if err != nil {
-// 		t.Errorf("RequestLocation failed: %v", err)
-// 		return
-// 	}
-// 	if resp.Location != 100 {
-// 		t.Errorf("RequestLocation returned incorrect node ID: got %d, want %d", resp.Location, 100)
-// 	}
-// }
-
-// Create a unit test in Go where three goroutines are involved, with the first two waiting for an object's location
-// and the third notifying the server of the object's presence:
-// - Two goroutines will call RequestLocation for a UID that initially doesn't have any node IDs associated with it. They will block until they are notified of a change.
-// - One goroutine will perform the NotifyOwns action after a short delay, adding a node ID to the UID, which should then notify the waiting goroutines.
-// func TestRequestLocationWithNotification(t *testing.T) {
-// 	ctx := context.Background()
-// 	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
-// 	if err != nil {
-// 		t.Fatalf("Failed to dial bufnet: %v", err)
-// 	}
-// 	defer conn.Close()
-// 	client := pb.NewGCSObjClient(conn)
-
-// 	var wg sync.WaitGroup
-// 	uid := uint64(1) // Example UID for testing
-
-// 	// Start two goroutines that are trying to fetch the object location
-// 	for i := 0; i < 2; i++ {
-// 		wg.Add(1)
-// 		go func(index int) {
-// 			defer wg.Done()
-// 			resp, err := client.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: uid})
-// 			if err != nil {
-// 				t.Errorf("Goroutine %d: RequestLocation failed: %v", index, err)
-// 				return
-// 			}
-// 			if resp.Location != 100 {
-// 				t.Errorf("Goroutine %d: RequestLocation returned incorrect node ID: got %d, want %d", index, resp.Location, 100)
-// 			}
-// 		}(i)
-// 	}
-
-// 	// Goroutine to notify
-// 	wg.Add(1)
-// 	go func() {
-// 		defer wg.Done()
-// 		// Let the requests initiate first
-// 		time.Sleep(100 * time.Millisecond)
-// 		_, err := client.NotifyOwns(ctx, &pb.NotifyOwnsRequest{
-// 			Uid:    uid,
-// 			NodeId: 100,
-// 		})
-// 		if err != nil {
-// 			t.Fatalf("NotifyOwns failed: %v", err)
-// 		}
-// 	}()
-
-// 	wg.Wait() // Wait for all goroutines to complete
-// }
-
 // Test the getNodeId function
-func TestGetNodeId(t *testing.T) {
+func TestGetNodeId2(t *testing.T) {
 	// Initialize the server
 	server := NewGCSObjServer()
 
@@ -179,6 +133,208 @@ func TestGetNodeId(t *testing.T) {
 		}
 	}
 }
+
+func TestSendCallback(t *testing.T) {
+	// Setup a mock listener
+	lis := bufconn.Listen(bufSize)
+	s := grpc.NewServer()
+	pb.RegisterLocalObjStoreServer(s, &mockLocalObjStoreServer{})
+	go func() {
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("Server exited with error: %v", err)
+		}
+	}()
+
+	// Mock client address
+	clientAddress := "bufnet"
+
+	// Initialize the GCSObjServer
+	server := &GCSObjServer{}
+
+	// Use bufDialer in grpc.Dial call
+	conn, err := grpc.DialContext(context.Background(), "bufnet", grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
+		return lis.Dial()
+	}), grpc.WithInsecure())
+	if err != nil {
+		t.Fatalf("Failed to dial bufnet: %v", err)
+	}
+	defer conn.Close()
+
+	// Run sendCallback as a goroutine
+	go server.sendCallback(clientAddress, 1, 100)
+
+	// Allow some time for the goroutine to execute
+	time.Sleep(1 * time.Second)
+}
+
+// Mock implementation of the LocalObjStoreServer
+type mockLocalObjStoreServer struct {
+	pb.UnimplementedLocalObjStoreServer
+}
+
+func (m *mockLocalObjStoreServer) LocationFound(ctx context.Context, req *pb.LocationFoundCallback) (*pb.StatusResponse, error) {
+	return &pb.StatusResponse{Success: true}, nil
+}
+
+func TestNotifyOwns(t *testing.T) {
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
+	if err != nil {
+		t.Fatalf("Failed to dial bufnet: %v", err)
+	}
+	defer conn.Close()
+	client := pb.NewGCSObjClient(conn)
+
+	// Testing NotifyOwns
+	resp, err := client.NotifyOwns(ctx, &pb.NotifyOwnsRequest{
+		Uid:    1,
+		NodeId: 100,
+	})
+	if err != nil || !resp.Success {
+		t.Errorf("NotifyOwns failed: %v, response: %v", err, resp)
+	}
+}
+
+func TestRequestLocation(t *testing.T) {
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
+	if err != nil {
+		t.Fatalf("Failed to dial bufnet: %v", err)
+	}
+	defer conn.Close()
+	client := pb.NewGCSObjClient(conn)
+
+	// Ensure the object is registered to test retrieval
+	_, err = client.NotifyOwns(ctx, &pb.NotifyOwnsRequest{
+		Uid:    1,
+		NodeId: 100,
+	})
+	if err != nil {
+		t.Fatalf("Setup failure: could not register UID: %v", err)
+	}
+
+	// Test RequestLocation when the location should be found immediately
+	resp, err := client.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: 1})
+	if err != nil {
+		t.Errorf("RequestLocation failed: %v", err)
+		return
+	}
+	if !resp.ImmediatelyFound {
+		t.Errorf("Expected to find location immediately, but it was not found")
+	}
+
+	// Test RequestLocation for a UID that does not exist
+	resp, err = client.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: 2})
+	if err != nil {
+		t.Errorf("RequestLocation failed: %v", err)
+		return
+	}
+	if resp.ImmediatelyFound {
+		t.Errorf("Expected location not to be found immediately, but it was found")
+	}
+}
+
+// Create a unit test in Go where three goroutines are involved, with the first two waiting for an object's location
+// and the third notifying the server of the object's presence:
+// - Two goroutines will call RequestLocation for a UID that initially doesn't have any node IDs associated with it. They will block until they are notified of a change.
+// - One goroutine will perform the NotifyOwns action after a short delay, adding a node ID to the UID, which should then notify the waiting goroutines.
+// func TestRequestLocationWithNotification(t *testing.T) {
+// 	// Initialize the server and listener
+// 	lis := bufconn.Listen(bufSize)
+// 	s := grpc.NewServer()
+// 	pb.RegisterGCSObjServer(s, MockNewGCSObjServer())
+// 	go func() {
+// 		if err := s.Serve(lis); err != nil {
+// 			log.Fatalf("Server exited with error: %v", err)
+// 		}
+// 	}()
+
+// 	// Setup gRPC client
+// 	ctx := context.Background()
+// 	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
+// 	if err != nil {
+// 		t.Fatalf("Failed to dial bufnet: %v", err)
+// 	}
+// 	defer conn.Close()
+// 	client := pb.NewGCSObjClient(conn)
+
+// 	// Use a wait group to wait for both goroutines to complete
+// 	var wg sync.WaitGroup
+// 	wg.Add(2)
+
+// 	// A channel to listen for callback notifications
+// 	callbackReceived := make(chan struct{}, 2)
+
+// 	// Mock the sendCallback to capture its invocation
+// 	originalSendCallback := (&GCSObjServer{}).sendCallback
+// 	mockSendCallback := func(clientAddress string, uid uint64, nodeId uint64) {
+// 		originalSendCallback(clientAddress, uid, nodeId)
+// 		callbackReceived <- struct{}{}
+// 	}
+
+// 	server := NewGCSObjServer()
+// 	server.sendCallback = mockSendCallback
+
+// 	// First goroutine calls RequestLocation
+// 	go func() {
+// 		defer wg.Done()
+// 		resp, err := client.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: 1})
+// 		if err != nil {
+// 			t.Errorf("RequestLocation failed: %v", err)
+// 			return
+// 		}
+// 		if resp.ImmediatelyFound {
+// 			t.Errorf("Expected location not to be found immediately, but it was found")
+// 		}
+// 	}()
+
+// 	// Second goroutine calls RequestLocation
+// 	go func() {
+// 		defer wg.Done()
+// 		resp, err := client.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: 1})
+// 		if err != nil {
+// 			t.Errorf("RequestLocation failed: %v", err)
+// 			return
+// 		}
+// 		if resp.ImmediatelyFound {
+// 			t.Errorf("Expected location not to be found immediately, but it was found")
+// 		}
+// 	}()
+
+// 	// Third goroutine performs NotifyOwns after a short delay
+// 	go func() {
+// 		time.Sleep(100 * time.Millisecond)
+// 		_, err := client.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: 1, NodeId: 100})
+// 		if err != nil {
+// 			t.Errorf("NotifyOwns failed: %v", err)
+// 		}
+// 	}()
+
+// 	// Wait for both callbacks to be received
+// 	for i := 0; i < 2; i++ {
+// 		select {
+// 		case <-callbackReceived:
+// 			// Callback received, continue
+// 		case <-time.After(1 * time.Second):
+// 			t.Errorf("Timeout waiting for callback")
+// 		}
+// 	}
+
+// 	// Wait for all goroutines to finish
+// 	wg.Wait()
+// }
+
+// type MockGCSObjServer struct {
+// 	GCSObjServer
+// }
+
+// func (s *MockGCSObjServer) sendCallback(clientAddress string, uid uint64, nodeId uint64) {
+// 	return
+// }
+
+// func MockNewGCSObjServer() *MockGCSObjServer {
+// 	return NewGCSObjServer()
+// }
 
 // Helper function to check if a slice contains a specific value
 func contains(slice []uint64, value uint64) bool {

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	// "errors"
@@ -42,29 +41,18 @@ func main() {
 // server is used to implement your gRPC service.
 type GCSObjServer struct {
 	pb.UnimplementedGCSObjServer
-	objectLocations map[uint64][]uint64
-	mu              sync.Mutex
-	cond            *sync.Cond
+	objectLocations map[uint64][]uint64 // object uid -> list of nodeIds as uint64
+	waitlist        map[uint64][]string // object uid -> list of IP addresses as string
+	mu              sync.Mutex          // lock should be used for both objectLocations and waitlist
 }
 
 func NewGCSObjServer() *GCSObjServer {
 	server := &GCSObjServer{
 		objectLocations: make(map[uint64][]uint64),
+		waitlist:        make(map[uint64][]string),
 		mu:              sync.Mutex{},
 	}
-	server.cond = sync.NewCond(&server.mu) // Properly pass the address of the struct's mutex.
 	return server
-}
-
-func (s *GCSObjServer) NotifyOwns(ctx context.Context, req *pb.NotifyOwnsRequest) (*pb.StatusResponse, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	// Append the nodeId to the list for the given uid
-	s.objectLocations[req.Uid] = append(s.objectLocations[req.Uid], req.NodeId)
-	s.cond.Broadcast()
-
-	return &pb.StatusResponse{Success: true}, nil
 }
 
 /*
@@ -84,6 +72,57 @@ func (s *GCSObjServer) getNodeId(uid uint64) (*uint64, bool) {
 	return nodeId, true
 }
 
+// sendCallback sends a location found callback to the local object store client
+// This should be used as a goroutine
+func (s *GCSObjServer) sendCallback(clientAddress string, uid uint64, nodeId uint64) {
+	// Set up a new gRPC connection to the client
+	// TODO: Refactor to save gRPC connections rather than creating a new one each time
+	// Dial is lazy-loading, but we should still save the connection for future use
+	conn, err := grpc.Dial(clientAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		// Log the error instead of returning it
+		log.Printf("Failed to connect back to client at %s: %v", clientAddress, err)
+		return
+	}
+	defer conn.Close() // TODO: remove in some eventual universe
+
+	localObjStoreClient := pb.NewLocalObjStoreClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Call LocationFound and handle any potential error
+	_, err = localObjStoreClient.LocationFound(ctx, &pb.LocationFoundCallback{Uid: uid, Location: nodeId})
+	if err != nil {
+		log.Printf("Failed to send LocationFound callback for UID %d to client at %s: %v", uid, clientAddress, err)
+	}
+}
+
+func (s *GCSObjServer) NotifyOwns(ctx context.Context, req *pb.NotifyOwnsRequest) (*pb.StatusResponse, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	uid, nodeId := req.Uid, req.NodeId
+
+	// Append the nodeId to the list for the given object uid
+	if _, exists := s.objectLocations[uid]; !exists {
+		s.objectLocations[uid] = []uint64{} // Initialize slice if it doesn't exist
+	}
+	s.objectLocations[uid] = append(s.objectLocations[uid], nodeId)
+
+	// Clear waitlist for this uid, if any
+	waitingIPs, exists := s.waitlist[uid]
+	if exists {
+		for _, clientAddress := range waitingIPs {
+			go s.sendCallback(clientAddress, uid, nodeId)
+		}
+		// Clear the waitlist for the given uid after processing
+		delete(s.waitlist, uid)
+	}
+
+	return &pb.StatusResponse{Success: true}, nil
+}
+
 func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocationRequest) (*pb.RequestLocationResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -95,21 +134,14 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 	}
 	clientAddress := p.Addr.String()
 
-	// Set up a new gRPC connection to the client
-	// TODO: Refactor to save gRPC connections rather than creating a new one each time
-	// Dial is lazy-loading, but we should still save the connection for future use
-	conn, err := grpc.Dial(clientAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		errorMessage := fmt.Sprintf("Failed to connect back to client: %v", err)
-		return nil, status.Error(codes.Internal, errorMessage)
-	}
-	//defer conn.Close() // TODO: remove in some eventual universe
-
-	localObjStoreClient := pb.NewLocalObjStoreClient(conn)
-
-	nodeId, exists := s.getNodeId(req.Uid)
+	uid := req.Uid
+	nodeId, exists := s.getNodeId(uid)
 	if !exists {
-		// TODO: Add client to waiting list - also should be lock-based waiting list
+		// Add client to waiting list
+		if _, exists := s.waitlist[uid]; !exists {
+			s.waitlist[uid] = []string{} // Initialize slice if it doesn't exist
+		}
+		s.waitlist[uid] = append(s.waitlist[uid], clientAddress)
 
 		// Reply to this gRPC request
 		return &pb.RequestLocationResponse{
@@ -118,18 +150,10 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 	}
 
 	// Send immediate callback
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		localObjStoreClient.LocationFound(ctx, &pb.LocationFoundCallback{Uid: req.Uid, Location: *nodeId})
-	}()
+	go s.sendCallback(clientAddress, uid, *nodeId)
 
 	// Reply to this gRPC request
 	return &pb.RequestLocationResponse{
 		ImmediatelyFound: true,
 	}, nil
 }
-
-/* NOTE: We only use one cv for now, which may cause performance issues in the future
-However, there is significant overhead if we want one cv per object, as then we would have to manage
-the cleanup through reference counting  */
