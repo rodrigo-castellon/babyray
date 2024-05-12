@@ -61,7 +61,7 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
     if val, ok := localObjectStore[req.Uid]; ok {
         return &pb.GetResponse{Uid : req.Uid, ObjectBytes : val}, nil
     }
-    log.Println("Creating channel for: %d", req.Uid)
+    log.Println(fmt.Sprintf("Creating channel for: %d", req.Uid))
     localObjectChannels[req.Uid] = make(chan []byte)
     if req.Testing == false {
         gcsObjClient.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: req.Uid, Requester: localNodeID})
@@ -99,7 +99,7 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
 
     //     gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: resp.Uid, NodeId: localNodeID})
     // }
-    log.Println("checking for UID: %d", resp.Uid)
+    log.Println(fmt.Sprintf("checking for UID: %d", resp.Uid))
     channel, ok := localObjectChannels[resp.Uid]
     if !ok {
         return &pb.StatusResponse{Success: false}, errors.New("channel DNE")
