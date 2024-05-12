@@ -80,8 +80,9 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
     } else {
         otherLocalAddress = fmt.Sprintf("%s:%d", resp.Address, resp.Port)
     }
-   
+    log.Println("starting dial")
     conn, err := grpc.Dial(otherLocalAddress, grpc.WithInsecure())
+    log.Println("finished dial")
     if err != nil {
         return &pb.StatusResponse{Success: false}, errors.New(fmt.Sprintf("failed to dial other LOS @:%s ", otherLocalAddress))
     }
