@@ -122,6 +122,7 @@ message NotifyOwnsRequest {
 
 message RequestLocationRequest {
   uint64 uid = 1;
+  uint64 requester = 2; 
 }
 
 message RequestLocationResponse {
