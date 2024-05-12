@@ -61,6 +61,8 @@ func (s* server) Init(ctx context.Context) {
     gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
     conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
     s.gcsObjClient = pb.NewGCSObjClient(conn)
+
+    return &pb.StatusResponse{Success: true}
     
 }
 func (s *server) Store(ctx context.Context, req *pb.StoreRequest) (*pb.StatusResponse, error) {
