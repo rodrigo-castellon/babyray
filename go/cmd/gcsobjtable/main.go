@@ -68,7 +68,7 @@ func (s *GCSObjServer) NotifyOwns(ctx context.Context, req *pb.NotifyOwnsRequest
 	return &pb.StatusResponse{Success: true}, nil
 }
 
-func (s *GCSObjServer) getNodeId(uint64 uid) (*uint64, bool) {
+func (s *GCSObjServer) getNodeId(uid uint64) (*uint64, bool) {
 	nodeIds, exists := s.objectLocations[uid]
 	if !exists || len(nodeIds) == 0 {
 		return nil, false
@@ -77,7 +77,7 @@ func (s *GCSObjServer) getNodeId(uint64 uid) (*uint64, bool) {
 	// Note: policy is to pick a random one; in the future it will need to be locality-based
 	randomIndex := rand.Intn(len(nodeIds))
 	nodeId := &nodeIds[randomIndex]
-	return nodeId, nil
+	return nodeId, true
 }
 
 func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocationRequest) (*pb.RequestLocationResponse, error) {
@@ -116,7 +116,7 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		gcsObjClient.LocationFound(ctx, &pb.RequestLocationCallback{NodeId: nodeId})
+		gcsObjClient.LocationFound(ctx, &pb.RequestLocationCallback{NodeId: *nodeId})
 	}()
 	return &pb.RequestLocationResponse{
 		ImmediatelyFound: true,
