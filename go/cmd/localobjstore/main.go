@@ -21,18 +21,20 @@ var cfg *config.Config
 func main() {
     cfg = config.GetConfig() // Load configuration
     address := ":" + strconv.Itoa(cfg.Ports.LocalObjectStore) // Prepare the network address
-
-    // lis, err := net.Listen("tcp", address)
-    // if err != nil {
-    //     log.Fatalf("failed to listen: %v", err)
-    // }
-    // _ = lis;
-    // s := grpc.NewServer()
-    // pb.RegisterLocalObjStoreServer(s, &server{})
-    // log.Printf("server listening at %v", lis.Addr())
-    // if err := s.Serve(lis); err != nil {
-    //    log.Fatalf("failed to serve: %v", err)
-    // }
+    if address == "" {
+        lis, err := net.Listen("tcp", address)
+        if err != nil {
+            log.Fatalf("failed to listen: %v", err)
+        }
+        _ = lis;
+        s := grpc.NewServer()
+        pb.RegisterLocalObjStoreServer(s, &server{})
+        log.Printf("server listening at %v", lis.Addr())
+        if err := s.Serve(lis); err != nil {
+           log.Fatalf("failed to serve: %v", err)
+        }
+    }
+   
 
     localObjectStore = make(map[uint64][]byte)
     localObjectChannels = make(map[uint64]chan []byte)
