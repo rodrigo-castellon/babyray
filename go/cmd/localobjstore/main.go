@@ -7,7 +7,7 @@ import (
     "strconv"
     "fmt"
     context "context"
-
+    "errors"
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
     "github.com/rodrigo-castellon/babyray/config"
