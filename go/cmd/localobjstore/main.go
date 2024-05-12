@@ -76,7 +76,7 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
     if val, ok := s.localObjectStore[req.Uid]; ok {
         return &pb.GetResponse{Uid : req.Uid, ObjectBytes : val, Local: true}, nil
     }
-    log.Println(fmt.Sprintf("Creating channel for: %d", req.Uid))
+    
     s.localObjectChannels[req.Uid] = make(chan []byte)
     if req.Testing == false {
         s.gcsObjClient.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: req.Uid, Requester: s.localNodeID})
@@ -96,17 +96,17 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
     } else {
         otherLocalAddress = fmt.Sprintf("%s:%d", resp.Address, resp.Port)
     }
-    log.Println("starting dial")
+
     conn, err := grpc.Dial(otherLocalAddress, grpc.WithInsecure())
-    log.Println("finished dial")
+   
     if err != nil {
         return &pb.StatusResponse{Success: false}, errors.New(fmt.Sprintf("failed to dial other LOS @:%s ", otherLocalAddress))
     }
 
     c := pb.NewLocalObjStoreClient(conn)
-    log.Println("starting copy")
+   
     x, err := c.Copy(ctx, &pb.CopyRequest{Uid : resp.Uid, Requester : s.localNodeID})
-    log.Println("finished copy")
+ 
     if x == nil || err != nil {
         return &pb.StatusResponse{Success: false}, errors.New(fmt.Sprintf("failed to copy from other LOS @:%s ", otherLocalAddress))
     }
@@ -114,13 +114,13 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
 
     //     gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: resp.Uid, NodeId: localNodeID})
     // }
-    log.Println(fmt.Sprintf("checking for UID: %d", resp.Uid))
+    
     channel, ok := s.localObjectChannels[resp.Uid]
     if !ok {
         return &pb.StatusResponse{Success: false}, errors.New("channel DNE")
     }
     channel <- x.ObjectBytes
-    log.Println("wrote to channel")
+    
     return &pb.StatusResponse{Success: true}, nil
 
 }
