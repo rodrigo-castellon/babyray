@@ -43,7 +43,13 @@ func LoadConfig() *Config {
     }
 
     // Construct the path to the configuration file
+    rootPath := os.Getenv("PROJECT_ROOT")
+    // _ = rootPath
+    log.Printf("%v", rootPath)
+    log.Printf("%v", cwd)
+    log.Printf("ROOT IS: %v", filepath.Join(rootPath, "config", "app_config.yaml"))
     configFile := filepath.Join(cwd, "..", "..", "..", "config", "app_config.yaml")
+    // configFile := filepath.Join(rootPath, "config", "app_config.yaml")
 
     yamlFile, err := ioutil.ReadFile(configFile)
     if err != nil {

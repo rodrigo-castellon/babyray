@@ -4,30 +4,56 @@ services:
   gcs:
     image: ray-node
     command: ["/bin/sh", "-c", "./go/bin/gcsfunctable & ./go/bin/gcsobjtable"]
+    networks:
+        mynetwork:
+            aliases:
+                - node0
     ports:
       - "50000:50000"
 
   global_scheduler:
     image: ray-node
-    command: ["/bin/sh", "-c", "./go/bin/globalscheduler &"]
+    command: ["/bin/sh", "-c", "./go/bin/globalscheduler"]
+    networks:
+        mynetwork:
+            aliases:
+                - node1
     ports:
       - "50001:50001"
 
   worker1:
     image: ray-node
     command: ["/bin/sh", "-c", "./go/bin/localscheduler & ./go/bin/localobjstore"]
+    networks:
+        mynetwork:
+            aliases:
+                - node2
+    #entrypoint: /bin/bash
+    #command: >
+    #  -c "apt update && apt install -y iputils-ping && ping node0"
     ports:
       - "50002:50002"
 
   worker2:
     image: ray-node
     command: ["/bin/sh", "-c", "./go/bin/localscheduler & ./go/bin/localobjstore"]
+    networks:
+        mynetwork:
+            aliases:
+                - node3
     ports:
       - "50003:50003"
 
   worker3:
     image: ray-node
     command: ["/bin/sh", "-c", "./go/bin/localscheduler & ./go/bin/localobjstore"]
+    networks:
+        mynetwork:
+            aliases:
+                - node4
     ports:
       - "50004:50004"
 
+networks:
+    mynetwork:
+        driver: bridge
