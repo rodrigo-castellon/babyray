@@ -59,7 +59,7 @@ func (s *server) Store(ctx context.Context, req *pb.StoreRequest) (*pb.StatusRes
 
 func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, error) {
     if val, ok := localObjectStore[req.Uid]; ok {
-        return &pb.GetResponse{Uid : req.Uid, ObjectBytes : val}, nil
+        return &pb.GetResponse{Uid : req.Uid, ObjectBytes : val, Local: true}, nil
     }
     log.Println(fmt.Sprintf("Creating channel for: %d", req.Uid))
     localObjectChannels[req.Uid] = make(chan []byte)
@@ -69,7 +69,7 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
     
     val := <- localObjectChannels[req.Uid]
     localObjectStore[req.Uid] = val
-    return &pb.GetResponse{Uid : req.Uid, ObjectBytes : localObjectStore[req.Uid]}, nil
+    return &pb.GetResponse{Uid : req.Uid, ObjectBytes : localObjectStore[req.Uid], Local: false}, nil
 }
 
 func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundResponse) (*pb.StatusResponse, error) {
