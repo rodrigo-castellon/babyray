@@ -108,13 +108,13 @@ func TestStoreAndGet_Local(t *testing.T) {
 }
 func TestStoreAndGet_External(t *testing.T) {
 	ctx := context.Background()
-    s1, err := startServer("50051")
+    s1, err := startServer(":50051")
     if err != nil {
         t.Fatalf("Failed to start server 1: %v", err)
     }
     defer s1.Stop()
 
-    s2, err := startServer("50052")
+    s2, err := startServer(":50052")
     if err != nil {
         t.Fatalf("Failed to start server 2: %v", err)
     }
