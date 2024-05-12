@@ -99,7 +99,7 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 		errorMessage := fmt.Sprintf("Failed to connect back to client: %v", err)
 		return nil, status.Error(codes.Internal, errorMessage)
 	}
-	//defer conn.Close() // TODO: remove
+	//defer conn.Close() // TODO: remove in some eventual universe
 
 	localObjStoreClient := pb.NewLocalObjStoreClient(conn)
 
