@@ -59,7 +59,6 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
     if val, ok := localObjectStore[req.Uid]; ok {
         return &pb.GetResponse{Uid : req.Uid, ObjectBytes : val}, nil
     }
-    var nodeId uint64 = 1 
     localObjectChannels[req.Uid] = make(chan []byte)
     if req.Testing == false {
         gcsObjClient.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: req.Uid, Requester: localNodeID})
