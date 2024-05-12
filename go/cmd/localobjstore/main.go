@@ -81,7 +81,10 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
         otherLocalAddress = fmt.Sprintf("%s:%d", resp.Address, resp.Port)
     }
    
-    conn, _ := grpc.Dial(otherLocalAddress, grpc.WithInsecure())
+    conn, err := grpc.Dial(otherLocalAddress, grpc.WithInsecure())
+    if err != nil {
+        return &pb.StatusResponse{Success: false}, errors.New(fmt.Sprintf("failed to dial other LOS @:%s ", otherLocalAddress))
+    }
     c := pb.NewLocalObjStoreClient(conn)
     x, err := c.Copy(ctx, &pb.CopyRequest{Uid : resp.Uid, Requester : localNodeID})
     if x == nil || err != nil {
