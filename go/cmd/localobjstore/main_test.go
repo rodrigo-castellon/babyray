@@ -179,8 +179,7 @@ func TestStoreAndGet_External(t *testing.T) {
     time.Sleep(1 * time.Second)  
 
     locStatusResp, err := client1.LocationFound(ctx, &pb.LocationFoundResponse{Uid: 1, Address: "localhost", Port: 50052})
-
-    if !locStatusResp.Success || err != nil {
+    if err != nil || locStatusResp == nil || !locStatusResp.Success  {
         t.Errorf("Failed to tell LOS 1 about location")
     }
 
