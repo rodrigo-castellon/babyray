@@ -78,7 +78,7 @@ func TestStoreAndGet_Local(t *testing.T) {
     // if err != nil {
     //     t.Fatalf("Failed to dial bufnet: %v", err)
     // }
-    _, err := startServer("50051")
+    _, err := startServer(":50051")
     if err != nil {
         t.Fatalf("failed to start server: %v", err)
     }
