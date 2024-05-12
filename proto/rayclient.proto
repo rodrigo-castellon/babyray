@@ -71,24 +71,24 @@ message GetRequest {
 }
 
 message GetResponse {
-  uint32 uid = 1; 
+  uint64 uid = 1; 
   bytes objectBytes = 2;
 }
 
 message LocationFoundResponse {
-  uint32 uid = 1; 
-  uint32 location = 2; 
-  uint64 address = 3; //For testing
+  uint64 uid = 1; 
+  uint64 location = 2; 
+  string address = 3; //For testing
   uint64 port = 4; //For testing
 }
 
 message CopyRequest {
-  uint32 uid = 1; 
-  uint32 requester = 2; 
+  uint64 uid = 1; 
+  uint64 requester = 2; 
 }
 
 message CopyResponse {
-  uint32 uid = 1; 
+  uint64 uid = 1; 
   bytes objectBytes = 2; 
 }
 
