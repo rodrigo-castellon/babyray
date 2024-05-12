@@ -100,6 +100,7 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
     // }
     
     localObjectChannels[resp.Uid] <- x.ObjectBytes
+    log.Println("wrote to channel")
     return &pb.StatusResponse{Success: true}, nil
 
 }
