@@ -4,8 +4,8 @@ import (
     "context"
     "net"
     "testing"
-	"log"
 	"bytes"
+    "time"
     "google.golang.org/grpc"
     "google.golang.org/grpc/test/bufconn"
     pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -33,7 +33,7 @@ func startServer(port string) (*grpc.Server, error) {
     if err != nil {
         return nil, err
     }
-    server := grpc.NewServer()
+    s := grpc.NewServer()
     pb.RegisterLocalObjStoreServer(s, &server{})
     go func() {
         server.Serve(lis)
@@ -120,8 +120,15 @@ func TestStoreAndGet_External(t *testing.T) {
         t.Fatalf("Failed to dial server 1: %v", err)
     }
     conn1, err1 := grpc.DialContext(ctx, "localhost:50051", grpc.WithInsecure())
-    conn2, err2 := grpc.DialContext(ctx, "localhost:50052", grpc.WithInsecure())
+    if err1 != nil {
+        t.Fatalf("Failed to dial LOC1")
 
+    }
+
+    conn2, err2 := grpc.DialContext(ctx, "localhost:50052", grpc.WithInsecure())
+    if err2 != nil {
+        t.Fatalf("failed to dial LOC2")
+    }
     defer conn1.Close()
     defer conn2.Close()
     client1 := pb.NewLocalObjStoreClient(conn1)
