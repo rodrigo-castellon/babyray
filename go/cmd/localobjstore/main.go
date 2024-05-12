@@ -54,7 +54,7 @@ type server struct {
    localNodeID uint64
 }
 
-func (s* server) InitLOS(ctx context.Context) {
+func (s* server) Init(ctx context.Context) {
     s.localObjectStore = make(map[uint64][]byte)
     s.localObjectChannels = make(map[uint64]chan []byte)
     s.localNodeID = 1
