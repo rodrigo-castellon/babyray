@@ -72,8 +72,9 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
 
 func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundResponse) (*pb.StatusResponse, error) {
     var otherLocalAddress string
+    var nodeID uint64
     if resp.Port != 0 {
-        nodeID := resp.Location; 
+        nodeID = resp.Location; 
         otherLocalAddress = fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, nodeID, cfg.Ports.LocalObjectStore)     
     } else {
         otherLocalAddress = fmt.Sprintf("%s:%d", resp.Address, resp.Port)
@@ -81,7 +82,7 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
    
     conn, _ := grpc.Dial(otherLocalAddress, grpc.WithInsecure())
     c := pb.NewLocalObjStoreClient(conn)
-    x, _ := c.Copy(ctx, &pb.CopyRequest{Uid : resp.Uid, Requester : nodeID})
+    x, _ := c.Copy(ctx, &pb.CopyRequest{Uid : resp.Uid, Requester : localNodeID})
     
     gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: resp.Uid, NodeId: localNodeID})
     localObjectChannels[resp.Uid] <- x.ObjectBytes
