@@ -93,8 +93,8 @@ func TestStoreAndGet_Local(t *testing.T) {
 
 	// Test Get
 	resp2, err2 := client.Get(ctx, &pb.GetRequest{
-		Uid: 1
-        Testing: true
+		Uid: 1, 
+        Testing: true,
 	})
 	if err2 != nil || !bytes.Equals(data, resp.ObjectBytes) {
 		t.Errorf("Get failed: %v, response: %v", err2, resp2)
