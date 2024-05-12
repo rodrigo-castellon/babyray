@@ -67,7 +67,7 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
     return &pb.GetResponse{Uid : req.Uid, ObjectBytes : localObjectStore[req.Uid]}, nil
 }
 
-func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundResponse) (*pb.StatusResponse, error) {
+func (s* server) LocationFound(ctx context.Context, resp *pb.RequestLocationCallback) (*pb.StatusResponse, error) {
     nodeID := resp.Location; 
     otherLocalAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, nodeID, cfg.Ports.LocalObjectStore)
     conn, _ := grpc.Dial(otherLocalAddress, grpc.WithInsecure())

@@ -121,7 +121,11 @@ message RequestLocationRequest {
   uint64 uid = 1;
 }
 
-message RequestLocationResponse {
+message RequestLocationResponse { 
+  bool immediatelyFound = 1;
+}
+
+message RequestLocationCallback { 
   uint64 nodeId = 1;
 }
 
@@ -143,6 +147,7 @@ message RegisterResponse {
 
 message FetchRequest {
   uint64 name = 1;
+  uint64 callbackNodeId = 2;
 }
 
 message FetchResponse {

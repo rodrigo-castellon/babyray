@@ -15,7 +15,7 @@ func TestExtractAddressFromCtx(t *testing.T) {
     ctx := metadata.NewIncomingContext(context.Background(), md)
 
     // Test extraction
-    addr, err := extractAddressFromCtx(ctx)
+    addr, err := ExtractAddressFromCtx(ctx)
     if err != nil {
         t.Fatalf("Failed to extract address: %v", err)
     }
@@ -25,7 +25,7 @@ func TestExtractAddressFromCtx(t *testing.T) {
 
     // Test with no metadata
     ctxNoMeta := context.Background()
-    _, err = extractAddressFromCtx(ctxNoMeta)
+    _, err = ExtractAddressFromCtx(ctxNoMeta)
     if err == nil {
         t.Errorf("Expected an error for missing metadata, but got none")
     }
