@@ -131,7 +131,6 @@ func TestStoreAndGet_External(t *testing.T) {
         t.Fatalf("Failed to dial LOC1")
 
     }
-
     conn2, err2 := grpc.DialContext(ctx, "localhost:50052", grpc.WithInsecure())
     if err2 != nil {
         t.Fatalf("failed to dial LOC2")
@@ -180,10 +179,8 @@ func TestStoreAndGet_External(t *testing.T) {
 
     locStatusResp, err := client1.LocationFound(ctx, &pb.LocationFoundResponse{Uid: 1, Address: "localhost", Port: 50052})
     if err != nil || locStatusResp == nil || !locStatusResp.Success  {
-        t.Errorf("Failed to tell LOS 1 about location")
+        t.Errorf("Failed to tell LOS 1 about location: %v", err)
     }
-
-
 	
 }
 
