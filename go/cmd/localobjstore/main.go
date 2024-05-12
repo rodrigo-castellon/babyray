@@ -98,8 +98,11 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
 
     //     gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: resp.Uid, NodeId: localNodeID})
     // }
-    
-    localObjectChannels[resp.Uid] <- x.ObjectBytes
+    channel, ok := localObjectChannels[resp.Uid]
+    if !ok {
+        return &pb.StatusResponse{Success: false}, errors.New("channel DNE")
+    }
+    channel <- x.ObjectBytes
     log.Println("wrote to channel")
     return &pb.StatusResponse{Success: true}, nil
 
