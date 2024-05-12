@@ -13,10 +13,10 @@ import (
     "github.com/rodrigo-castellon/babyray/config"
 
 )
-var localObjectStore map[uint64][]byte
-var localObjectChannels map[uint64]chan []byte
-var gcsObjClient pb.GCSObjClient
-var localNodeID uint64
+// var localObjectStore map[uint64][]byte
+// var localObjectChannels map[uint64]chan []byte
+// var gcsObjClient pb.GCSObjClient
+// var localNodeID uint64
 var cfg *config.Config
 func main() {
     cfg = config.GetConfig() // Load configuration
@@ -36,40 +36,53 @@ func main() {
     }
    
 
-    localObjectStore = make(map[uint64][]byte)
-    localObjectChannels = make(map[uint64]chan []byte)
+    // localObjectStore = make(map[uint64][]byte)
+    // localObjectChannels = make(map[uint64]chan []byte)
 
-    gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
-    conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
-    gcsObjClient = pb.NewGCSObjClient(conn)
-    localNodeID = 0
+    // gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
+    // conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
+    // gcsObjClient = pb.NewGCSObjClient(conn)
+    // localNodeID = 0
 }
 
 // server is used to implement your gRPC service.
 type server struct {
    pb.UnimplementedLocalObjStoreServer
+   localObjectStore map[uint64][]byte
+   localObjectChannels map[uint64]chan []byte
+   gcsObjClient pb.GCSObjClient
+   localNodeID uint64
 }
 
-func (s *server) Store(ctx context.Context, req *pb.StoreRequest) (*pb.StatusResponse, error) {
-    localObjectStore[req.Uid] = req.ObjectBytes
+func (s* server) InitLOS(ctx context.Context) {
+    s.localObjectStore = make(map[uint64][]byte)
+    s.localObjectChannels = make(map[uint64]chan []byte)
+    s.localNodeID = -1
+    gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
+    conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
+    s.gcsObjClient = pb.NewGCSObjClient(conn)
     
-    gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: req.Uid, NodeId: localNodeID})
+}
+func (s *server) Store(ctx context.Context, req *pb.StoreRequest) (*pb.StatusResponse, error) {
+    s.localObjectStore[req.Uid] = req.ObjectBytes
+    
+    s.gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: req.Uid, NodeId: localNodeID})
     return &pb.StatusResponse{Success: true}, nil
 }
 
 func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, error) {
-    if val, ok := localObjectStore[req.Uid]; ok {
+    if val, ok := s.localObjectStore[req.Uid]; ok {
         return &pb.GetResponse{Uid : req.Uid, ObjectBytes : val, Local: true}, nil
     }
     log.Println(fmt.Sprintf("Creating channel for: %d", req.Uid))
-    localObjectChannels[req.Uid] = make(chan []byte)
+    s.localObjectChannels[req.Uid] = make(chan []byte)
     if req.Testing == false {
-        gcsObjClient.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: req.Uid, Requester: localNodeID})
+        s.gcsObjClient.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: req.Uid, Requester: localNodeID})
     }
     
-    val := <- localObjectChannels[req.Uid]
-    localObjectStore[req.Uid] = val
-    return &pb.GetResponse{Uid : req.Uid, ObjectBytes : localObjectStore[req.Uid], Local: false}, nil
+    val := <- s.localObjectChannels[req.Uid]
+    s.localObjectStore[req.Uid] = val
+    return &pb.GetResponse{Uid : req.Uid, ObjectBytes : s.localObjectStore[req.Uid], Local: false}, nil
 }
 
 func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundResponse) (*pb.StatusResponse, error) {
@@ -90,7 +103,7 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
 
     c := pb.NewLocalObjStoreClient(conn)
     log.Println("starting copy")
-    x, err := c.Copy(ctx, &pb.CopyRequest{Uid : resp.Uid, Requester : localNodeID})
+    x, err := c.Copy(ctx, &pb.CopyRequest{Uid : resp.Uid, Requester : s.localNodeID})
     log.Println("finished copy")
     if x == nil || err != nil {
         return &pb.StatusResponse{Success: false}, errors.New(fmt.Sprintf("failed to copy from other LOS @:%s ", otherLocalAddress))
@@ -100,7 +113,7 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
     //     gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: resp.Uid, NodeId: localNodeID})
     // }
     log.Println(fmt.Sprintf("checking for UID: %d", resp.Uid))
-    channel, ok := localObjectChannels[resp.Uid]
+    channel, ok := s.localObjectChannels[resp.Uid]
     if !ok {
         return &pb.StatusResponse{Success: false}, errors.New("channel DNE")
     }
@@ -111,7 +124,7 @@ func (s* server) LocationFound(ctx context.Context, resp *pb.LocationFoundRespon
 }
 
 func (s* server) Copy(ctx context.Context, req *pb.CopyRequest) (*pb.CopyResponse, error) {
-    data, ok:= localObjectStore[req.Uid];
+    data, ok:= s.localObjectStore[req.Uid];
     if !ok {
         return &pb.CopyResponse{Uid: req.Uid, ObjectBytes : nil}, errors.New("object was not in LOS")
     }
