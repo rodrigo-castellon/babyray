@@ -154,11 +154,11 @@ func TestStoreAndGet_External(t *testing.T) {
     //     err: nil
     // }   
     
-    sresp, err := client2.Store(ctx, &pb.StoreRequest{Uid: 1, ObjectBytes: data})
+    sresp, err := client2.Store(ctx, &pb.StoreRequest{Uid: 3, ObjectBytes: data})
     if !sresp.Success || err != nil {
         t.Errorf("Failed to store value on LOS 2")
     } 
-    response2, err := client2.Get(ctx, &pb.GetRequest{Uid: 1, Testing: true})
+    response2, err := client2.Get(ctx, &pb.GetRequest{Uid: 3, Testing: true})
 
     if err != nil || !bytes.Equal(response2.ObjectBytes, data) {
         t.Errorf("Failed to get value on LOS 2")
@@ -168,7 +168,7 @@ func TestStoreAndGet_External(t *testing.T) {
     go func(){ 
         timeout, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
         defer cancel()
-        response1, err := client1.Get(timeout, &pb.GetRequest{Uid: 1, Testing: true})
+        response1, err := client1.Get(timeout, &pb.GetRequest{Uid: 3, Testing: true})
         if response1.Local {
             t.Errorf("found on local")
         }
@@ -185,7 +185,7 @@ func TestStoreAndGet_External(t *testing.T) {
     time.Sleep(1 * time.Second)  
     timeout, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
     defer cancel() 
-    locStatusResp, err := client1.LocationFound(timeout, &pb.LocationFoundResponse{Uid: 1, Address: "localhost", Port: 50052})
+    locStatusResp, err := client1.LocationFound(timeout, &pb.LocationFoundResponse{Uid: 3, Address: "localhost", Port: 50052})
     if err != nil || locStatusResp == nil || !locStatusResp.Success  {
         if timeout.Err() == context.DeadlineExceeded {
             t.Errorf("Timeout on client1 location call")
