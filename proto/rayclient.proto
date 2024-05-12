@@ -56,7 +56,7 @@ message ScheduleResponse {
 service LocalObjStore {
   rpc Store(StoreRequest) returns (StatusResponse);
   rpc Get(GetRequest) returns (GetResponse);
-  rpc LocationFound(LocationFoundResponse) returns (StatusResponse); 
+  rpc LocationFound(LocationFoundCallback) returns (StatusResponse); 
   rpc Copy(CopyRequest) returns (CopyResponse); 
 }
 
@@ -74,9 +74,17 @@ message GetResponse {
   bytes objectBytes = 2;
 }
 
-message LocationFoundResponse {
+/* DEPRECATED; USE LocationFoundCallback */
+/*
+message LocationFoundResponse { 
   uint32 uid = 1; 
   uint32 location = 2; 
+}
+*/
+
+message LocationFoundCallback { 
+  uint64 uid = 1;
+  uint64 location = 2;
 }
 
 message CopyRequest {
@@ -123,10 +131,6 @@ message RequestLocationRequest {
 
 message RequestLocationResponse { 
   bool immediatelyFound = 1;
-}
-
-message RequestLocationCallback { 
-  uint64 nodeId = 1;
 }
 
 /* END GCS OBJECT TABLE */
