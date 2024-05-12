@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	GlobalScheduler_Schedule_FullMethodName = "/ray.GlobalScheduler/schedule"
+	GlobalScheduler_Schedule_FullMethodName = "/ray.GlobalScheduler/Schedule"
 )
 
 // GlobalSchedulerClient is the client API for GlobalScheduler service.
@@ -100,7 +100,7 @@ var GlobalScheduler_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*GlobalSchedulerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "schedule",
+			MethodName: "Schedule",
 			Handler:    _GlobalScheduler_Schedule_Handler,
 		},
 	},
