@@ -1,6 +1,6 @@
-.PHONY: all go py clean build servers
+.PHONY: all go py clean build servers docker
 
-all: go py build
+all: go py build docker
 
 go: proto
 	@echo "Generating Go gRPC code..."
@@ -12,7 +12,6 @@ py: proto
 	@echo "Modifying import statements for relative imports..."
 	# below line is now compatible with both MacOS (BSD) and GNU
 	sed -i'' -e 's/import rayclient_pb2 as rayclient__pb2/from . import rayclient_pb2 as rayclient__pb2/' python/babyray/rayclient_pb2_grpc.py
-
 
 build: servers
 
@@ -41,6 +40,10 @@ localscheduler:
 worker:
 	@echo "Building Worker Server..."
 	cd go && go build -o bin/worker cmd/worker/main.go
+
+docker:
+	docker build --build-arg CONFIG=base -t ray-node:base .
+	docker build --build-arg CONFIG=driver -t ray-node:driver .
 
 clean:
 	@echo "Cleaning up..."
