@@ -74,17 +74,9 @@ message GetResponse {
   bytes objectBytes = 2;
 }
 
-/* DEPRECATED; USE LocationFoundCallback */
-/*
-message LocationFoundResponse { 
-  uint32 uid = 1; 
-  uint32 location = 2; 
-}
-*/
-
 message LocationFoundCallback { 
-  uint64 uid = 1;
-  uint64 location = 2;
+  uint64 uid = 1; // this is the uid of the object that was originally asked for
+  uint64 location = 2; // this is the node number of the node who has this object
 }
 
 message CopyRequest {

@@ -101,7 +101,7 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 	}
 	//defer conn.Close() // TODO: remove
 
-	gcsObjClient := pb.NewLocalObjStoreClient(conn)
+	localObjStoreClient := pb.NewLocalObjStoreClient(conn)
 
 	nodeId, exists := s.getNodeId(req.Uid)
 	if !exists {
@@ -116,7 +116,7 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		gcsObjClient.LocationFound(ctx, &pb.RequestLocationCallback{NodeId: *nodeId})
+		localObjStoreClient.LocationFound(ctx, &pb.LocationFoundCallback{NodeId: *nodeId})
 	}()
 	return &pb.RequestLocationResponse{
 		ImmediatelyFound: true,

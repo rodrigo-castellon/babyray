@@ -438,8 +438,8 @@ type LocationFoundCallback struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Uid      uint64 `protobuf:"varint,1,opt,name=uid,proto3" json:"uid,omitempty"`
-	Location uint64 `protobuf:"varint,2,opt,name=location,proto3" json:"location,omitempty"`
+	Uid      uint64 `protobuf:"varint,1,opt,name=uid,proto3" json:"uid,omitempty"`           // this is the uid of the object that was originally asked for
+	Location uint64 `protobuf:"varint,2,opt,name=location,proto3" json:"location,omitempty"` // this is the node number of the node who has this object
 }
 
 func (x *LocationFoundCallback) Reset() {
