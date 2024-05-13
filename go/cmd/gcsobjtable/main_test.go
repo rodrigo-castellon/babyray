@@ -253,6 +253,12 @@ func (s *MockGCSObjServer) sendCallback(clientAddress string, uid uint64, nodeId
 	s.callbackReceived <- struct{}{}
 }
 
+var mockLis *bufconn.Listener
+
+func mockBufDialer(context.Context, string) (net.Conn, error) {
+	return mockLis.Dial()
+}
+
 // A test which simulates the following:
 // - Two LocalObjStore nodes will call RequestLocation for a UID that initially doesn't have any node IDs associated with it. They will not be happy until they are notified of a change.
 // - One LocalObjStore node will perform the NotifyOwns action after a short delay, adding a node ID to the UID, which should then notify the waiting nodes.
@@ -266,19 +272,19 @@ func TestRequestLocationNotifyOwnsHitsCallback(t *testing.T) {
 	NUM_CALLBACKS_EXPECTED := 2
 
 	// Initialize the server and listener
-	lis := bufconn.Listen(bufSize)
+	mockLis = bufconn.Listen(bufSize)
 	s := grpc.NewServer()
 	mock := NewMockGCSObjServer(NUM_CALLBACKS_EXPECTED) // USE OF MOCK HERE
 	pb.RegisterGCSObjServer(s, mock)
 	go func() {
-		if err := s.Serve(lis); err != nil {
+		if err := s.Serve(mockLis); err != nil {
 			log.Fatalf("Server exited with error: %v", err)
 		}
 	}()
 
 	// Setup gRPC client
 	ctx := context.Background()
-	conn, err := grpc.DialContext(ctx, "junk", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, "junk", grpc.WithContextDialer(mockBufDialer), grpc.WithInsecure())
 	if err != nil {
 		t.Fatalf("Failed to dial bufnet: %v", err)
 	}
