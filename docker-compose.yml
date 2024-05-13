@@ -28,11 +28,10 @@ services:
         mynetwork:
             aliases:
                 - node2
-    #entrypoint: /bin/bash
-    #command: >
-    #  -c "apt update && apt install -y iputils-ping && ping node0"
     ports:
       - "50002:50002"
+    environment:
+      NODE_ID: 2
 
   worker2:
     image: ray-node:driver
@@ -43,6 +42,8 @@ services:
                 - node3
     ports:
       - "50003:50003"
+    environment:
+      NODE_ID: 3
 
   worker3:
     image: ray-node:driver
@@ -53,6 +54,8 @@ services:
                 - node4
     ports:
       - "50004:50004"
+    environment:
+      NODE_ID: 4
 
 networks:
     mynetwork:
