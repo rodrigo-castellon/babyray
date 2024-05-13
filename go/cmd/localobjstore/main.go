@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"os"
 
 	"github.com/rodrigo-castellon/babyray/config"
 	pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -51,15 +52,23 @@ func startServer(port string) (*grpc.Server, error) {
 
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
-		return nil, err
+		log.Fatalf("failed to listen: %v", err)
 	}
+
 	s := grpc.NewServer()
     gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
 	conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
-	pb.RegisterLocalObjStoreServer(s, &server{localObjectStore: make(map[uint64][]byte), localObjectChannels: make(map[uint64]chan []byte), gcsObjClient: pb.NewGCSObjClient(conn), localNodeID: os.Env("NODE_ID")})
-	go func() {
-		s.Serve(lis)
-	}()
+	nodeId, _ := strconv.Atoi(os.Getenv("NODE_ID"))
+	pb.RegisterLocalObjStoreServer(s, &server{localObjectStore: make(map[uint64][]byte), localObjectChannels: make(map[uint64]chan []byte), gcsObjClient: pb.NewGCSObjClient(conn), localNodeID: uint64(nodeId)})
+	// go func() {
+	// 	s.Serve(lis)
+	// }()
+
+	log.Printf("server listening at %v", lis.Addr())
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
+
 
 	return s, nil
 }

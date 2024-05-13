@@ -7,6 +7,8 @@ import (
 	"math/rand"
 	"net"
 	"strconv"
+    "os"
+    // "math"
 
 	"github.com/rodrigo-castellon/babyray/config"
 	pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -49,15 +51,21 @@ type server struct {
 func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.ScheduleResponse, error) {
 	var worker_id int
 	// worker_id = check_resources()
-	worker_id = -1
+	worker_id, _ = strconv.Atoi(os.Getenv("NODE_ID"))
 	uid := uint64(rand.Intn(100))
 	if worker_id != -1 {
-		workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.Ourself, cfg.Ports.LocalWorkerStart+worker_id)
-		conn, _ := grpc.Dial(workerAddress, grpc.WithInsecure())
+		workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
+        log.Printf("the worker address is %v", workerAddress)
+		conn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
+        if err != nil {
+            log.Fatalf("failed to connect to %s: %v", workerAddress, err)
+        }
+        defer conn.Close()
+
 		workerClient := pb.NewWorkerClient(conn)
-		_, err := workerClient.Run(ctx, &pb.RunRequest{Uid: uid, Args: req.Args, Kwargs: req.Kwargs})
+		_, err = workerClient.Run(ctx, &pb.RunRequest{Uid: uid, Args: req.Args, Kwargs: req.Kwargs})
 		if err != nil {
-			log.Printf("cannot contact worker %d", worker_id)
+			log.Printf("cannot contact worker %d: %v", worker_id, err)
 		}
 	} else {
 
