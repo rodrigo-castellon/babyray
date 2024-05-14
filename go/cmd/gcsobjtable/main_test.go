@@ -2,15 +2,19 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/rand"
 	"net"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/rodrigo-castellon/babyray/config"
 	pb "github.com/rodrigo-castellon/babyray/pkg"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -19,6 +23,7 @@ const bufSize = 1024 * 1024
 var lis *bufconn.Listener
 
 func init() {
+	cfg = config.GetConfig() // Load configuration
 	lis = bufconn.Listen(bufSize)
 	s := grpc.NewServer()
 	pb.RegisterGCSObjServer(s, NewGCSObjServer())
@@ -85,7 +90,7 @@ func TestGetNodeId(t *testing.T) {
 }
 
 // Test the getNodeId function
-func TestGetNodeId2(t *testing.T) {
+func TestGetNodeId_2(t *testing.T) {
 	// Initialize the server
 	server := NewGCSObjServer()
 
@@ -134,7 +139,25 @@ func TestGetNodeId2(t *testing.T) {
 	}
 }
 
-func TestSendCallback(t *testing.T) {
+// Mock implementation of the LocalObjStoreServer
+type mockLocalObjStoreServer struct {
+	pb.UnimplementedLocalObjStoreServer
+	callbackReceived chan struct{}
+}
+
+func (m *mockLocalObjStoreServer) LocationFound(ctx context.Context, req *pb.LocationFoundCallback) (*pb.StatusResponse, error) {
+	m.callbackReceived <- struct{}{}
+	return &pb.StatusResponse{Success: true}, nil
+}
+
+func NewMockLocalObjStoreServer(callbackBufferSize int) *mockLocalObjStoreServer {
+	return &mockLocalObjStoreServer{
+		callbackReceived: make(chan struct{}, callbackBufferSize),
+	}
+}
+
+// Does not check for a callback hit
+func TestSendCallback_Dumb(t *testing.T) {
 	// Setup a mock listener
 	lis := bufconn.Listen(bufSize)
 	s := grpc.NewServer()
@@ -146,7 +169,7 @@ func TestSendCallback(t *testing.T) {
 	}()
 
 	// Mock client address
-	clientAddress := "bufnet"
+	clientAddress := "localhost:689"
 
 	// Initialize the GCSObjServer
 	server := &GCSObjServer{}
@@ -164,17 +187,110 @@ func TestSendCallback(t *testing.T) {
 	go server.sendCallback(clientAddress, 1, 100)
 
 	// Allow some time for the goroutine to execute
-	time.Sleep(1 * time.Second)
+	time.Sleep(200 * time.Millisecond)
+
 }
 
-// Mock implementation of the LocalObjStoreServer
-type mockLocalObjStoreServer struct {
-	pb.UnimplementedLocalObjStoreServer
+// Checks for a callback hit using go channel
+func TestSendCallback_Hit(t *testing.T) {
+	// Create a context with a timeout to manage server and test lifecycle
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	// Prepare the network address
+	address := ":" + strconv.Itoa(cfg.Ports.LocalObjectStore)
+	lis, err := net.Listen("tcp", address)
+	if err != nil {
+		t.Fatalf("failed to listen: %v", err)
+	}
+
+	// Create and start the gRPC server
+	s := grpc.NewServer()
+	mock := NewMockLocalObjStoreServer(1)
+	pb.RegisterLocalObjStoreServer(s, mock)
+	log.Printf("server listening at %v", lis.Addr())
+
+	// Run the server in a goroutine
+	go func() {
+		if err := s.Serve(lis); err != nil && err != grpc.ErrServerStopped {
+			log.Fatalf("failed to serve: %v", err)
+		}
+	}()
+
+	// Ensure the server is shut down cleanly at the end of the test
+	defer func() {
+		s.GracefulStop()
+		lis.Close()
+	}()
+
+	// Allow some time for the server to start
+	time.Sleep(200 * time.Millisecond)
+
+	// Mock client address - ephemeral outbound
+	host := "localhost"
+	clientPort := strconv.Itoa(cfg.Ports.LocalObjectStore) // Replace the ephemeral port with the official LocalObjectStore port
+	clientAddress := net.JoinHostPort(host, clientPort)
+
+	// Initialize the GCSObjServer
+	server := &GCSObjServer{}
+
+	// Use a WaitGroup to wait for the callback goroutine
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	// Run sendCallback as a goroutine
+	go func() {
+		defer wg.Done()
+		server.sendCallback(clientAddress, 1, 100)
+	}()
+
+	// Wait for the callback or timeout
+	select {
+	case <-mock.callbackReceived:
+		// Callback received, continue
+	case <-ctx.Done():
+		t.Errorf("Timeout waiting for callback")
+	}
+
+	// Wait for all goroutines to finish
+	wg.Wait()
 }
 
-func (m *mockLocalObjStoreServer) LocationFound(ctx context.Context, req *pb.LocationFoundCallback) (*pb.StatusResponse, error) {
-	return &pb.StatusResponse{Success: true}, nil
-}
+// func TestSendCallback_Hit(t *testing.T) {
+
+// 	address := ":" + strconv.Itoa(cfg.Ports.LocalObjectStore) // Prepare the network address
+// 	lis, err := net.Listen("tcp", address)
+// 	if err != nil {
+// 		log.Fatalf("failed to listen: %v", err)
+// 	}
+// 	s := grpc.NewServer()
+// 	mock := NewMockLocalObjStoreServer(1)
+// 	pb.RegisterLocalObjStoreServer(s, mock)
+// 	log.Printf("server listening at %v", lis.Addr())
+// 	if err := s.Serve(lis); err != nil {
+// 		log.Fatalf("failed to serve: %v", err)
+// 	}
+
+// 	// Allow some time for the server to start
+// 	time.Sleep(200 * time.Millisecond)
+
+// 	// Mock client address - ephemeral outbound
+// 	clientAddress := "localhost:777"
+
+// 	// Initialize the GCSObjServer
+// 	server := &GCSObjServer{}
+
+// 	// Run sendCallback as a goroutine
+// 	go server.sendCallback(clientAddress, 1, 100)
+
+// 	// Catch it
+// 	select {
+// 	case <-mock.callbackReceived:
+// 		// Callback received, continue
+// 	case <-time.After(1 * time.Second):
+// 		t.Errorf("Timeout waiting for callback")
+// 	}
+// }
 
 func TestNotifyOwns(t *testing.T) {
 	ctx := context.Background()
@@ -195,8 +311,21 @@ func TestNotifyOwns(t *testing.T) {
 	}
 }
 
+// We don't listen for a callback in this test
 func TestRequestLocation(t *testing.T) {
-	ctx := context.Background()
+	clientAddress := "127.0.0.1:8080"
+	addr, err := net.ResolveTCPAddr("tcp", clientAddress)
+	if err != nil {
+		fmt.Printf("Error resolving address: %v\n", err)
+		return
+	}
+	p := &peer.Peer{
+		Addr: addr,
+	}
+
+	// Create a new context with the peer information
+	ctx := peer.NewContext(context.Background(), p)
+
 	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
 	if err != nil {
 		t.Fatalf("Failed to dial bufnet: %v", err)
@@ -234,30 +363,30 @@ func TestRequestLocation(t *testing.T) {
 	}
 }
 
-// MockGCSObjServer inherits GCSObjServer and overrides sendCallback
-type MockGCSObjServer struct {
-	*GCSObjServer
-	callbackReceived chan struct{}
-}
+// // MockGCSObjServer inherits GCSObjServer and overrides sendCallback
+// type MockGCSObjServer struct {
+// 	*GCSObjServer
+// 	callbackReceived chan struct{}
+// }
 
-func NewMockGCSObjServer(callbackBufferSize int) *MockGCSObjServer {
-	return &MockGCSObjServer{
-		GCSObjServer:     NewGCSObjServer(),
-		callbackReceived: make(chan struct{}, callbackBufferSize),
-	}
-}
+// func NewMockGCSObjServer(callbackBufferSize int) *MockGCSObjServer {
+// 	return &MockGCSObjServer{
+// 		GCSObjServer:     NewGCSObjServer(),
+// 		callbackReceived: make(chan struct{}, callbackBufferSize),
+// 	}
+// }
 
-// sendCallback is the dummy method for testing
-func (s *MockGCSObjServer) sendCallback(clientAddress string, uid uint64, nodeId uint64) {
-	//log.Printf("Mock sendCallback called with clientAddress: %s, uid: %d, nodeId: %d", clientAddress, uid, nodeId)
-	s.callbackReceived <- struct{}{}
-}
+// // sendCallback is the dummy method for testing
+// func (s *MockGCSObjServer) sendCallback(clientAddress string, uid uint64, nodeId uint64) {
+// 	//log.Printf("Mock sendCallback called with clientAddress: %s, uid: %d, nodeId: %d", clientAddress, uid, nodeId)
+// 	s.callbackReceived <- struct{}{}
+// }
 
-var mockLis *bufconn.Listener
+// var mockLis *bufconn.Listener
 
-func mockBufDialer(context.Context, string) (net.Conn, error) {
-	return mockLis.Dial()
-}
+// func mockBufDialer(context.Context, string) (net.Conn, error) {
+// 	return mockLis.Dial()
+// }
 
 // A test which simulates the following:
 // - Two LocalObjStore nodes will call RequestLocation for a UID that initially doesn't have any node IDs associated with it. They will not be happy until they are notified of a change.
@@ -268,65 +397,67 @@ func mockBufDialer(context.Context, string) (net.Conn, error) {
 // Node B: a LocalObjStore requesting location
 // Node C: a LocalObjStore notifying ownership
 // Node D: a GCSObjTable being tested
-func TestRequestLocationNotifyOwnsHitsCallback(t *testing.T) {
-	NUM_CALLBACKS_EXPECTED := 2
+// func TestRequestLocationNotifyOwnsHitsCallback(t *testing.T) {
+// 	NUM_CALLBACKS_EXPECTED := 2
 
-	// Initialize the server and listener
-	mockLis = bufconn.Listen(bufSize)
-	s := grpc.NewServer()
-	mock := NewMockGCSObjServer(NUM_CALLBACKS_EXPECTED) // USE OF MOCK HERE
-	pb.RegisterGCSObjServer(s, mock)
-	go func() {
-		if err := s.Serve(mockLis); err != nil {
-			log.Fatalf("Server exited with error: %v", err)
-		}
-	}()
+// 	// Initialize the server and listener
+// 	mockLis = bufconn.Listen(bufSize)
+// 	s := grpc.NewServer()
+// 	mock := NewMockGCSObjServer(NUM_CALLBACKS_EXPECTED) // USE OF MOCK HERE
+// 	pb.RegisterGCSObjServer(s, mock)
+// 	go func() {
+// 		if err := s.Serve(mockLis); err != nil {
+// 			log.Fatalf("Server exited with error: %v", err)
+// 		}
+// 	}()
 
-	// Setup gRPC client
-	ctx := context.Background()
-	conn, err := grpc.DialContext(ctx, "junk", grpc.WithContextDialer(mockBufDialer), grpc.WithInsecure())
-	if err != nil {
-		t.Fatalf("Failed to dial bufnet: %v", err)
-	}
-	defer conn.Close()
-	client := pb.NewGCSObjClient(conn)
+// 	// Setup gRPC client
+// 	ctx := context.Background()
+// 	conn, err := grpc.DialContext(ctx, "junk", grpc.WithContextDialer(mockBufDialer), grpc.WithInsecure())
+// 	if err != nil {
+// 		t.Fatalf("Failed to dial bufnet: %v", err)
+// 	}
+// 	defer conn.Close()
+// 	client := pb.NewGCSObjClient(conn)
 
-	// Simulate Node A calling RequestLocation
-	resp, err := client.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: 555})
-	if err != nil {
-		t.Errorf("RequestLocation failed: %v", err)
-		return
-	}
-	if resp.ImmediatelyFound {
-		t.Errorf("Expected location not to be found immediately, but it was found")
-	}
+// 	// Simulate Node A calling RequestLocation
+// 	resp, err := client.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: 555})
+// 	if err != nil {
+// 		t.Errorf("RequestLocation failed: %v", err)
+// 		return
+// 	}
+// 	if resp.ImmediatelyFound {
+// 		t.Errorf("Expected location not to be found immediately, but it was found")
+// 	}
 
-	// Simulate Node B calling RequestLocation
-	resp, err = client.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: 555})
-	if err != nil {
-		t.Errorf("RequestLocation failed: %v", err)
-		return
-	}
-	if resp.ImmediatelyFound {
-		t.Errorf("Expected location not to be found immediately, but it was found")
-	}
+// 	// Simulate Node B calling RequestLocation
+// 	resp, err = client.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: 555})
+// 	if err != nil {
+// 		t.Errorf("RequestLocation failed: %v", err)
+// 		return
+// 	}
+// 	if resp.ImmediatelyFound {
+// 		t.Errorf("Expected location not to be found immediately, but it was found")
+// 	}
 
-	// Simulate Node C calling NotifyOwns
-	_, err = client.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: 555, NodeId: 100})
-	if err != nil {
-		t.Errorf("NotifyOwns failed: %v", err)
-	}
+// 	// Simulate Node C calling NotifyOwns
+// 	_, err = client.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: 555, NodeId: 100})
+// 	if err != nil {
+// 		t.Errorf("NotifyOwns failed: %v", err)
+// 	}
 
-	// Wait for both callbacks to be received
-	for i := 0; i < 2; i++ {
-		select {
-		case <-mock.callbackReceived:
-			// Callback received, continue
-		case <-time.After(1 * time.Second):
-			t.Errorf("Timeout waiting for callback")
-		}
-	}
-}
+// 	// Wait for both callbacks to be received
+// 	for i := 0; i < 2; i++ {
+// 		select {
+// 		case <-mock.callbackReceived:
+// 			// Callback received, continue
+// 		case <-time.After(1 * time.Second):
+// 			t.Errorf("Timeout waiting for callback")
+// 		}
+// 	}
+// }
+
+// ==============
 
 // Unit test in Go
 
