@@ -26,7 +26,7 @@ func createGRPCClient[T any](address string, constructor ClientConstructor[T]) T
     if err != nil {
         log.Fatalf("failed to connect to %s: %v", address, err)
     }
-    defer conn.Close()
+    // defer conn.Close() // f u chatgpt
     return constructor(conn)
 }
 
