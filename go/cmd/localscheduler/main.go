@@ -63,7 +63,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
         defer conn.Close()
 
 		workerClient := pb.NewWorkerClient(conn)
-		_, err = workerClient.Run(ctx, &pb.RunRequest{Uid: uid, Args: req.Args, Kwargs: req.Kwargs})
+		_, err = workerClient.Run(ctx, &pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
 		if err != nil {
 			log.Fatalf("cannot contact worker %d: %v", worker_id, err)
 		}
