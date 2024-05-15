@@ -258,7 +258,9 @@ pwd
 Then, on MacOS:
 ```
 nano ~/.zshrc
-add the following: export PROJECT_ROOT=/path/to/your/project
+```
+add the following: `export PROJECT_ROOT=/path/to/your/project`
+```
 source ~/.zshrc
 ```
 This ensures that your Go code has access to the `app_config.yaml` file.
