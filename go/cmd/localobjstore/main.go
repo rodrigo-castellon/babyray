@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"os"
 
 	"github.com/rodrigo-castellon/babyray/config"
 	pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -22,20 +23,21 @@ var cfg *config.Config
 
 func main() {
 	cfg = config.GetConfig()                                  // Load configuration
-	address := ":" + strconv.Itoa(cfg.Ports.LocalObjectStore) // Prepare the network address
-	if address == "" {
-		lis, err := net.Listen("tcp", address)
-		if err != nil {
-			log.Fatalf("failed to listen: %v", err)
-		}
-		_ = lis
-		s := grpc.NewServer()
-		pb.RegisterLocalObjStoreServer(s, &server{})
-		log.Printf("server listening at %v", lis.Addr())
-		if err := s.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
-		}
-	}
+    startServer(":" + strconv.Itoa(cfg.Ports.LocalObjectStore))
+	// address := ":" + strconv.Itoa(cfg.Ports.LocalObjectStore) // Prepare the network address
+	// if address == "" {
+	// 	lis, err := net.Listen("tcp", address)
+	// 	if err != nil {
+	// 		log.Fatalf("failed to listen: %v", err)
+	// 	}
+	// 	_ = lis
+	// 	s := grpc.NewServer()
+	// 	pb.RegisterLocalObjStoreServer(s, &server{})
+	// 	log.Printf("server listening at %v", lis.Addr())
+	// 	if err := s.Serve(lis); err != nil {
+	// 		log.Fatalf("failed to serve: %v", err)
+	// 	}
+	// }
 
 	// localObjectStore = make(map[uint64][]byte)
 	// localObjectChannels = make(map[uint64]chan []byte)
@@ -44,6 +46,31 @@ func main() {
 	// conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
 	// gcsObjClient = pb.NewGCSObjClient(conn)
 	// localNodeID = 0
+}
+
+func startServer(port string) (*grpc.Server, error) {
+
+	lis, err := net.Listen("tcp", port)
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	s := grpc.NewServer()
+    gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
+	conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
+	nodeId, _ := strconv.Atoi(os.Getenv("NODE_ID"))
+	pb.RegisterLocalObjStoreServer(s, &server{localObjectStore: make(map[uint64][]byte), localObjectChannels: make(map[uint64]chan []byte), gcsObjClient: pb.NewGCSObjClient(conn), localNodeID: uint64(nodeId)})
+	// go func() {
+	// 	s.Serve(lis)
+	// }()
+
+	log.Printf("server listening at %v", lis.Addr())
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
+
+
+	return s, nil
 }
 
 // server is used to implement your gRPC service.
