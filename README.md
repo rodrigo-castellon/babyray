@@ -1,15 +1,79 @@
 # baby🦈
 
-## Automatic deployment
+[Baby Ray](https://www.youtube.com/watch?v=WkCecpH2GAo) is a minimal yet fully-functioning (fault-tolerance included!) implementation of [Ray](https://arxiv.org/abs/1712.05889) in Go. 
 
-You can automatically deploy the worker + GCS + global scheduler nodes by doing:
+Currently a work in progress. By the end of this project, you should be able to simulate a full Ray cluster using Docker Compose and launch CPU jobs using Python, using exactly the same API exposed by the real Ray Core library.
+
+
+## Automatic deployment - shorthand version
+```bash
+make all
+```
 
 ```bash
 docker-compose up
 ```
 
-Reset by doing ^C and then running `docker-compose down` to make sure all the containers are killed.
+Separate terminal:
+```bash
+./log_into_driver.sh 
+```
 
+## Automatic deployment
+
+You can automatically deploy the entire cluster (workers, GCS, global scheduler nodes) by following these instructions.
+
+First, build everything:
+
+```bash
+make all
+```
+
+This will generate the Go and Python gRPC stub files, compile the Go server code, and build the Docker images we need to deploy the cluster.
+
+Next, spin up the cluster:
+
+```bash
+docker-compose up
+```
+
+Now, your cluster should be running! Let's test out if a node can talk to another node. Note that these commands will now be run-specific, since Docker containers are ID'd  randomly. First, list the container ID's of our cluster with `docker ps`. We'll get something like:
+
+```
+CONTAINER ID   IMAGE                            COMMAND                  CREATED         STATUS         PORTS                      NAMES
+c20387bbd534   ray-node                         "/bin/sh -c './go/bi…"   3 seconds ago   Up 2 seconds   0.0.0.0:50004->50004/tcp   babyray_worker3_1
+dce69f377b01   ray-node                         "/bin/sh -c ./go/bin…"   3 seconds ago   Up 2 seconds   0.0.0.0:50001->50001/tcp   babyray_global_scheduler_1
+e06583f90acd   ray-node                         "/bin/sh -c './go/bi…"   3 seconds ago   Up 2 seconds   0.0.0.0:50002->50002/tcp   babyray_worker1_1
+1d2559b0bb90   ray-node                         "/bin/sh -c './go/bi…"   3 seconds ago   Up 2 seconds   0.0.0.0:50003->50003/tcp   babyray_worker2_1
+c3781cf7bbce   ray-node                         "/bin/sh -c './go/bi…"   3 seconds ago   Up 2 seconds   0.0.0.0:50000->50000/tcp   babyray_gcs_1
+```
+
+Now, pick one of those container ID's---here we pick worker 1---and run an interactive shell on it:
+
+```bash
+docker exec -it e06583f90acd  /bin/bash
+```
+
+Then, run the command `ping node0` and you'll get something like:
+
+```
+docker exec -it e06583f90acd  /bin/bash
+root@e06583f90acd:/app# ping node0
+PING node0 (172.24.0.2) 56(84) bytes of data.
+64 bytes from babyray_gcs_1.babyray_mynetwork (172.24.0.2): icmp_seq=1 ttl=64 time=3.11 ms
+64 bytes from babyray_gcs_1.babyray_mynetwork (172.24.0.2): icmp_seq=2 ttl=64 time=0.499 ms
+64 bytes from babyray_gcs_1.babyray_mynetwork (172.24.0.2): icmp_seq=3 ttl=64 time=0.470 ms
+64 bytes from babyray_gcs_1.babyray_mynetwork (172.24.0.2): icmp_seq=4 ttl=64 time=0.348 ms
+64 bytes from babyray_gcs_1.babyray_mynetwork (172.24.0.2): icmp_seq=5 ttl=64 time=0.224 ms
+64 bytes from babyray_gcs_1.babyray_mynetwork (172.24.0.2): icmp_seq=6 ttl=64 time=0.268 ms
+64 bytes from babyray_gcs_1.babyray_mynetwork (172.24.0.2): icmp_seq=7 ttl=64 time=0.173 ms
+```
+
+Packets are flowing between worker 1 and the GCS!
+
+### Shut down the cluster
+
+Reset by doing ^C in the `docker-compose up` session and then running `docker-compose down` to make sure all the containers are killed and the network is deleted.
 
 ## Run a single node
 

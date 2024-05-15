@@ -47,7 +47,7 @@ class Future:
 
     def get(self):
         # make a request to local object store
-        out = local_object_store_gRPC.Get(rayclient_pb2.GetRequest(uid=self.uid))
+        out = pickle.loads(local_object_store_gRPC.Get(rayclient_pb2.GetRequest(uid=self.uid)).objectBytes)
         return out
 
 
@@ -64,7 +64,7 @@ class RemoteFunction:
                 rayclient_pb2.ScheduleRequest(
                     name=self.name, args=pickle.dumps(args), kwargs=pickle.dumps(kwargs)
                 )
-            )
+            ).uid
             return Future(uid)
 
     def register(self):
@@ -73,7 +73,7 @@ class RemoteFunction:
             rayclient_pb2.RegisterRequest(
                 serializedFunc=pickle.dumps(self.func)
             )
-        )
+        ).name
 
 
 def init():

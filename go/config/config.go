@@ -34,16 +34,11 @@ type Config struct {
 func LoadConfig() *Config {
     var config Config
 
-    // Get the working directory of the executable. Key assumption here is that
-    // the executable is located at go/cmd/*/[executable]. Otherwise this will
-    // break.
-    cwd, err := os.Getwd()
-    if err != nil {
-        log.Fatalf("Failed to get current working directory: %v", err)
-    }
-
-    // Construct the path to the configuration file
-    configFile := filepath.Join(cwd, "..", "..", "..", "config", "app_config.yaml")
+    // Construct the path to the configuration file. PROJECT_ROOT should somehow
+    // be set prior to any Go code execution (i.e., in GitHub Actions workflow
+    // before unit tests are run or in Dockerfile)
+    rootPath := os.Getenv("PROJECT_ROOT")
+    configFile := filepath.Join(rootPath, "config", "app_config.yaml")
 
     yamlFile, err := ioutil.ReadFile(configFile)
     if err != nil {
