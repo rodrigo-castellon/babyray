@@ -56,6 +56,9 @@ message ScheduleResponse {
 service LocalObjStore {
   rpc Store(StoreRequest) returns (StatusResponse);
   rpc Get(GetRequest) returns (GetResponse);
+  rpc LocationFound(LocationFoundResponse) returns (StatusResponse); 
+  rpc Copy(CopyRequest) returns (CopyResponse); 
+  rpc Init(StatusResponse) returns (StatusResponse); 
 }
 
 message StoreRequest {
@@ -65,10 +68,30 @@ message StoreRequest {
 
 message GetRequest {
   uint64 uid = 1;
+  bool testing = 2; 
 }
 
 message GetResponse {
-  bytes objectBytes = 1;
+  uint64 uid = 1; 
+  bytes objectBytes = 2;
+  bool local = 3; 
+}
+
+message LocationFoundResponse {
+  uint64 uid = 1; 
+  uint64 location = 2; 
+  string address = 3; //For testing
+  uint64 port = 4; //For testing
+}
+
+message CopyRequest {
+  uint64 uid = 1; 
+  uint64 requester = 2; 
+}
+
+message CopyResponse {
+  uint64 uid = 1; 
+  bytes objectBytes = 2; 
 }
 
 /* END WORKER NODE LOCAL OBJECT STORE */
@@ -101,6 +124,7 @@ message NotifyOwnsRequest {
 
 message RequestLocationRequest {
   uint64 uid = 1;
+  uint64 requester = 2; 
 }
 
 message RequestLocationResponse {
