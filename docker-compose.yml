@@ -2,32 +2,61 @@ version: '3'
 
 services:
   gcs:
-    image: ray-node
+    image: ray-node:base
     command: ["/bin/sh", "-c", "./go/bin/gcsfunctable & ./go/bin/gcsobjtable"]
+    networks:
+        mynetwork:
+            aliases:
+                - node0
     ports:
       - "50000:50000"
 
   global_scheduler:
-    image: ray-node
-    command: ["/bin/sh", "-c", "./go/bin/globalscheduler &"]
+    image: ray-node:base
+    command: ["/bin/sh", "-c", "./go/bin/globalscheduler"]
+    networks:
+        mynetwork:
+            aliases:
+                - node1
     ports:
       - "50001:50001"
 
   worker1:
-    image: ray-node
+    image: ray-node:driver
     command: ["/bin/sh", "-c", "./go/bin/localscheduler & ./go/bin/localobjstore"]
+    networks:
+        mynetwork:
+            aliases:
+                - node2
     ports:
       - "50002:50002"
+    environment:
+      NODE_ID: 2
 
   worker2:
-    image: ray-node
+    image: ray-node:driver
     command: ["/bin/sh", "-c", "./go/bin/localscheduler & ./go/bin/localobjstore"]
+    networks:
+        mynetwork:
+            aliases:
+                - node3
     ports:
       - "50003:50003"
+    environment:
+      NODE_ID: 3
 
   worker3:
-    image: ray-node
+    image: ray-node:driver
     command: ["/bin/sh", "-c", "./go/bin/localscheduler & ./go/bin/localobjstore"]
+    networks:
+        mynetwork:
+            aliases:
+                - node4
     ports:
       - "50004:50004"
+    environment:
+      NODE_ID: 4
 
+networks:
+    mynetwork:
+        driver: bridge

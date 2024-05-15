@@ -39,7 +39,7 @@ service LocalScheduler {
 }
 
 message ScheduleRequest {
-  string name = 1;
+  uint64 name = 1;
   bytes args = 2;
   bytes kwargs = 3;
 }
