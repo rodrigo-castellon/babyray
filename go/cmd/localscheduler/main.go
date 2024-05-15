@@ -58,20 +58,23 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
         log.Printf("the worker address is %v", workerAddress)
 		conn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
         if err != nil {
-            log.Fatalf("failed to connect to %s: %v", workerAddress, err)
+            log.Printf("failed to connect to %s: %v", workerAddress, err)
+            return nil, err
         }
         defer conn.Close()
 
 		workerClient := pb.NewWorkerClient(conn)
 		_, err = workerClient.Run(ctx, &pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
 		if err != nil {
-			log.Fatalf("cannot contact worker %d: %v", worker_id, err)
+            log.Printf("cannot contact worker %d: %v", worker_id, err)
+            return nil, err
 		}
 	} else {
 
 		_, err := globalSchedulerClient.Schedule(ctx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
 		if err != nil {
-			log.Printf("cannot contact global scheduler")
+            log.Printf("cannot contact global scheduler")
+            return nil, err
 		}
 
 	}

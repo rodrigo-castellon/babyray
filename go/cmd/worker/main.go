@@ -9,6 +9,8 @@ import (
     // "encoding/json"
     "bytes"
     "os/exec"
+    "os"
+    "path/filepath"
     "encoding/base64"
 
     "google.golang.org/grpc"
@@ -72,25 +74,24 @@ type StoreClient interface {
 
 func executeFunction(f []byte, args []byte, kwargs []byte) ([]byte, error) {
     // Prepare the command to run the Python script
-    cmd := exec.Command("sh", "-c", "python3 execute.py")
+    rootPath := os.Getenv("PROJECT_ROOT")
+    executeFile := filepath.Join(rootPath, "go", "cmd", "worker", "execute.py")
+    cmd := exec.Command("/usr/bin/python3", executeFile)
 
     // Create a buffer to hold the serialized data
     inputBuffer := bytes.NewBuffer(nil)
 
     // Assume data is the serialized data you want to encode in base64
-    // fB64 := base64.StdEncoding.EncodeToString(f)
-    // argsB64 := base64.StdEncoding.EncodeToString(args)
-    // kwargsB64 := base64.StdEncoding.EncodeToString(kwargs)
+    fB64 := []byte(base64.StdEncoding.EncodeToString(f))
+    argsB64 := []byte(base64.StdEncoding.EncodeToString(args))
+    kwargsB64 := []byte(base64.StdEncoding.EncodeToString(kwargs))
 
     // Write the function, args, and kwargs to the buffer
-    inputBuffer.Write(f)
-    // inputBuffer.writes(fB64)
+    inputBuffer.Write(fB64)
     inputBuffer.WriteByte('\n')
-    // inputBuffer.Write(argsB64)
-    inputBuffer.Write(args)
+    inputBuffer.Write(argsB64)
     inputBuffer.WriteByte('\n')
-    // inputBuffer.Write(kwargsB64)
-    inputBuffer.Write(kwargs)
+    inputBuffer.Write(kwargsB64)
 
     // Set the stdin to our input buffer
     cmd.Stdin = inputBuffer
