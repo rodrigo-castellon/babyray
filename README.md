@@ -5,20 +5,6 @@
 Currently a work in progress. By the end of this project, you should be able to simulate a full Ray cluster using Docker Compose and launch CPU jobs using Python, using exactly the same API exposed by the real Ray Core library.
 
 
-## Automatic deployment - shorthand version
-```bash
-make all
-```
-
-```bash
-docker-compose up
-```
-
-Separate terminal:
-```bash
-./log_into_driver.sh 
-```
-
 ## Automatic deployment
 
 You can automatically deploy the entire cluster (workers, GCS, global scheduler nodes) by following these instructions.

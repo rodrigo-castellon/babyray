@@ -26,7 +26,7 @@ service GlobalScheduler {
 
 message GlobalScheduleRequest {
   uint64 uid = 1;
-  uint64 name = 2;
+  string name = 2;
   bytes args = 3;
   bytes kwargs = 4;
 }
@@ -56,7 +56,7 @@ message ScheduleResponse {
 service LocalObjStore {
   rpc Store(StoreRequest) returns (StatusResponse);
   rpc Get(GetRequest) returns (GetResponse);
-  rpc LocationFound(LocationFoundCallback) returns (StatusResponse); 
+  rpc LocationFound(LocationFoundResponse) returns (StatusResponse); 
   rpc Copy(CopyRequest) returns (CopyResponse); 
   rpc Init(StatusResponse) returns (StatusResponse); 
 }
@@ -77,9 +77,9 @@ message GetResponse {
   bool local = 3; 
 }
 
-message LocationFoundCallback { 
-  uint64 uid = 1; // this is the uid of the object that was originally asked for
-  uint64 location = 2; // this is the node number of the node who has this object
+message LocationFoundResponse {
+  uint64 uid = 1; 
+  uint64 location = 2; 
   string address = 3; //For testing
   uint64 port = 4; //For testing
 }
@@ -127,8 +127,8 @@ message RequestLocationRequest {
   uint64 requester = 2; 
 }
 
-message RequestLocationResponse { 
-  bool immediatelyFound = 1;
+message RequestLocationResponse {
+  uint64 nodeId = 1;
 }
 
 /* END GCS OBJECT TABLE */
@@ -149,7 +149,6 @@ message RegisterResponse {
 
 message FetchRequest {
   uint64 name = 1;
-  uint64 callbackNodeId = 2;
 }
 
 message FetchResponse {
