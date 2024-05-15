@@ -1,5 +1,5 @@
 # generic libraries
-import dill as pickle
+import cloudpickle as pickle
 import grpc
 
 from dataclasses import dataclass

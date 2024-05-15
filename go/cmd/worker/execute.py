@@ -1,5 +1,5 @@
 import sys
-import dill as pickle
+import cloudpickle as pickle
 import base64
 
 
