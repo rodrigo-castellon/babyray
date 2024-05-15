@@ -255,7 +255,7 @@ If you'd like to run `go test` individually, you should do the following:
 cd babyray
 pwd
 ```
-On MacOS:
+Then, on MacOS:
 ```
 nano ~/.zshrc
 export PROJECT_ROOT=/path/to/your/project
