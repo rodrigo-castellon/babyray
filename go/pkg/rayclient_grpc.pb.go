@@ -212,7 +212,7 @@ const (
 type LocalObjStoreClient interface {
 	Store(ctx context.Context, in *StoreRequest, opts ...grpc.CallOption) (*StatusResponse, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
-	LocationFound(ctx context.Context, in *LocationFoundResponse, opts ...grpc.CallOption) (*StatusResponse, error)
+	LocationFound(ctx context.Context, in *LocationFoundCallback, opts ...grpc.CallOption) (*StatusResponse, error)
 	Copy(ctx context.Context, in *CopyRequest, opts ...grpc.CallOption) (*CopyResponse, error)
 	Init(ctx context.Context, in *StatusResponse, opts ...grpc.CallOption) (*StatusResponse, error)
 }
@@ -243,7 +243,7 @@ func (c *localObjStoreClient) Get(ctx context.Context, in *GetRequest, opts ...g
 	return out, nil
 }
 
-func (c *localObjStoreClient) LocationFound(ctx context.Context, in *LocationFoundResponse, opts ...grpc.CallOption) (*StatusResponse, error) {
+func (c *localObjStoreClient) LocationFound(ctx context.Context, in *LocationFoundCallback, opts ...grpc.CallOption) (*StatusResponse, error) {
 	out := new(StatusResponse)
 	err := c.cc.Invoke(ctx, LocalObjStore_LocationFound_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -276,7 +276,7 @@ func (c *localObjStoreClient) Init(ctx context.Context, in *StatusResponse, opts
 type LocalObjStoreServer interface {
 	Store(context.Context, *StoreRequest) (*StatusResponse, error)
 	Get(context.Context, *GetRequest) (*GetResponse, error)
-	LocationFound(context.Context, *LocationFoundResponse) (*StatusResponse, error)
+	LocationFound(context.Context, *LocationFoundCallback) (*StatusResponse, error)
 	Copy(context.Context, *CopyRequest) (*CopyResponse, error)
 	Init(context.Context, *StatusResponse) (*StatusResponse, error)
 	mustEmbedUnimplementedLocalObjStoreServer()
@@ -292,7 +292,7 @@ func (UnimplementedLocalObjStoreServer) Store(context.Context, *StoreRequest) (*
 func (UnimplementedLocalObjStoreServer) Get(context.Context, *GetRequest) (*GetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
-func (UnimplementedLocalObjStoreServer) LocationFound(context.Context, *LocationFoundResponse) (*StatusResponse, error) {
+func (UnimplementedLocalObjStoreServer) LocationFound(context.Context, *LocationFoundCallback) (*StatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LocationFound not implemented")
 }
 func (UnimplementedLocalObjStoreServer) Copy(context.Context, *CopyRequest) (*CopyResponse, error) {
@@ -351,7 +351,7 @@ func _LocalObjStore_Get_Handler(srv interface{}, ctx context.Context, dec func(i
 }
 
 func _LocalObjStore_LocationFound_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LocationFoundResponse)
+	in := new(LocationFoundCallback)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -363,7 +363,7 @@ func _LocalObjStore_LocationFound_Handler(srv interface{}, ctx context.Context, 
 		FullMethod: LocalObjStore_LocationFound_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LocalObjStoreServer).LocationFound(ctx, req.(*LocationFoundResponse))
+		return srv.(LocalObjStoreServer).LocationFound(ctx, req.(*LocationFoundCallback))
 	}
 	return interceptor(ctx, in, info, handler)
 }
