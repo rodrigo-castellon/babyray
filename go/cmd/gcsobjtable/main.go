@@ -21,8 +21,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var cfg *config.Config
+
 func main() {
-	cfg := config.GetConfig()                               // Load configuration
+	cfg = config.GetConfig()                                // Load configuration
 	address := ":" + strconv.Itoa(cfg.Ports.GCSObjectTable) // Prepare the network address
 
 	lis, err := net.Listen("tcp", address)
@@ -132,7 +134,20 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 	if !ok {
 		return nil, status.Error(codes.Internal, "could not get peer information; hence, failed to extract client address")
 	}
-	clientAddress := p.Addr.String()
+
+	// /////
+	// log.SetOutput(os.Stdout)
+	// log.Println(p.Addr.String())
+	// //////////
+
+	host, _, err := net.SplitHostPort(p.Addr.String()) // Strip out the ephemeral port
+	if err != nil {
+		//return nil, status.Error(codes.Internal, "could not split host and port")
+		// Temporary workaround: If splitting fails, use the entire address string as the host
+		host = p.Addr.String()
+	}
+	clientPort := strconv.Itoa(cfg.Ports.LocalObjectStore) // Replace the ephemeral port with the official LocalObjectStore port
+	clientAddress := net.JoinHostPort(host, clientPort)
 
 	uid := req.Uid
 	nodeId, exists := s.getNodeId(uid)
