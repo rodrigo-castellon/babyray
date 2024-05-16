@@ -77,7 +77,6 @@ class RemoteFunction:
 
 
 def init():
-    print("Initializing Baby Ray")
     # we need to connect to:
     # gcs function table
     # gcs object table

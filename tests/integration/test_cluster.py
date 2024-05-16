@@ -3,7 +3,7 @@ import pytest
 
 # import dill as pickle
 import cloudpickle as pickle
-from babyray import init, remote, get
+from babyray import init, remote, get, Future
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -73,8 +73,8 @@ def test_task_dependencies():
         return x * x
 
     @remote
-    def g(x, y):
-        return x + y
+    def g(x: Future, y: Future) -> int:
+        return get(x) + get(y)
 
     a = f.remote(2)
     b = f.remote(3)
