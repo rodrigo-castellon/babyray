@@ -55,11 +55,11 @@ func (m *mockStoreClient) Get(ctx context.Context, in *pb.GetRequest, opts ...gr
 }
 
 func TestStoreAndGet_Local(t *testing.T) {
-	fmt.Println("starting local test")
+	
 	ctx := context.Background()
 	
 	server, err := startServer(":30051")
-	fmt.Println("server started")
+	
 	defer server.Stop()
 	if err != nil {
 		t.Fatalf("failed to start server: %v", err)

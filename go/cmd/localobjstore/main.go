@@ -62,7 +62,7 @@ func startServer(port string) (*grpc.Server, error) {
 	pb.RegisterLocalObjStoreServer(s, &server{localObjectStore: make(map[uint64][]byte), localObjectChannels: make(map[uint64]chan []byte), gcsObjClient: pb.NewGCSObjClient(conn), localNodeID: uint64(nodeId)})
 	
 
-	log.Printf("server listening at %v", lis.Addr())
+	//log.Printf("server listening at %v", lis.Addr())
 	go func() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
