@@ -6,7 +6,6 @@ import (
 	"net"
 	"testing"
 	"time"
-	"fmt"
 
 	pb "github.com/rodrigo-castellon/babyray/pkg"
 	"google.golang.org/grpc"
