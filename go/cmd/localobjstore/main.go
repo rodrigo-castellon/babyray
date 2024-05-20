@@ -127,9 +127,9 @@ func (s *server) LocationFound(ctx context.Context, resp *pb.LocationFoundCallba
 	if x == nil || err != nil {
 		return &pb.StatusResponse{Success: false}, errors.New(fmt.Sprintf("failed to copy from other LOS @:%s ", otherLocalAddress))
 	}
-	if resp.Port == "" {
+	if resp.Port == 0 {
 
-	     gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: resp.Uid, NodeId: localNodeID})
+	     s.gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: resp.Uid, NodeId: s.localNodeID})
 	}
 
 	channel, ok := s.localObjectChannels[resp.Uid]
