@@ -22,6 +22,7 @@ message StatusResponse {
 
 service GlobalScheduler {
   rpc Schedule(GlobalScheduleRequest) returns (StatusResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (StatusResponse); 
 }
 
 message GlobalScheduleRequest {
@@ -29,6 +30,14 @@ message GlobalScheduleRequest {
   uint64 name = 2;
   bytes args = 3;
   bytes kwargs = 4;
+
+}
+
+message HeartbeatRequest {
+  uint64 runningTasks = 1; 
+  uint64 queuedTasks = 2; 
+  float avgRunningTime = 3; 
+  float avgBandwidth = 4; 
 }
 
 /* END GLOBAL SCHEDULER */
