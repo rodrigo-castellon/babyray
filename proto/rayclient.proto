@@ -67,9 +67,8 @@ service LocalObjStore {
   rpc Get(GetRequest) returns (GetResponse);
   rpc LocationFound(LocationFoundCallback) returns (StatusResponse); 
   rpc Copy(CopyRequest) returns (CopyResponse); 
-  rpc Init(StatusResponse) returns (StatusResponse); 
+  rpc AvgBandwidth (StatusResponse) returns (BandwidthResponse); 
 }
-
 message StoreRequest {
   uint64 uid = 1;
   bytes objectBytes = 2;
@@ -84,6 +83,10 @@ message GetResponse {
   uint64 uid = 1; 
   bytes objectBytes = 2;
   bool local = 3; 
+}
+
+message BandwidthResponse {
+  float AvgBandwidth = 1; 
 }
 
 message LocationFoundCallback { 
