@@ -15,9 +15,10 @@ import (
 	"google.golang.org/grpc"
 )
 
-var globalSchedulerClient pb.GlobalSchedulerClient
-var localNodeID uint64
+
 var cfg *config.Config
+const HEARTBEAT_WAIT int32 = 1 
+const MAX_TASKS uint32 = 10
 
 func main() {
 	cfg = config.GetConfig()                                // Load configuration
@@ -28,22 +29,32 @@ func main() {
 	}
 	_ = lis
 	s := grpc.NewServer()
-	pb.RegisterLocalSchedulerServer(s, &server{})
+
+	globalSchedulerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GlobalScheduler, cfg.Ports.GlobalScheduler)
+	conn, _ := grpc.Dial(globalSchedulerAddress, grpc.WithInsecure())
+	globalSchedulerClient = pb.NewGlobalSchedulerClient(conn)
+	nodeId, _ := strconv.Atoi(os.Getenv("NODE_ID"))
+
+	pb.RegisterLocalSchedulerServer(s, &server{globalSchedulerClient: globalSchedulerClient, localNodeID: nodeId})
 	log.Printf("server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
 
-	globalSchedulerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GlobalScheduler, cfg.Ports.GlobalScheduler)
-	conn, _ := grpc.Dial(globalSchedulerAddress, grpc.WithInsecure())
-	globalSchedulerClient = pb.NewGlobalSchedulerClient(conn)
-	localNodeID = 0
+	go s.SendHeartbeats()
+
+
+
+	
 
 }
 
 // server is used to implement your gRPC service.
 type server struct {
 	pb.UnimplementedLocalSchedulerServer
+	globalSchedulerClient pb.GlobalSchedulerClient
+	localNodeID uint64
+
 }
 
 // Implement your service methods here.
@@ -52,9 +63,8 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 	var worker_id int
 	// worker_id = check_resources()
 	worker_id, _ = strconv.Atoi(os.Getenv("NODE_ID"))
-	uid := uint64(rand.Intn(100))
-	if worker_id != -1 {
-		workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
+
+	workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
         log.Printf("the worker address is %v", workerAddress)
 		conn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
         if err != nil {
@@ -64,14 +74,20 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
         defer conn.Close()
 
 		workerClient := pb.NewWorkerClient(conn)
+	
+	
+	uid := uint64(rand.Intn(100))
+	scheduleLocally := workerClient.NumRunningTasks() < MAX_TASKS
+
+	if scheduleLocally {
 		_, err = workerClient.Run(ctx, &pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
 		if err != nil {
             log.Printf("cannot contact worker %d: %v", worker_id, err)
             return nil, err
 		}
+		
 	} else {
-
-		_, err := globalSchedulerClient.Schedule(ctx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
+		_, err := s.globalSchedulerClient.Schedule(ctx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
 		if err != nil {
             log.Printf("cannot contact global scheduler")
             return nil, err
@@ -81,3 +97,39 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 	return &pb.ScheduleResponse{Uid: uid}, nil
 
 }
+
+func (s *server) SendHeartbeats(): 
+	worker_id, _ = strconv.Atoi(os.Getenv("NODE_ID"))
+	workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
+        log.Printf("the worker address is %v", workerAddress)
+		workerConn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
+        if err != nil {
+            log.Printf("failed to connect to %s: %v", workerAddress, err)
+            return nil, err
+        }
+    defer workerConn.Close()
+
+	lobsAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalObjectStore)
+	log.Printf("the worker address is %v", lobsAddress)
+	lobsConn, err := grpc.Dial(lobsAddress, grpc.WithInsecure())
+	if err != nil {
+		log.Printf("failed to connect to %s: %v", lobsAddress, err)
+		return nil, err
+	}
+    defer lobsConn.Close()
+
+
+	workerClient := pb.NewWorkerClient(workerConn)
+	lobsClient := pb.NewLocalObjStoreClient(lobsConn)
+	for {
+		numRunningTasks := workerClient.NumRunningTasks()
+		numQueuedTasks  := workerClient.NumQueuedTasks()
+		avgRunningTime  := workerClient.AvgRunningTime()
+		avgBandwidth    := lobsClient.AvgBandwidth()
+		s.globalSchedulerClient.Heartbeat(&pb.HeartbeatRequest{
+			RunningTasks: numRunningTasks, 
+			QueuedTasks: numQueuedTasks, 
+		    AvgRunningTime: avgRunningTime, 
+			AvgBandwidth: avgBandwidth})
+	    time.Sleep(HEARTBEAT_WAIT * time.Second)
+	}
