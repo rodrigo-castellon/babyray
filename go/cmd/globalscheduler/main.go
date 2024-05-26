@@ -1,12 +1,12 @@
 package main
 
 import (
-    // "context"
+    "context"
     "log"
     "net"
     "strconv"
     "math/rand"
-    
+    "fmt"
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
     "github.com/rodrigo-castellon/babyray/config"
@@ -24,8 +24,8 @@ func main() {
     s := grpc.NewServer()
     gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
 	conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
-    pb.RegisterGlobalSchedulerServer(s, &server{globalSchedulerClient: pb.NewGCSClient(conn)})
-    defer conn.close()
+    pb.RegisterGlobalSchedulerServer(s, &server{gcsClient: pb.NewGCSObjClient(conn)})
+    defer conn.Close()
     log.Printf("server listening at %v", lis.Addr())
     if err := s.Serve(lis); err != nil {
        log.Fatalf("failed to serve: %v", err)
@@ -35,15 +35,15 @@ func main() {
 type HeartbeatEntry struct {
     numRunningTasks uint32
     numQueuedTasks uint32
-    avgRunningTime float
-    avgBandwidth float
+    avgRunningTime float32
+    avgBandwidth float32
 
 }
 // server is used to implement your gRPC service.
 type server struct {
    pb.UnimplementedGlobalSchedulerServer
    gcsClient pb.GCSFuncClient
-   status map[uint32]heartbeat
+   status map[uint32]HeartbeatEntry
 }
 
 
