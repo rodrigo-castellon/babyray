@@ -78,11 +78,11 @@ func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) 
 
 }
 
-func getBestWorker(s *server, localityFlag bool, args []bytes) (uint32) {
+func getBestWorker(ctx context.Context, s *server, localityFlag bool, args []bytes) (uint32) {
     minId := -1; 
     minTime := math.MaxInt
     if localityFlag {
-        locationsResp, err := s.gcsClient.GetObjectLocations(&pb.ObjectLocationsRequest{Args: args})
+        locationsResp, err := s.gcsClient.GetObjectLocations(ctx, &pb.ObjectLocationsRequest{Args: args})
         if err != nil {
             log.Fatalf("Failed to ask gcs for object locations: %v", err)
         }
@@ -90,14 +90,14 @@ func getBestWorker(s *server, localityFlag bool, args []bytes) (uint32) {
   
         locationToBytes := make(map[uint64]uint32)
         total := 0
-        for val := range locationsResp.Locations {
+        for _, val := range locationsResp.Locations {
             locationToBytes[val.Location] += val.Bytes
             total += val.Bytes
         }
         
         for loc, bytes := range locationToBytes {
-            queueingTime := s.status[loc][numQueuedTasks] * s.status[loc][AvgRunningTime]
-            transferTime := (total - bytes) * s.status[loc][AvgBandwidth]
+            queueingTime := s.status[loc].numQueuedTasks * s.status[loc].AvgRunningTime
+            transferTime := (total - bytes) * s.status[loc].AvgBandwidth
             waitingTIme = queueingTime + transferTime
             if waitingTime < min_waiting_time {
                 minTime = waitingTime
