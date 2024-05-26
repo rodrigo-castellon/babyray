@@ -37,7 +37,7 @@ message HeartbeatRequest {
   uint64 queuedTasks = 2; 
   float avgRunningTime = 3; 
   float avgBandwidth = 4; 
-  uint53 nodeId = 5; 
+  uint64 nodeId = 5; 
 }
 
 /* END GLOBAL SCHEDULER */
