@@ -98,14 +98,14 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 
 }
 
-func SendHeartbeats(s *server){
+func SendHeartbeats(s *server) {
 	worker_id, _ = strconv.Atoi(os.Getenv("NODE_ID"))
 	workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
         log.Printf("the worker address is %v", workerAddress)
 		workerConn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
         if err != nil {
-            log.Printf("failed to connect to %s: %v", workerAddress, err)
-            return nil, err
+            log.Fatalf("failed to connect to %s: %v", workerAddress, err)
+            
         }
     defer workerConn.Close()
 
@@ -113,8 +113,8 @@ func SendHeartbeats(s *server){
 	log.Printf("the worker address is %v", lobsAddress)
 	lobsConn, err := grpc.Dial(lobsAddress, grpc.WithInsecure())
 	if err != nil {
-		log.Printf("failed to connect to %s: %v", lobsAddress, err)
-		return nil, err
+		log.Fatalf("failed to connect to %s: %v", lobsAddress, err)
+		
 	}
     defer lobsConn.Close()
 
