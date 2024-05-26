@@ -41,8 +41,8 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
-	ctx = context.Background()
-	go SendHeartbeats(ctx, globalSchedulerClient, nodeId)
+	ctx := context.Background()
+	go SendHeartbeats(ctx, globalSchedulerClient, uint64(nodeId))
 
 
 
@@ -78,9 +78,9 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 	
 	
 	uid := uint64(rand.Intn(100))
-	scheduleLocally := workerClient.WorkerStatus(&pb.StatusResponse{}).NumRunningTasks < MAX_TASKS
+	scheduleLocally, _ := workerClient.WorkerStatus(ctx, &pb.StatusResponse{})
 
-	if scheduleLocally {
+	if scheduleLocally.NumRunningTasks < MAX_TASKS {
 		_, err = workerClient.Run(ctx, &pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
 		if err != nil {
             log.Printf("cannot contact worker %d: %v", worker_id, err)
@@ -100,7 +100,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 }
 
 func SendHeartbeats(ctx context.Context, globalSchedulerClient pb.GlobalSchedulerClient, nodeId uint64 ) {
-	worker_id, _ := strconv.Atoi(os.Getenv("NODE_ID"))
+	//worker_id, _ := strconv.Atoi(os.Getenv("NODE_ID"))
 	workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
         log.Printf("the worker address is %v", workerAddress)
 		workerConn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
@@ -134,6 +134,6 @@ func SendHeartbeats(ctx context.Context, globalSchedulerClient pb.GlobalSchedule
 		    AvgRunningTime: avgRunningTime, 
 			AvgBandwidth: avgBandwidth.AvgBandwidth, 
 			NodeId: nodeId })
-	    time.Sleep(HEARTBEAT_WAIT * time.Second)
+	    time.Sleep(time.Duration(HEARTBEAT_WAIT) * time.Second)
 	}
 }
