@@ -98,7 +98,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 
 }
 
-func (s *server) SendHeartbeats(): 
+func (s *server) SendHeartbeats(){
 	worker_id, _ = strconv.Atoi(os.Getenv("NODE_ID"))
 	workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
         log.Printf("the worker address is %v", workerAddress)
@@ -133,3 +133,4 @@ func (s *server) SendHeartbeats():
 			AvgBandwidth: avgBandwidth})
 	    time.Sleep(HEARTBEAT_WAIT * time.Second)
 	}
+}
