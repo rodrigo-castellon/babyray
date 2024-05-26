@@ -18,8 +18,8 @@ import (
 
 
 var cfg *config.Config
-const HEARTBEAT_WAIT int32 = 1 
-const MAX_TASKS uint32 = 10
+const HEARTBEAT_WAIT uint64 = 1 
+const MAX_TASKS uint64 = 10
 
 func main() {
 	cfg = config.GetConfig()                                // Load configuration
