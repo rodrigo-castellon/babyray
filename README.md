@@ -274,9 +274,12 @@ If you'd like to run `go test` individually, you should do the following:
 cd babyray
 pwd
 ```
-On MacOS:
+Then, on MacOS:
 ```
 nano ~/.zshrc
-export PROJECT_ROOT=/path/to/your/project
+```
+add the following: `export PROJECT_ROOT=/path/to/your/project`
+```
+source ~/.zshrc
 ```
 This ensures that your Go code has access to the `app_config.yaml` file.

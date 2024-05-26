@@ -10,6 +10,7 @@ import (
 	pb "github.com/rodrigo-castellon/babyray/pkg"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
+	"github.com/rodrigo-castellon/babyray/config"
 )
 
 const bufSize = 1024 * 1024
@@ -17,16 +18,7 @@ const bufSize = 1024 * 1024
 var lis *bufconn.Listener
 
 func init() {
-	//startServer("50051")
-	main()
-	// lis = bufconn.Listen(bufSize)
-	// s := grpc.NewServer()
-	// pb.RegisterLocalObjStoreServer(s, &server{})
-	// go func() {
-	//     if err := s.Serve(lis); err != nil {
-	//         log.Fatalf("Server exited with error: %v", err)
-	//     }
-	// }()
+	cfg = config.GetConfig()  
 }
 
 
@@ -62,22 +54,23 @@ func (m *mockStoreClient) Get(ctx context.Context, in *pb.GetRequest, opts ...gr
 }
 
 func TestStoreAndGet_Local(t *testing.T) {
+	
 	ctx := context.Background()
-	// conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
-
-	// if err != nil {
-	//     t.Fatalf("Failed to dial bufnet: %v", err)
-	// }
-	server, err := startServer(":50051")
+	
+	server, err := startServer(":30051")
+	
 	defer server.Stop()
 	if err != nil {
 		t.Fatalf("failed to start server: %v", err)
 	}
-	conn, err := grpc.DialContext(ctx, "localhost:50051", grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, "localhost:30051", grpc.WithInsecure())
 	defer conn.Close()
+	if err != nil {
+		t.Fatalf("Failed to dial server")
+	}
 	data := []byte{72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100}
 	client := pb.NewLocalObjStoreClient(conn)
-	client.Init(ctx, &pb.StatusResponse{})
+	
 
 	// Test Store
 	resp, err := client.Store(ctx, &pb.StoreRequest{
@@ -128,21 +121,9 @@ func TestStoreAndGet_External(t *testing.T) {
 	defer conn2.Close()
 	client1 := pb.NewLocalObjStoreClient(conn1)
 	client2 := pb.NewLocalObjStoreClient(conn2)
-	client1.Init(ctx, &pb.StatusResponse{})
-	client2.Init(ctx, &pb.StatusResponse{})
 	data := []byte{72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100}
 
-	// mockStore := &mockStoreClient{
-	//     statusResp: &pb.StatusResponse{},
-	//     resp: &pb.GetResponse{Uid: 1, ObjectBytes: data},
-	//     err: nil,
-	// }
 
-	// mockGCSClient := &mockGCSClient{
-	//     statusResp: &pb.StatusResponse{},
-	//     resp: &pb.RequestLocationResponse{NodeId: 2},
-	//     err: nil
-	// }
 
 	sresp, err := client2.Store(ctx, &pb.StoreRequest{Uid: 3, ObjectBytes: data})
 	if !sresp.Success || err != nil {
@@ -182,46 +163,3 @@ func TestStoreAndGet_External(t *testing.T) {
 	}
 
 }
-
-// func TestLocationFound(t *testing.T) {
-//     ctx := context.Background()
-//     conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
-//     if err != nil {
-//         t.Fatalf("Failed to dial bufnet: %v", err)
-//     }
-//     defer conn.Close()
-//     client := pb.NewLocalObjStoreClient(conn)
-// 	uid := 100
-// 	go {
-// 		client.Get(pb.GetRequest{Uid: 100})
-// 	}
-
-// }
-
-// func TestLocationFound(t *testing.T) {
-// 	mockGCSClient := newMockLocalObjStoreClient()
-
-// 	// Initialize a mock server and required dependencies
-// 	s := &server{
-// 		gcsObjClient:       mockGCSClient,
-// 		localObjectChannels: map[string]chan []byte{"testUID": make(chan []byte, 1)},
-// 	}
-
-// 	ctx := context.Background()
-// 	resp := &pb.LocationFoundResponse{
-// 		Uid:      "testUID",
-// 		Location: 1,
-// 	}
-
-// 	statusResp, err := s.LocationFound(ctx, resp)
-// 	require.NoError(t, err)
-// 	require.NotNil(t, statusResp)
-// 	require.True(t, statusResp.Success)
-
-// 	select {
-// 	case data := <-s.localObjectChannels["testUID"]:
-// 		require.Equal(t, []byte("mockObjectData"), data)
-// 	default:
-// 		t.Fatal("Expected data not found in the channel")
-// 	}
-// }

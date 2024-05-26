@@ -38,8 +38,9 @@ func LoadConfig() *Config {
     // be set prior to any Go code execution (i.e., in GitHub Actions workflow
     // before unit tests are run or in Dockerfile)
     rootPath := os.Getenv("PROJECT_ROOT")
+    
     configFile := filepath.Join(rootPath, "config", "app_config.yaml")
-
+   
     yamlFile, err := ioutil.ReadFile(configFile)
     if err != nil {
         log.Fatalf("error: %v", err)
