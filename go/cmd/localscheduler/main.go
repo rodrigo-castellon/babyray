@@ -8,7 +8,6 @@ import (
 	"net"
 	"strconv"
     "os"
-    // "math"
 	"time"
 
 	"github.com/rodrigo-castellon/babyray/config"
