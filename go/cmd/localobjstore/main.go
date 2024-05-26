@@ -9,6 +9,7 @@ import (
 	"net"
 	"strconv"
 	"os"
+	"time"
 
 	"github.com/rodrigo-castellon/babyray/config"
 	pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -20,7 +21,7 @@ import (
 // var gcsObjClient pb.GCSObjClient
 // var localNodeID uint64
 var cfg *config.Config
-const EMA_PARAM float = .9
+const EMA_PARAM float32 = .9
 func main() {
 	cfg = config.GetConfig()                                  // Load configuration
     startServer(":" + strconv.Itoa(cfg.Ports.LocalObjectStore))
@@ -80,7 +81,7 @@ type server struct {
 	localObjectChannels map[uint64]chan []byte
 	gcsObjClient        pb.GCSObjClient
 	localNodeID         uint64
-	avgBandwidth        float 
+	avgBandwidth        float32
 }
 
 func (s *server) Store(ctx context.Context, req *pb.StoreRequest) (*pb.StatusResponse, error) {
@@ -157,6 +158,6 @@ func (s *server) Copy(ctx context.Context, req *pb.CopyRequest) (*pb.CopyRespons
 	return &pb.CopyResponse{Uid: req.Uid, ObjectBytes: data}, nil
 }
 
-func(s *server) AvgBandwidth(ctx context.Context, req *pb.StatusResponse) {
-	return &pb.BandwidthResponse{AvgBandwidth: s.avgBandwidth}
+func(s *server) AvgBandwidth(ctx context.Context, req *pb.StatusResponse) (*pb.BandwidthResponse, error) {
+	return &pb.BandwidthResponse{AvgBandwidth: s.avgBandwidth}, nil
 }
