@@ -51,6 +51,8 @@ func (c *globalSchedulerClient) Schedule(ctx context.Context, in *GlobalSchedule
 // for forward compatibility
 type GlobalSchedulerServer interface {
 	Schedule(context.Context, *GlobalScheduleRequest) (*StatusResponse, error)
+	Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.StatusResponse, error)
+
 	mustEmbedUnimplementedGlobalSchedulerServer()
 }
 

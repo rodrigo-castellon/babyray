@@ -6,6 +6,8 @@ import (
     "net"
     "strconv"
     "math/rand"
+    "math"
+    "bytes"
     "fmt"
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -43,7 +45,7 @@ type HeartbeatEntry struct {
 type server struct {
    pb.UnimplementedGlobalSchedulerServer
    gcsClient pb.GCSObjClient
-   status map[uint32]HeartbeatEntry
+   status map[uint64]HeartbeatEntry
 }
 
 
@@ -51,7 +53,7 @@ func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.
     s.status[req.NodeId] = HeartbeatEntry{numRunningTasks: req.RunningTasks, numQueuedTasks: req.QueuedTasks, avgRunningTime: req.AvgRunningTime, avgBandwidth: req.AvgBandwidth}
     return &pb.StatusResponse{Success: true}, nil
 }
-func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) (*pb.ScheduleResponse, error) {
+func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) (*pb.StatusResponse, error) {
     localityFlag := false //Os.Getenv("locality_aware")
     worker_id := getBestWorker(s, localityFlag, req.Args)
     workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, worker_id, cfg.Ports.LocalWorkerStart)
@@ -71,7 +73,7 @@ func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) 
     if err != nil || !output_result.Success {
         log.Fatalf(fmt.Sprintf("global scheduler failed to contact worker %d. Err: %v, Response code: %d", worker_id, err, output_result.ErrorCode))
     } 
-    return &pb.ScheduleResponse{Uid: uid}, nil
+    return &pb.StatusResponse{Success: true}, nil
 
 
 }
@@ -80,9 +82,9 @@ func getBestWorker(s *server, localityFlag bool, args []bytes) (uint32) {
     minId := -1; 
     minTime := math.MaxInt
     if localityFlag {
-        locationsResp, err = s.gcsClient.GetObjectLocations(&pb.ObjectLocationRequest{Args: args})
+        locationsResp, err := s.gcsClient.GetObjectLocations(&pb.ObjectLocationsRequest{Args: args})
         if err != nil {
-            log.Errorf("Failed to ask gcs for object locations: %v", err)
+            log.Fatalf("Failed to ask gcs for object locations: %v", err)
         }
        
   
