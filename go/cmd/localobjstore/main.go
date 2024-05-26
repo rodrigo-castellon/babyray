@@ -124,11 +124,11 @@ func (s *server) LocationFound(ctx context.Context, resp *pb.LocationFoundCallba
 
 	c := pb.NewLocalObjStoreClient(conn)
 
-	start := time.Time()
+	start := time.Now()
 
 	x, err := c.Copy(ctx, &pb.CopyRequest{Uid: resp.Uid, Requester: s.localNodeID})
 
-	bandwidth := len(x.ObjectBytes) / (time.Time() - start)
+	bandwidth := float32(len(x.ObjectBytes)) / float32((time.Now().Sub(start).Seconds()))
 
 	s.avgBandwidth = EMA_PARAM * s.avgBandwidth + (1 - EMA_PARAM) * bandwidth 
 
