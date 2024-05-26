@@ -47,10 +47,10 @@ type server struct {
 }
 
 
-func (s *server) Heartbeat(ctx context.Context, *pb.HeartbeatRequest req) (*pb.StatusResponse, error) {
+func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.StatusResponse, error) {
     s.status[req.NodeId] = HeartbeatEntry{numRunningTasks: req.RunningTasks, numQueuedTasks: req.QueuedTasks, avgRunningTime: req.AvgRunningTime, avgBandwidth: req.AvgBandwidth}
 }
-func (s *server) Schedule(ctx context.Context , *pb.GlobalScheduleRequest req) (*pb.StatusResponse, error) {
+func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) (*pb.StatusResponse, error) {
     localityFlag := false //Os.Getenv("locality_aware")
     worker_id := getBestWorker(s, localityFlag, args)
     workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, worker_id, cfg.Ports.Worker)
