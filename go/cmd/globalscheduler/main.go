@@ -7,7 +7,7 @@ import (
     "strconv"
     "math/rand"
     "math"
-    "bytes"
+   // "bytes"
     "fmt"
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -78,10 +78,11 @@ func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) 
 
 }
 
-func getBestWorker(ctx context.Context, s *server, localityFlag bool, args []byte) (uint32) {
+func getBestWorker(ctx context.Context, s *server, localityFlag bool, args []byte) (uint64) {
     var minId uint64
     minId = 0
-    minTime := math.MaxFloat32
+    var minTime float32
+    minTime = math.MaxFloat32
     if localityFlag {
         locationsResp, err := s.gcsClient.GetObjectLocations(ctx, &pb.ObjectLocationsRequest{Args: args})
         if err != nil {
