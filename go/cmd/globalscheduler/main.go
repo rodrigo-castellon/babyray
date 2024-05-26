@@ -79,8 +79,9 @@ func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) 
 }
 
 func getBestWorker(ctx context.Context, s *server, localityFlag bool, args []byte) (uint32) {
-    minId := -1; 
-    minTime := math.MaxInt
+    var minId uint64
+    minId = 0
+    minTime := math.MaxFloat32
     if localityFlag {
         locationsResp, err := s.gcsClient.GetObjectLocations(ctx, &pb.ObjectLocationsRequest{Args: args})
         if err != nil {
@@ -97,10 +98,10 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, args []byt
         }
         
         for loc, bytes := range locationToBytes {
-            queueingTime := s.status[loc].numQueuedTasks * s.status[loc].avgRunningTime
-            transferTime := (total - bytes) * s.status[loc].avgBandwidth
+            queueingTime := float32(s.status[loc].numQueuedTasks) * s.status[loc].avgRunningTime
+            transferTime := float32(total - bytes) * s.status[loc].avgBandwidth
             waitingTime := queueingTime + transferTime
-            if waitingTime < min_waiting_time {
+            if waitingTime < minTime {
                 minTime = waitingTime
                 minId = loc
             }
@@ -108,15 +109,15 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, args []byt
 
     } else {
   
-        for id, times := range s.status {
-            if times[0] + times[1] < minTime {
+        for id, heartbeat := range s.status {
+            if float32(heartbeat.numQueuedTasks) * heartbeat.avgRunningTime < minTime {
                 minId = id
-                minTime = times[0] + times[1]
+                minTime = float32(heartbeat.numQueuedTasks) * heartbeat.avgRunningTime
             }
         }
         
     }
-    if minId == -1 {
+    if minTime == math.MaxInt {
         log.Fatalf("global scheduler failed to pick a worker")
     }
     return minId
