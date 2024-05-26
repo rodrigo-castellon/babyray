@@ -78,7 +78,7 @@ func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) 
 
 }
 
-func getBestWorker(ctx context.Context, s *server, localityFlag bool, args []bytes) (uint32) {
+func getBestWorker(ctx context.Context, s *server, localityFlag bool, args []byte) (uint32) {
     minId := -1; 
     minTime := math.MaxInt
     if localityFlag {
@@ -88,17 +88,18 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, args []byt
         }
        
   
-        locationToBytes := make(map[uint64]uint32)
-        total := 0
+        locationToBytes := make(map[uint64]uint64)
+        var total uint64
+        total = 0
         for _, val := range locationsResp.Locations {
             locationToBytes[val.Location] += val.Bytes
             total += val.Bytes
         }
         
         for loc, bytes := range locationToBytes {
-            queueingTime := s.status[loc].numQueuedTasks * s.status[loc].AvgRunningTime
-            transferTime := (total - bytes) * s.status[loc].AvgBandwidth
-            waitingTIme = queueingTime + transferTime
+            queueingTime := s.status[loc].numQueuedTasks * s.status[loc].avgRunningTime
+            transferTime := (total - bytes) * s.status[loc].avgBandwidth
+            waitingTime := queueingTime + transferTime
             if waitingTime < min_waiting_time {
                 minTime = waitingTime
                 minId = loc
