@@ -9,6 +9,7 @@ import (
 	"strconv"
     "os"
     // "math"
+	"time"
 
 	"github.com/rodrigo-castellon/babyray/config"
 	pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -40,8 +41,8 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
-
-	go SendHeartbeats()
+	ctx = context.Background()
+	go SendHeartbeats(ctx, globalSchedulerClient, nodeId)
 
 
 
@@ -98,7 +99,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 
 }
 
-func SendHeartbeats() {
+func SendHeartbeats(ctx context.Context, globalSchedulerClient pb.GlobalSchedulerClient, nodeId uint64 ) {
 	worker_id, _ := strconv.Atoi(os.Getenv("NODE_ID"))
 	workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
         log.Printf("the worker address is %v", workerAddress)
@@ -127,11 +128,12 @@ func SendHeartbeats() {
 		numQueuedTasks  := status.NumQueuedTasks
 		avgRunningTime  := status.AvgRunningTime
 		avgBandwidth, _    := lobsClient.AvgBandwidth(ctx, &pb.StatusResponse{})
-		s.globalSchedulerClient.Heartbeat(ctx, &pb.HeartbeatRequest{
+		globalSchedulerClient.Heartbeat(ctx, &pb.HeartbeatRequest{
 			RunningTasks: numRunningTasks, 
 			QueuedTasks: numQueuedTasks, 
 		    AvgRunningTime: avgRunningTime, 
-			AvgBandwidth: avgBandwidth.AvgBandwidth})
+			AvgBandwidth: avgBandwidth.AvgBandwidth, 
+			NodeId: nodeId })
 	    time.Sleep(HEARTBEAT_WAIT * time.Second)
 	}
 }
