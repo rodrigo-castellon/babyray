@@ -11,9 +11,9 @@ import (
     pb "github.com/rodrigo-castellon/babyray/pkg"
     "github.com/rodrigo-castellon/babyray/config"
 )
-
+var cfg config.Config
 func main() {
-    cfg := config.LoadConfig() // Load configuration
+    cfg = config.LoadConfig() // Load configuration
     address := ":" + strconv.Itoa(cfg.Ports.GlobalScheduler) // Prepare the network address
 
     lis, err := net.Listen("tcp", address)
@@ -33,26 +33,27 @@ func main() {
 }
 
 type HeartbeatEntry struct {
-    numRunningTasks uint32
-    numQueuedTasks uint32
-    avgRunningTime float32
-    avgBandwidth float32
+    numRunningTasks uint64
+    numQueuedTasks uint64
+    avgRunningTime float64
+    avgBandwidth float64
 
 }
 // server is used to implement your gRPC service.
 type server struct {
    pb.UnimplementedGlobalSchedulerServer
-   gcsClient pb.GCSFuncClient
+   gcsClient pb.GCSObjClient
    status map[uint32]HeartbeatEntry
 }
 
 
 func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.StatusResponse, error) {
     s.status[req.NodeId] = HeartbeatEntry{numRunningTasks: req.RunningTasks, numQueuedTasks: req.QueuedTasks, avgRunningTime: req.AvgRunningTime, avgBandwidth: req.AvgBandwidth}
+    return &pb.StatusResponse{Success: true}, nil
 }
 func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) (*pb.StatusResponse, error) {
     localityFlag := false //Os.Getenv("locality_aware")
-    worker_id := getBestWorker(s, localityFlag, args)
+    worker_id := getBestWorker(s, localityFlag, req.Args)
     workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, worker_id, cfg.Ports.Worker)
 
     log.Printf("the worker address is %v", workerAddress)
@@ -66,7 +67,7 @@ func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) 
     workerClient := pb.NewWorkerClient(conn)
 
 	uid := uint64(rand.Intn(100))
-    output_result, err = workerClient.Run(&pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
+    output_result, err := workerClient.Run(ctx, &pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
     if err != nil || !output_result.Success {
         log.Fatalf(fmt.Sprintf("global scheduler failed to contact worker %d. Err: %v, Response code: %d", worker_id, err, output_result.errorCode))
     } 
