@@ -88,11 +88,11 @@ func getBestWorker(s *server, localityFlag bool, args []bytes) (uint32) {
         }
        
   
-        locationToBytes = make(map[uint64]uint32)
+        locationToBytes := make(map[uint64]uint32)
         total := 0
-        for _ , loc := range locationsResp.Locations {
-            locationToBytes[loc[0]] += loc[1] 
-            total += loc[1]
+        for val := range locationsResp.Locations {
+            locationToBytes[val.Location] += val.Bytes
+            total += val.Bytes
         }
         
         for loc, bytes := range locationToBytes {

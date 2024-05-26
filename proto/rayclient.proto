@@ -146,8 +146,12 @@ message RequestLocationResponse {
 message ObjectLocationsRequest {
   bytes args = 1; 
 }
+message LocationByteTuple {
+  uint64 location = 1; 
+  uint64 bytes = 2;
+}
 message ObjectLocationsResponse {
-  bytes locations = 1; 
+  map<uint64, LocationByteTuple> locations = 1; 
 }
 /* END GCS OBJECT TABLE */
 
