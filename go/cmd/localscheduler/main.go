@@ -77,7 +77,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 	
 	
 	uid := uint64(rand.Intn(100))
-	scheduleLocally := workerClient.NumRunningTasks() < MAX_TASKS
+	scheduleLocally := workerClient.NumRunningTasks(&pb.StatusResponse{}) < MAX_TASKS
 
 	if scheduleLocally {
 		_, err = workerClient.Run(ctx, &pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})

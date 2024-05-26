@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 import "google/protobuf/empty.proto";
-
 package ray;
 
 option go_package = "github.com/rodrigo-castellon/babyray/pkg/grpc;grpc";
