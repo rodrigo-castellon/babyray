@@ -32,16 +32,16 @@ func main() {
 
 	globalSchedulerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GlobalScheduler, cfg.Ports.GlobalScheduler)
 	conn, _ := grpc.Dial(globalSchedulerAddress, grpc.WithInsecure())
-	globalSchedulerClient = pb.NewGlobalSchedulerClient(conn)
+	globalSchedulerClient := pb.NewGlobalSchedulerClient(conn)
 	nodeId, _ := strconv.Atoi(os.Getenv("NODE_ID"))
 
-	pb.RegisterLocalSchedulerServer(s, &server{globalSchedulerClient: globalSchedulerClient, localNodeID: nodeId})
+	pb.RegisterLocalSchedulerServer(s, &server{globalSchedulerClient: globalSchedulerClient, localNodeID: uint64(nodeId)})
 	log.Printf("server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
 
-	go s.SendHeartbeats()
+	go SendHeartbeats()
 
 
 
@@ -98,7 +98,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 
 }
 
-func (s *server) SendHeartbeats(){
+func SendHeartbeats(s *server){
 	worker_id, _ = strconv.Atoi(os.Getenv("NODE_ID"))
 	workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
         log.Printf("the worker address is %v", workerAddress)
@@ -122,10 +122,11 @@ func (s *server) SendHeartbeats(){
 	workerClient := pb.NewWorkerClient(workerConn)
 	lobsClient := pb.NewLocalObjStoreClient(lobsConn)
 	for {
-		numRunningTasks := workerClient.NumRunningTasks()
-		numQueuedTasks  := workerClient.NumQueuedTasks()
-		avgRunningTime  := workerClient.AvgRunningTime()
-		avgBandwidth    := lobsClient.AvgBandwidth()
+		status, _ = workerClient.WorkerStatus(&pb.StatusResponse{})
+		numRunningTasks := status.NumRunningTasks
+		numQueuedTasks  := status.NumQueuedTasks
+		avgRunningTime  := status.AvgRunningTime
+		avgBandwidth    := lobsClient.AvgBandwidth(&pb.StatusResponse{}).AvgBandwidth
 		s.globalSchedulerClient.Heartbeat(&pb.HeartbeatRequest{
 			RunningTasks: numRunningTasks, 
 			QueuedTasks: numQueuedTasks, 
