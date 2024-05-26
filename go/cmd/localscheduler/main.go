@@ -77,7 +77,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 	
 	
 	uid := uint64(rand.Intn(100))
-	scheduleLocally := workerClient.NumRunningTasks(&pb.StatusResponse{}) < MAX_TASKS
+	scheduleLocally := workerClient.WorkerStatus(&pb.StatusResponse{}).NumRunningTasks < MAX_TASKS
 
 	if scheduleLocally {
 		_, err = workerClient.Run(ctx, &pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
@@ -98,8 +98,8 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 
 }
 
-func SendHeartbeats(s *server) {
-	worker_id, _ = strconv.Atoi(os.Getenv("NODE_ID"))
+func SendHeartbeats() {
+	worker_id, _ := strconv.Atoi(os.Getenv("NODE_ID"))
 	workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
         log.Printf("the worker address is %v", workerAddress)
 		workerConn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
@@ -122,16 +122,16 @@ func SendHeartbeats(s *server) {
 	workerClient := pb.NewWorkerClient(workerConn)
 	lobsClient := pb.NewLocalObjStoreClient(lobsConn)
 	for {
-		status, _ = workerClient.WorkerStatus(&pb.StatusResponse{})
+		status, _ := workerClient.WorkerStatus(ctx, &pb.StatusResponse{})
 		numRunningTasks := status.NumRunningTasks
 		numQueuedTasks  := status.NumQueuedTasks
 		avgRunningTime  := status.AvgRunningTime
-		avgBandwidth    := lobsClient.AvgBandwidth(&pb.StatusResponse{}).AvgBandwidth
-		s.globalSchedulerClient.Heartbeat(&pb.HeartbeatRequest{
+		avgBandwidth, _    := lobsClient.AvgBandwidth(ctx, &pb.StatusResponse{})
+		s.globalSchedulerClient.Heartbeat(ctx, &pb.HeartbeatRequest{
 			RunningTasks: numRunningTasks, 
 			QueuedTasks: numQueuedTasks, 
 		    AvgRunningTime: avgRunningTime, 
-			AvgBandwidth: avgBandwidth})
+			AvgBandwidth: avgBandwidth.AvgBandwidth})
 	    time.Sleep(HEARTBEAT_WAIT * time.Second)
 	}
 }
