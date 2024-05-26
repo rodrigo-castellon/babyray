@@ -55,7 +55,7 @@ func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.
 }
 func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) (*pb.StatusResponse, error) {
     localityFlag := false //Os.Getenv("locality_aware")
-    worker_id := getBestWorker(s, localityFlag, req.Args)
+    worker_id := getBestWorker(ctx, s, localityFlag, req.Args)
     workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, worker_id, cfg.Ports.LocalWorkerStart)
 
     log.Printf("the worker address is %v", workerAddress)
