@@ -37,6 +37,7 @@ message HeartbeatRequest {
   uint64 queuedTasks = 2; 
   float avgRunningTime = 3; 
   float avgBandwidth = 4; 
+  uint53 nodeId = 5; 
 }
 
 /* END GLOBAL SCHEDULER */
@@ -126,6 +127,7 @@ message RunRequest {
 service GCSObj {
   rpc NotifyOwns(NotifyOwnsRequest) returns (StatusResponse);
   rpc RequestLocation(RequestLocationRequest) returns (RequestLocationResponse);
+  rpc GetObjectLocations(ObjectLocationsRequest) return (ObjectLocationsResponse); 
 }
 
 message NotifyOwnsRequest {
@@ -141,7 +143,12 @@ message RequestLocationRequest {
 message RequestLocationResponse { 
   bool immediatelyFound = 1;
 }
-
+message ObjectLocationsRequest {
+  bytes args = 1; 
+}
+message ObjectLocationsResponse {
+  bytes locations = 1; 
+}
 /* END GCS OBJECT TABLE */
 
 /* START GCS FUNCTION TABLE */

@@ -11,7 +11,7 @@ import (
     pb "github.com/rodrigo-castellon/babyray/pkg"
     "github.com/rodrigo-castellon/babyray/config"
 )
-var cfg config.Config
+var cfg *config.Config
 func main() {
     cfg = config.LoadConfig() // Load configuration
     address := ":" + strconv.Itoa(cfg.Ports.GlobalScheduler) // Prepare the network address
@@ -35,8 +35,8 @@ func main() {
 type HeartbeatEntry struct {
     numRunningTasks uint64
     numQueuedTasks uint64
-    avgRunningTime float64
-    avgBandwidth float64
+    avgRunningTime float32
+    avgBandwidth float32
 
 }
 // server is used to implement your gRPC service.
@@ -51,10 +51,10 @@ func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.
     s.status[req.NodeId] = HeartbeatEntry{numRunningTasks: req.RunningTasks, numQueuedTasks: req.QueuedTasks, avgRunningTime: req.AvgRunningTime, avgBandwidth: req.AvgBandwidth}
     return &pb.StatusResponse{Success: true}, nil
 }
-func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) (*pb.StatusResponse, error) {
+func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) (*pb.ScheduleResponse, error) {
     localityFlag := false //Os.Getenv("locality_aware")
     worker_id := getBestWorker(s, localityFlag, req.Args)
-    workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, worker_id, cfg.Ports.Worker)
+    workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, worker_id, cfg.Ports.LocalWorkerStart)
 
     log.Printf("the worker address is %v", workerAddress)
     conn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
@@ -69,22 +69,23 @@ func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) 
 	uid := uint64(rand.Intn(100))
     output_result, err := workerClient.Run(ctx, &pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
     if err != nil || !output_result.Success {
-        log.Fatalf(fmt.Sprintf("global scheduler failed to contact worker %d. Err: %v, Response code: %d", worker_id, err, output_result.errorCode))
+        log.Fatalf(fmt.Sprintf("global scheduler failed to contact worker %d. Err: %v, Response code: %d", worker_id, err, output_result.ErrorCode))
     } 
-    return uid
+    return &pb.ScheduleResponse{Uid: uid}, nil
 
 
 }
 
-func getBestWorker(s *server, localityFlag bool, args []uint64) (uint32) {
-    minId = -1; 
+func getBestWorker(s *server, localityFlag bool, args []bytes) (uint32) {
+    minId := -1; 
+    minTime := math.MaxInt
     if localityFlag {
         locationsResp, err = s.gcsClient.GetObjectLocations(&pb.ObjectLocationRequest{Args: args})
         if err != nil {
             log.Errorf("Failed to ask gcs for object locations: %v", err)
         }
-        minTime = math.MaxInt
-        minId = -1
+       
+  
         locationToBytes = make(map[uint64]uint32)
         total := 0
         for _ , loc := range locationsResp.Locations {
@@ -103,7 +104,7 @@ func getBestWorker(s *server, localityFlag bool, args []uint64) (uint32) {
         }
 
     } else {
-        minTime := math.MaxInt
+  
         for id, times := range s.status {
             if times[0] + times[1] < minTime {
                 minId = id
