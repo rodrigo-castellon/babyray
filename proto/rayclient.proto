@@ -127,7 +127,7 @@ message RunRequest {
 service GCSObj {
   rpc NotifyOwns(NotifyOwnsRequest) returns (StatusResponse);
   rpc RequestLocation(RequestLocationRequest) returns (RequestLocationResponse);
-  rpc GetObjectLocations(ObjectLocationsRequest) return (ObjectLocationsResponse); 
+  rpc GetObjectLocations(ObjectLocationsRequest) returns (ObjectLocationsResponse); 
 }
 
 message NotifyOwnsRequest {
