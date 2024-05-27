@@ -48,7 +48,7 @@ jobs:
         make -j $(nproc)
         sudo make altinstall
         cd ..
-        rm -rf Python-3.11.2 Python-3.11.2.tgz
+        sudo rm -rf Python-3.11.2 Python-3.11.2.tgz
 
     - name: Symlink properly
       run: sudo rm -f /usr/bin/python3 && sudo ln -s /usr/local/bin/python3.11 /usr/bin/python3
