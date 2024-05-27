@@ -52,10 +52,10 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 	var worker_id int
 	// worker_id = check_resources()
 	worker_id, _ = strconv.Atoi(os.Getenv("NODE_ID"))
-	uid := uint64(rand.Intn(100))
+	// uid := uint64(rand.Intn(100))
+    uid := rand.Uint64()
 	if worker_id != -1 {
 		workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
-        log.Printf("the worker address is %v", workerAddress)
 		conn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
         if err != nil {
             log.Printf("failed to connect to %s: %v", workerAddress, err)

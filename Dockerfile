@@ -45,11 +45,14 @@ ENV PROJECT_ROOT=/app
 FROM base as driver
 
 # install necessary Python packages to run anything
-RUN python3 -m pip install dill --break-system-packages
+RUN python3 -m pip install dill cloudpickle --break-system-packages
 RUN cd python && python3 -m pip install -e . --break-system-packages
 
 # install basic necessities to actually do driver stuff
 RUN apt install -y nano
+
+# install testing
+RUN python3 -m pip install pytest --break-system-packages
 
 # take in a CONFIG argument which will tell us what to target (GCS, global scheduler, or worker)
 # using multi-stage builds: https://chat.openai.com/share/a5eb4076-e36a-4a1e-b4c8-9d56ea7a604e

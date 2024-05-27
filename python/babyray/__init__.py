@@ -1,5 +1,5 @@
 # generic libraries
-import dill as pickle
+import cloudpickle as pickle
 import grpc
 
 from dataclasses import dataclass
@@ -77,7 +77,6 @@ class RemoteFunction:
 
 
 def init():
-    print("Initializing Baby Ray")
     # we need to connect to:
     # gcs function table
     # gcs object table

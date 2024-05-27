@@ -1,5 +1,7 @@
 .PHONY: all go py clean build servers docker
 
+PYTHON ?= python
+
 all: go py build docker
 
 go: proto
@@ -8,7 +10,7 @@ go: proto
 
 py: proto
 	@echo "Generating Python gRPC code..."
-	python -m grpc_tools.protoc -I proto/ --python_out=python/babyray --grpc_python_out=python/babyray proto/rayclient.proto
+	$(PYTHON) -m grpc_tools.protoc -I proto/ --python_out=python/babyray --grpc_python_out=python/babyray proto/rayclient.proto
 	@echo "Modifying import statements for relative imports..."
 	# below line is now compatible with both MacOS (BSD) and GNU
 	sed -i'' -e 's/import rayclient_pb2 as rayclient__pb2/from . import rayclient_pb2 as rayclient__pb2/' python/babyray/rayclient_pb2_grpc.py
