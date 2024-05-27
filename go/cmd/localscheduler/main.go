@@ -75,9 +75,8 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
         defer conn.Close()
 
 		workerClient := pb.NewWorkerClient(conn)
+	}
 	
-	
-	uid := uint64(rand.Intn(100))
 	scheduleLocally, _ := workerClient.WorkerStatus(ctx, &pb.StatusResponse{})
 
 	if scheduleLocally.NumRunningTasks < MAX_TASKS {
