@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -156,17 +157,10 @@ func NewMockLocalObjStoreServer(callbackBufferSize int) *mockLocalObjStoreServer
 	}
 }
 
-// Does not check for a callback hit
-func TestSendCallback_Dumb(t *testing.T) {
-	// Setup a mock listener
-	lis := bufconn.Listen(bufSize)
-	s := grpc.NewServer()
-	pb.RegisterLocalObjStoreServer(s, &mockLocalObjStoreServer{})
-	go func() {
-		if err := s.Serve(lis); err != nil {
-			log.Fatalf("Server exited with error: %v", err)
-		}
-	}()
+func TestSendCallback_ErrorCase(t *testing.T) {
+	// Capture log output
+	var logBuffer bytes.Buffer
+	log.SetOutput(&logBuffer)
 
 	// Mock client address
 	clientAddress := "localhost:689"
@@ -174,21 +168,21 @@ func TestSendCallback_Dumb(t *testing.T) {
 	// Initialize the GCSObjServer
 	server := &GCSObjServer{}
 
-	// Use bufDialer in grpc.Dial call
-	conn, err := grpc.DialContext(context.Background(), "bufnet", grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
-		return lis.Dial()
-	}), grpc.WithInsecure())
-	if err != nil {
-		t.Fatalf("Failed to dial bufnet: %v", err)
+	// Run sendCallback to trigger an error case
+	server.sendCallback(clientAddress, 1, 100)
+
+	// Check the log output
+	logOutput := logBuffer.String()
+	expectedLogSubstring1 := "Failed to send LocationFound callback for UID"
+	expectedLogSubstring2 := "connection refused"
+
+	if !bytes.Contains([]byte(logOutput), []byte(expectedLogSubstring1)) {
+		t.Errorf("Expected log message containing '%s' not found. Actual log: %s", expectedLogSubstring1, logOutput)
 	}
-	defer conn.Close()
 
-	// Run sendCallback as a goroutine
-	go server.sendCallback(clientAddress, 1, 100)
-
-	// Allow some time for the goroutine to execute
-	time.Sleep(200 * time.Millisecond)
-
+	if !bytes.Contains([]byte(logOutput), []byte(expectedLogSubstring2)) {
+		t.Errorf("Expected log message containing '%s' not found. Actual log: %s", expectedLogSubstring2, logOutput)
+	}
 }
 
 // Checks for a callback hit using go channel

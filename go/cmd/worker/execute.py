@@ -1,6 +1,9 @@
 import sys
-import dill as pickle
+import cloudpickle as pickle
 import base64
+from babyray import init
+
+init()
 
 
 def main():
@@ -25,4 +28,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print("exception was:", e)

@@ -33,8 +33,8 @@ message GlobalScheduleRequest {
 }
 
 message HeartbeatRequest {
-  uint64 runningTasks = 1; 
-  uint64 queuedTasks = 2; 
+  uint32 runningTasks = 1; 
+  uint32 queuedTasks = 2; 
   float avgRunningTime = 3; 
   float avgBandwidth = 4; 
   uint64 nodeId = 5; 
@@ -122,11 +122,10 @@ message RunRequest {
 }
 
 message WorkerStatusResponse {
-  uint64 numRunningTasks = 1; 
-  uint64 numQueuedTasks = 2; 
-  float avgRunningTime = 3; 
+  uint32 numRunningTasks = 1;
+  uint32 numQueuedTasks = 2;
+  float averageRunningTime = 3;
 }
-
 
 /* END WORKER SERVICE */
 

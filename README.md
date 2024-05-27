@@ -4,6 +4,25 @@
 
 Currently a work in progress. By the end of this project, you should be able to simulate a full Ray cluster using Docker Compose and launch CPU jobs using Python, using exactly the same API exposed by the real Ray Core library.
 
+## Unit Tests
+
+To run unit tests, either push or just run [act](https://github.com/nektos/act) locally.
+
+## Integration Tests
+
+To run integration tests:
+
+```bash
+make all
+```
+
+Then,
+
+```bash
+./scripts/run_tests.sh
+```
+
+This script will spin up a Baby Ray cluster and have the first worker node run a suite of Pytest tests (`tests/integration/test_cluster.py`).
 
 ## Automatic deployment - shorthand version
 ```bash

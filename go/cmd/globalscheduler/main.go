@@ -35,8 +35,8 @@ func main() {
 }
 
 type HeartbeatEntry struct {
-    numRunningTasks uint64
-    numQueuedTasks uint64
+    numRunningTasks uint32
+    numQueuedTasks uint32
     avgRunningTime float32
     avgBandwidth float32
 

@@ -25,6 +25,9 @@ const EMA_PARAM float32 = .9
 func main() {
 	cfg = config.GetConfig()                                  // Load configuration
     startServer(":" + strconv.Itoa(cfg.Ports.LocalObjectStore))
+	// Create a channel and block on it to prevent the main function from exiting
+	block := make(chan struct{})
+	<-block
 	// address := ":" + strconv.Itoa(cfg.Ports.LocalObjectStore) // Prepare the network address
 	// if address == "" {
 	// 	lis, err := net.Listen("tcp", address)
@@ -63,7 +66,7 @@ func startServer(port string) (*grpc.Server, error) {
 	pb.RegisterLocalObjStoreServer(s, &server{localObjectStore: make(map[uint64][]byte), localObjectChannels: make(map[uint64]chan []byte), gcsObjClient: pb.NewGCSObjClient(conn), localNodeID: uint64(nodeId)})
 	
 
-	//log.Printf("server listening at %v", lis.Addr())
+	log.Printf("server listening at %v", lis.Addr())
 	go func() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)

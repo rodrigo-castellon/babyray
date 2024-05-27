@@ -18,7 +18,7 @@ import (
 
 var cfg *config.Config
 const HEARTBEAT_WAIT uint64 = 1 
-const MAX_TASKS uint64 = 10
+const MAX_TASKS uint32 = 10
 
 func main() {
 	cfg = config.GetConfig()                                // Load configuration
@@ -63,9 +63,10 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 	var worker_id int
 	// worker_id = check_resources()
 	worker_id, _ = strconv.Atoi(os.Getenv("NODE_ID"))
-
-	workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
-        log.Printf("the worker address is %v", workerAddress)
+	// uid := uint64(rand.Intn(100))
+    uid := rand.Uint64()
+	if worker_id != -1 {
+		workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
 		conn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
         if err != nil {
             log.Printf("failed to connect to %s: %v", workerAddress, err)
@@ -125,7 +126,7 @@ func SendHeartbeats(ctx context.Context, globalSchedulerClient pb.GlobalSchedule
 		status, _ := workerClient.WorkerStatus(ctx, &pb.StatusResponse{})
 		numRunningTasks := status.NumRunningTasks
 		numQueuedTasks  := status.NumQueuedTasks
-		avgRunningTime  := status.AvgRunningTime
+		avgRunningTime  := status.AverageRunningTime
 		avgBandwidth, _    := lobsClient.AvgBandwidth(ctx, &pb.StatusResponse{})
 		globalSchedulerClient.Heartbeat(ctx, &pb.HeartbeatRequest{
 			RunningTasks: numRunningTasks, 

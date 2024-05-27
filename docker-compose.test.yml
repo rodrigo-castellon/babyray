@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  worker1:
+    command: ["/bin/sh", "-c", "./go/bin/localscheduler & ./go/bin/localobjstore & ./go/bin/worker & sleep 1 && pytest -v /app/tests/integration"]
+    depends_on:
+      - gcs
+      - global_scheduler
+      - worker2
+      - worker3
+
+#  worker2:
+#    command: ["/bin/sh", "-c", "./go/bin/localscheduler & ./go/bin/localobjstore & ./go/bin/worker"]
+#
+#  worker3:
+#    command: ["/bin/sh", "-c", "./go/bin/localscheduler & ./go/bin/localobjstore & ./go/bin/worker"]
+
