@@ -65,22 +65,19 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 	worker_id, _ = strconv.Atoi(os.Getenv("NODE_ID"))
 	// uid := uint64(rand.Intn(100))
     uid := rand.Uint64()
-	if worker_id != -1 {
-		workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
-		conn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
-        if err != nil {
-            log.Printf("failed to connect to %s: %v", workerAddress, err)
-            return nil, err
-        }
-        defer conn.Close()
-
-		workerClient := pb.NewWorkerClient(conn)
+	workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
+	conn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
+	if err != nil {
+		log.Printf("failed to connect to %s: %v", workerAddress, err)
+		return nil, err
 	}
-	
+	defer conn.Close()
+
+	workerClient := pb.NewWorkerClient(conn)
 	scheduleLocally, _ := workerClient.WorkerStatus(ctx, &pb.StatusResponse{})
 
 	if scheduleLocally.NumRunningTasks < MAX_TASKS {
-		_, err = workerClient.Run(ctx, &pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
+		_, err := workerClient.Run(ctx, &pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
 		if err != nil {
             log.Printf("cannot contact worker %d: %v", worker_id, err)
             return nil, err
