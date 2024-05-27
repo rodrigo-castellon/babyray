@@ -32,16 +32,36 @@ jobs:
         go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
         echo "PATH=$PATH:$(go env GOPATH)/bin" >> $GITHUB_ENV
 
+    # - name: Install Python 3
+    #   run: |
+    #     sudo apt-get update
+    #     sudo apt-get install -y python3 python3-pip
+
     - name: Install Python 3
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3 python3-pip
+        sudo apt-get install -y wget build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+        wget https://www.python.org/ftp/python/3.11.2/Python-3.11.2.tgz
+        tar -xf Python-3.11.2.tgz
+        cd Python-3.11.2
+        ./configure --enable-optimizations
+        make -j $(nproc)
+        sudo make altinstall
+        cd ..
+        rm -rf Python-3.11.2 Python-3.11.2.tgz
+
+    - name: Symlink properly
+      run: sudo rm -f /usr/bin/python3 && sudo ln -s /usr/local/bin/python3.11 /usr/bin/python3
 
     - name: Check Python version
-      run: python3 --version
+      run: /usr/local/bin/python3.11 --version
+      # run: python3 --version
 
     - name: Check Python installed packages
-      run: python3 -m pip install dill
+      run: /usr/local/bin/python3.11 -m pip install cloudpickle
+
+    - name: Install babyray Python package
+      run: cd python && /usr/local/bin/python3.11 -m pip install -e .
 
     - name: Call the makefile (on Go only) - E.g., this generates protobuf code
       run: make go
@@ -50,12 +70,41 @@ jobs:
       run: go build -v ./...
       working-directory: go
 
+    - name: Build python stuff
+      run: make PYTHON=/usr/local/bin/python3.11 py
+
     - name: Set Project Root
       run: echo "PROJECT_ROOT=$(pwd)" >> $GITHUB_ENV
 
     - name: Use Project Root
       run: echo "The project root is $PROJECT_ROOT"
-  
+
+    # OVERALL TESTS  
     - name: Test
       run: go test -v ./...
       working-directory: go
+
+    # SPECIFIC TESTS
+    # - name: Test gcsfunctable
+    #   run: go test -v ./cmd/gcsfunctable
+    #   working-directory: go
+
+    # - name: Test gcsobjtable
+    #   run: go test -v ./cmd/gcsobjtable
+    #   working-directory: go
+
+    # - name: Test globalscheduler
+    #   run: go test -v ./cmd/globalscheduler
+    #   working-directory: go
+
+    # - name: Test localobjstore
+    #   run: go test -v ./cmd/localobjstore
+    #   working-directory: go
+
+    # - name: Test localscheduler
+    #   run: go test -v ./cmd/localscheduler
+    #   working-directory: go
+
+    # - name: Test worker
+    #   run: go test -v ./cmd/worker
+    #   working-directory: go

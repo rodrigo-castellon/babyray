@@ -5,6 +5,7 @@ from babyray import init
 
 init()
 
+
 def main():
     # Read binary data from stdin
     input_data = sys.stdin.buffer.read()
