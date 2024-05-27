@@ -12,6 +12,8 @@ import (
     "os"
     "path/filepath"
     "encoding/base64"
+    "sync"
+    "time"
 
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -20,6 +22,15 @@ import (
 
 // Declare the global config variable
 var cfg *config.Config
+
+const MAX_CONCURRENT_TASKS = 10
+const EMA_PARAM = 0.9
+
+var semaphore = make(chan struct{}, MAX_CONCURRENT_TASKS)
+var mu sync.Mutex
+var numRunningTasks int
+var numQueuedTasks int
+var averageRunningTime float32
 
 type ClientConstructor[T any] func(grpc.ClientConnInterface) T
 
@@ -114,23 +125,55 @@ func executeFunction(f []byte, args []byte, kwargs []byte) ([]byte, error) {
 
 // run executes the function by fetching it, running it, and storing the result.
 func (s *workerServer) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusResponse, error) {
-    // Assuming RunRequest contains uid, name, args, and kwargs
+    mu.Lock()
+    numQueuedTasks++
+    mu.Unlock()
 
-    // Connect to the gcs_func_gRPC service
+    semaphore <- struct{}{}
 
-    // Fetch function using gRPC call
+    mu.Lock()
+    numQueuedTasks--
+    numRunningTasks++
+    mu.Unlock()
+
+    defer func() {
+        mu.Lock()
+        numRunningTasks--
+        mu.Unlock()
+        <-semaphore
+    }()
+
+    start := time.Now()
+
     funcResponse, err := s.funcClient.FetchFunc(ctx, &pb.FetchRequest{Name: req.Name})
     if err != nil {
         return nil, err
     }
 
-    output, _ := executeFunction(funcResponse.SerializedFunc, req.Args, req.Kwargs)
+    output, err := executeFunction(funcResponse.SerializedFunc, req.Args, req.Kwargs)
+    if err != nil {
+        return nil, err
+    }
 
-    // Store output using gRPC call
     _, err = s.storeClient.Store(ctx, &pb.StoreRequest{Uid: req.Uid, ObjectBytes: output})
     if err != nil {
         return nil, err
     }
 
+    runningTime := float32(time.Since(start).Seconds())
+    mu.Lock()
+    averageRunningTime = EMA_PARAM*averageRunningTime + (1-EMA_PARAM)*runningTime
+    mu.Unlock()
+
     return &pb.StatusResponse{Success: true}, nil
+}
+
+func (s *workerServer) WorkerStatus(ctx context.Context, req *pb.StatusResponse) (*pb.WorkerStatusResponse, error) {
+    mu.Lock()
+    defer mu.Unlock()
+    return &pb.WorkerStatusResponse{
+        NumRunningTasks:    uint32(numRunningTasks),
+        NumQueuedTasks:     uint32(numQueuedTasks),
+        AverageRunningTime: averageRunningTime,
+    }, nil
 }

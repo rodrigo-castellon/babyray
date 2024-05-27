@@ -99,6 +99,7 @@ message CopyResponse {
 /* START WORKER SERVICE */
 service Worker {
   rpc Run(RunRequest) returns (StatusResponse);
+  rpc WorkerStatus(StatusResponse) returns (WorkerStatusResponse);
 }
 
 message RunRequest {
@@ -108,6 +109,11 @@ message RunRequest {
   bytes kwargs = 4;
 }
 
+message WorkerStatusResponse {
+  uint32 numRunningTasks = 1;
+  uint32 numQueuedTasks = 2;
+  float averageRunningTime = 3;
+}
 
 /* END WORKER SERVICE */
 
