@@ -46,6 +46,7 @@ type GCSObjServer struct {
 	objectLocations map[uint64][]uint64 // object uid -> list of nodeIds as uint64
 	waitlist        map[uint64][]string // object uid -> list of IP addresses as string
 	mu              sync.Mutex          // lock should be used for both objectLocations and waitlist
+	objectSizes     map[uint64]uint64
 }
 
 func NewGCSObjServer() *GCSObjServer {
