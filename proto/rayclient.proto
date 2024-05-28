@@ -155,7 +155,7 @@ message ObjectLocationsRequest {
   repeated uint64 args = 1; 
 }
 message LocationByteTuple {
-  repeated uint64 locs = 1; 
+  repeated uint64 Locations = 1; 
   uint64 bytes = 2;
 }
 message ObjectLocationsResponse {
