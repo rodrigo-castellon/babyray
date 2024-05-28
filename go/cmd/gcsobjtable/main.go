@@ -173,6 +173,13 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 	}, nil
 }
 
-func (s GCSObjServer) GetObjectLocations(ctx context.Context, req *pb.ObjectLocationsRequest) (*pb.ObjectLocationsResponse, error) {
-	
+func (s *GCSObjServer) GetObjectLocations(ctx context.Context, req *pb.ObjectLocationsRequest) (*pb.ObjectLocationsResponse, error) {
+	locations := make(map[uint64]uint64)
+	for u := range req.args {
+		if _,ok := s.objectLocations[u]; ok {
+			locations[u] = &pb.LocationByteTuple{Location: Objects.objectLocations[u]}
+		}
+		
+	}
+	return &pb.ObjectLocationsResponse{Locations: locations}
 }

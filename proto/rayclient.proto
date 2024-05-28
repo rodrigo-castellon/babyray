@@ -152,11 +152,11 @@ message RequestLocationResponse {
   bool immediatelyFound = 1;
 }
 message ObjectLocationsRequest {
-  bytes args = 1; 
+  repeated uint64 args = 1; 
 }
 message LocationByteTuple {
-  uint64 location = 1; 
-  uint64 bytes = 2;
+  repeated uint64 location = 1; 
+//  uint64 bytes = 2;
 }
 message ObjectLocationsResponse {
   map<uint64, LocationByteTuple> locations = 1; 
