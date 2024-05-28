@@ -10,6 +10,7 @@ import (
 	"net"
 	"strconv"
 	"sync"
+	"fmt"
 
 	"github.com/rodrigo-castellon/babyray/config"
 	pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -172,7 +173,7 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 		}
 		s.waitlist[uid] = append(s.waitlist[uid], clientAddress)
 		if exists {
-			_, err := s.GlobalSchedulerClient.Schedule(ctx, s.lineage[uid])
+			_, err := s.globalSchedulerClient.Schedule(ctx, s.lineage[uid])
 			if err != nil {
 				log.Fatalf("unable to contact global scheduler")
 			}
