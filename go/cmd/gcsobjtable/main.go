@@ -62,8 +62,7 @@ func NewGCSObjServer() *GCSObjServer {
 		mu:              sync.Mutex{},
 		objectSizes:     make(map[uint64]uint64),
 		lineage:         make(map[uint64]*pb.GlobalScheduleRequest),
-		globalSchedulerClient: globalSchedulerClient
-		
+		globalSchedulerClient: globalSchedulerClient,
 	}
 	return server
 }
