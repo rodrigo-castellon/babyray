@@ -53,6 +53,7 @@ func NewGCSObjServer() *GCSObjServer {
 		objectLocations: make(map[uint64][]uint64),
 		waitlist:        make(map[uint64][]string),
 		mu:              sync.Mutex{},
+		objectSizes:     make(make[uint64]uint64),
 	}
 	return server
 }
@@ -109,6 +110,7 @@ func (s *GCSObjServer) NotifyOwns(ctx context.Context, req *pb.NotifyOwnsRequest
 	// Append the nodeId to the list for the given object uid
 	if _, exists := s.objectLocations[uid]; !exists {
 		s.objectLocations[uid] = []uint64{} // Initialize slice if it doesn't exist
+		s.objectSizes = req.ObjectSize
 	}
 	s.objectLocations[uid] = append(s.objectLocations[uid], nodeId)
 
@@ -177,7 +179,7 @@ func (s *GCSObjServer) GetObjectLocations(ctx context.Context, req *pb.ObjectLoc
 	locations := make(map[uint64]*pb.LocationByteTuple)
 	for u := range req.Args {
 		if _,ok := s.objectLocations[uint64(u)]; ok {
-			locations[uint64(u)] = &pb.LocationByteTuple{Locations: s.objectLocations[uint64(u)]}
+			locations[uint64(u)] = &pb.LocationByteTuple{Locations: s.objectLocations[uint64(u)], Bytes: s.objectSizes[uint64(u)]}
 		}
 		
 	}

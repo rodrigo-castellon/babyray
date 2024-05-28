@@ -90,7 +90,7 @@ type server struct {
 func (s *server) Store(ctx context.Context, req *pb.StoreRequest) (*pb.StatusResponse, error) {
 	s.localObjectStore[req.Uid] = req.ObjectBytes
 
-	s.gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: req.Uid, NodeId: s.localNodeID})
+	s.gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: req.Uid, NodeId: s.localNodeID, ObjectSize: uint64(len(req.ObjectBytes))})
 	return &pb.StatusResponse{Success: true}, nil
 }
 

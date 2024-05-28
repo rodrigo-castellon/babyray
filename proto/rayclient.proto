@@ -141,6 +141,7 @@ service GCSObj {
 message NotifyOwnsRequest {
   uint64 uid = 1;
   uint64 nodeId = 2;
+  uint64 objectSize = 3; 
 }
 
 message RequestLocationRequest {
