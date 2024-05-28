@@ -53,7 +53,7 @@ func NewGCSObjServer() *GCSObjServer {
 		objectLocations: make(map[uint64][]uint64),
 		waitlist:        make(map[uint64][]string),
 		mu:              sync.Mutex{},
-		objectSizes:     make(make[uint64]uint64),
+		objectSizes:     make(map[uint64]uint64),
 	}
 	return server
 }
