@@ -47,14 +47,23 @@ type GCSObjServer struct {
 	waitlist        map[uint64][]string // object uid -> list of IP addresses as string
 	mu              sync.Mutex          // lock should be used for both objectLocations and waitlist
 	objectSizes     map[uint64]uint64
+	lineage			map[uint64]*pb.GlobalScheduleRequest 
+	globalSchedulerClient pb.GlobalSchedulerClient
 }
 
 func NewGCSObjServer() *GCSObjServer {
+	globalSchedulerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GlobalScheduler, cfg.Ports.GlobalScheduler)
+	conn, _ := grpc.Dial(globalSchedulerAddress, grpc.WithInsecure())
+	globalSchedulerClient := pb.NewGlobalSchedulerClient(conn)
+	
 	server := &GCSObjServer{
 		objectLocations: make(map[uint64][]uint64),
 		waitlist:        make(map[uint64][]string),
 		mu:              sync.Mutex{},
 		objectSizes:     make(map[uint64]uint64),
+		lineage:         make(map[uint64]*pb.GlobalScheduleRequest)
+		globalSchedulerClient: globalSchedulerClient
+		
 	}
 	return server
 }
@@ -66,8 +75,11 @@ Assumes that s's mutex is locked.
 */
 func (s *GCSObjServer) getNodeId(uid uint64) (*uint64, bool) {
 	nodeIds, exists := s.objectLocations[uid]
-	if !exists || len(nodeIds) == 0 {
+	if !exists {
 		return nil, false
+	}
+	if len(nodeIds) == 0 {
+		return nil, true
 	}
 
 	// Note: policy is to pick a random one; in the future it will need to be locality-based
@@ -154,13 +166,18 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 
 	uid := req.Uid
 	nodeId, exists := s.getNodeId(uid)
-	if !exists {
+	if nodeId == nil {
 		// Add client to waiting list
-		if _, exists := s.waitlist[uid]; !exists {
+		if _, waiting := s.waitlist[uid]; !waiting {
 			s.waitlist[uid] = []string{} // Initialize slice if it doesn't exist
 		}
 		s.waitlist[uid] = append(s.waitlist[uid], clientAddress)
-
+		if exists {
+			_, err := s.GlobalSchedulerClient.Schedule(ctx, s.lineage[uid])
+			if err != nil {
+				log.Fatalf("unable to contact global scheduler")
+			}
+		}
 		// Reply to this gRPC request
 		return &pb.RequestLocationResponse{
 			ImmediatelyFound: false,
@@ -185,4 +202,12 @@ func (s *GCSObjServer) GetObjectLocations(ctx context.Context, req *pb.ObjectLoc
 		
 	}
 	return &pb.ObjectLocationsResponse{Locations: locations}, nil
+}
+
+func (s *GCSObjServer) RegisterLineage(ctx context.Context, req *pb.GlobalScheduleRequest) (*pb.StatusResponse, error) {
+	if _, ok := s.lineage[req.Uid]; ok {
+		return &pb.StatusResponse{Success: false}, status.Error(codes.Internal, "tried to register duplicate lineage")
+	}
+	s.lineage[req.Uid] = req
+	return &pb.StatusResponse{Success: false}, nil
 }
