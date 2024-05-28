@@ -111,7 +111,7 @@ func (s *GCSObjServer) NotifyOwns(ctx context.Context, req *pb.NotifyOwnsRequest
 	// Append the nodeId to the list for the given object uid
 	if _, exists := s.objectLocations[uid]; !exists {
 		s.objectLocations[uid] = []uint64{} // Initialize slice if it doesn't exist
-		s.objectSizes = req.ObjectSize
+		s.objectSizes[uid] = req.ObjectSize
 	}
 	s.objectLocations[uid] = append(s.objectLocations[uid], nodeId)
 
