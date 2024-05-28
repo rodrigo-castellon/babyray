@@ -9,6 +9,7 @@ import (
 	"net"
 	"strconv"
 	"os"
+	"time"
 
 	"github.com/rodrigo-castellon/babyray/config"
 	pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -20,7 +21,7 @@ import (
 // var gcsObjClient pb.GCSObjClient
 // var localNodeID uint64
 var cfg *config.Config
-
+const EMA_PARAM float32 = .9
 func main() {
 	cfg = config.GetConfig()                                  // Load configuration
     startServer(":" + strconv.Itoa(cfg.Ports.LocalObjectStore))
@@ -83,6 +84,7 @@ type server struct {
 	localObjectChannels map[uint64]chan []byte
 	gcsObjClient        pb.GCSObjClient
 	localNodeID         uint64
+	avgBandwidth        float32
 }
 
 func (s *server) Store(ctx context.Context, req *pb.StoreRequest) (*pb.StatusResponse, error) {
@@ -125,7 +127,13 @@ func (s *server) LocationFound(ctx context.Context, resp *pb.LocationFoundCallba
 
 	c := pb.NewLocalObjStoreClient(conn)
 
+	start := time.Now()
+
 	x, err := c.Copy(ctx, &pb.CopyRequest{Uid: resp.Uid, Requester: s.localNodeID})
+
+	bandwidth := float32(len(x.ObjectBytes)) / float32((time.Now().Sub(start).Seconds()))
+
+	s.avgBandwidth = EMA_PARAM * s.avgBandwidth + (1 - EMA_PARAM) * bandwidth 
 
 	if x == nil || err != nil {
 		return &pb.StatusResponse{Success: false}, errors.New(fmt.Sprintf("failed to copy from other LOS @:%s ", otherLocalAddress))
@@ -151,4 +159,8 @@ func (s *server) Copy(ctx context.Context, req *pb.CopyRequest) (*pb.CopyRespons
 		return &pb.CopyResponse{Uid: req.Uid, ObjectBytes: nil}, errors.New("object was not in LOS")
 	}
 	return &pb.CopyResponse{Uid: req.Uid, ObjectBytes: data}, nil
+}
+
+func(s *server) AvgBandwidth(ctx context.Context, req *pb.StatusResponse) (*pb.BandwidthResponse, error) {
+	return &pb.BandwidthResponse{AvgBandwidth: s.avgBandwidth}, nil
 }

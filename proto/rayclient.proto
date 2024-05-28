@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 import "google/protobuf/empty.proto";
-
 package ray;
 
 option go_package = "github.com/rodrigo-castellon/babyray/pkg/grpc;grpc";
@@ -22,6 +21,7 @@ message StatusResponse {
 
 service GlobalScheduler {
   rpc Schedule(GlobalScheduleRequest) returns (StatusResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (StatusResponse); 
 }
 
 message GlobalScheduleRequest {
@@ -30,6 +30,15 @@ message GlobalScheduleRequest {
   bytes args = 3;
   bytes kwargs = 4;
   repeated uint64 uids = 5; 
+}
+
+message HeartbeatRequest {
+  uint32 runningTasks = 1; 
+  uint32 queuedTasks = 2; 
+  float avgRunningTime = 3; 
+  float avgBandwidth = 4; 
+  uint64 nodeId = 5; 
+
 }
 
 /* END GLOBAL SCHEDULER */
@@ -60,9 +69,8 @@ service LocalObjStore {
   rpc Get(GetRequest) returns (GetResponse);
   rpc LocationFound(LocationFoundCallback) returns (StatusResponse); 
   rpc Copy(CopyRequest) returns (CopyResponse); 
-  rpc Init(StatusResponse) returns (StatusResponse); 
+  rpc AvgBandwidth (StatusResponse) returns (BandwidthResponse); 
 }
-
 message StoreRequest {
   uint64 uid = 1;
   bytes objectBytes = 2;
@@ -77,6 +85,10 @@ message GetResponse {
   uint64 uid = 1; 
   bytes objectBytes = 2;
   bool local = 3; 
+}
+
+message BandwidthResponse {
+  float AvgBandwidth = 1; 
 }
 
 message LocationFoundCallback { 
@@ -123,6 +135,7 @@ message WorkerStatusResponse {
 service GCSObj {
   rpc NotifyOwns(NotifyOwnsRequest) returns (StatusResponse);
   rpc RequestLocation(RequestLocationRequest) returns (RequestLocationResponse);
+  rpc GetObjectLocations(ObjectLocationsRequest) returns (ObjectLocationsResponse); 
 }
 
 message NotifyOwnsRequest {
@@ -138,7 +151,16 @@ message RequestLocationRequest {
 message RequestLocationResponse { 
   bool immediatelyFound = 1;
 }
-
+message ObjectLocationsRequest {
+  bytes args = 1; 
+}
+message LocationByteTuple {
+  uint64 location = 1; 
+  uint64 bytes = 2;
+}
+message ObjectLocationsResponse {
+  map<uint64, LocationByteTuple> locations = 1; 
+}
 /* END GCS OBJECT TABLE */
 
 /* START GCS FUNCTION TABLE */
