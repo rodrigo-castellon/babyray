@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	GlobalScheduler_Schedule_FullMethodName = "/ray.GlobalScheduler/Schedule"
+	GlobalScheduler_Schedule_FullMethodName  = "/ray.GlobalScheduler/Schedule"
+	GlobalScheduler_Heartbeat_FullMethodName = "/ray.GlobalScheduler/Heartbeat"
 )
 
 // GlobalSchedulerClient is the client API for GlobalScheduler service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GlobalSchedulerClient interface {
 	Schedule(ctx context.Context, in *GlobalScheduleRequest, opts ...grpc.CallOption) (*StatusResponse, error)
+	Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*StatusResponse, error)
 }
 
 type globalSchedulerClient struct {
@@ -46,13 +48,21 @@ func (c *globalSchedulerClient) Schedule(ctx context.Context, in *GlobalSchedule
 	return out, nil
 }
 
+func (c *globalSchedulerClient) Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*StatusResponse, error) {
+	out := new(StatusResponse)
+	err := c.cc.Invoke(ctx, GlobalScheduler_Heartbeat_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GlobalSchedulerServer is the server API for GlobalScheduler service.
 // All implementations must embed UnimplementedGlobalSchedulerServer
 // for forward compatibility
 type GlobalSchedulerServer interface {
 	Schedule(context.Context, *GlobalScheduleRequest) (*StatusResponse, error)
-	Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.StatusResponse, error)
-
+	Heartbeat(context.Context, *HeartbeatRequest) (*StatusResponse, error)
 	mustEmbedUnimplementedGlobalSchedulerServer()
 }
 
@@ -62,6 +72,9 @@ type UnimplementedGlobalSchedulerServer struct {
 
 func (UnimplementedGlobalSchedulerServer) Schedule(context.Context, *GlobalScheduleRequest) (*StatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Schedule not implemented")
+}
+func (UnimplementedGlobalSchedulerServer) Heartbeat(context.Context, *HeartbeatRequest) (*StatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Heartbeat not implemented")
 }
 func (UnimplementedGlobalSchedulerServer) mustEmbedUnimplementedGlobalSchedulerServer() {}
 
@@ -94,6 +107,24 @@ func _GlobalScheduler_Schedule_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GlobalScheduler_Heartbeat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HeartbeatRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GlobalSchedulerServer).Heartbeat(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GlobalScheduler_Heartbeat_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GlobalSchedulerServer).Heartbeat(ctx, req.(*HeartbeatRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GlobalScheduler_ServiceDesc is the grpc.ServiceDesc for GlobalScheduler service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -104,6 +135,10 @@ var GlobalScheduler_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Schedule",
 			Handler:    _GlobalScheduler_Schedule_Handler,
+		},
+		{
+			MethodName: "Heartbeat",
+			Handler:    _GlobalScheduler_Heartbeat_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -205,7 +240,7 @@ const (
 	LocalObjStore_Get_FullMethodName           = "/ray.LocalObjStore/Get"
 	LocalObjStore_LocationFound_FullMethodName = "/ray.LocalObjStore/LocationFound"
 	LocalObjStore_Copy_FullMethodName          = "/ray.LocalObjStore/Copy"
-	LocalObjStore_Init_FullMethodName          = "/ray.LocalObjStore/Init"
+	LocalObjStore_AvgBandwidth_FullMethodName  = "/ray.LocalObjStore/AvgBandwidth"
 )
 
 // LocalObjStoreClient is the client API for LocalObjStore service.
@@ -216,7 +251,7 @@ type LocalObjStoreClient interface {
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
 	LocationFound(ctx context.Context, in *LocationFoundCallback, opts ...grpc.CallOption) (*StatusResponse, error)
 	Copy(ctx context.Context, in *CopyRequest, opts ...grpc.CallOption) (*CopyResponse, error)
-	Init(ctx context.Context, in *StatusResponse, opts ...grpc.CallOption) (*StatusResponse, error)
+	AvgBandwidth(ctx context.Context, in *StatusResponse, opts ...grpc.CallOption) (*BandwidthResponse, error)
 }
 
 type localObjStoreClient struct {
@@ -263,9 +298,9 @@ func (c *localObjStoreClient) Copy(ctx context.Context, in *CopyRequest, opts ..
 	return out, nil
 }
 
-func (c *localObjStoreClient) Init(ctx context.Context, in *StatusResponse, opts ...grpc.CallOption) (*StatusResponse, error) {
-	out := new(StatusResponse)
-	err := c.cc.Invoke(ctx, LocalObjStore_Init_FullMethodName, in, out, opts...)
+func (c *localObjStoreClient) AvgBandwidth(ctx context.Context, in *StatusResponse, opts ...grpc.CallOption) (*BandwidthResponse, error) {
+	out := new(BandwidthResponse)
+	err := c.cc.Invoke(ctx, LocalObjStore_AvgBandwidth_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -280,7 +315,7 @@ type LocalObjStoreServer interface {
 	Get(context.Context, *GetRequest) (*GetResponse, error)
 	LocationFound(context.Context, *LocationFoundCallback) (*StatusResponse, error)
 	Copy(context.Context, *CopyRequest) (*CopyResponse, error)
-	Init(context.Context, *StatusResponse) (*StatusResponse, error)
+	AvgBandwidth(context.Context, *StatusResponse) (*BandwidthResponse, error)
 	mustEmbedUnimplementedLocalObjStoreServer()
 }
 
@@ -300,8 +335,8 @@ func (UnimplementedLocalObjStoreServer) LocationFound(context.Context, *Location
 func (UnimplementedLocalObjStoreServer) Copy(context.Context, *CopyRequest) (*CopyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Copy not implemented")
 }
-func (UnimplementedLocalObjStoreServer) Init(context.Context, *StatusResponse) (*StatusResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Init not implemented")
+func (UnimplementedLocalObjStoreServer) AvgBandwidth(context.Context, *StatusResponse) (*BandwidthResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AvgBandwidth not implemented")
 }
 func (UnimplementedLocalObjStoreServer) mustEmbedUnimplementedLocalObjStoreServer() {}
 
@@ -388,20 +423,20 @@ func _LocalObjStore_Copy_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
-func _LocalObjStore_Init_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _LocalObjStore_AvgBandwidth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(StatusResponse)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LocalObjStoreServer).Init(ctx, in)
+		return srv.(LocalObjStoreServer).AvgBandwidth(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: LocalObjStore_Init_FullMethodName,
+		FullMethod: LocalObjStore_AvgBandwidth_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LocalObjStoreServer).Init(ctx, req.(*StatusResponse))
+		return srv.(LocalObjStoreServer).AvgBandwidth(ctx, req.(*StatusResponse))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -430,8 +465,8 @@ var LocalObjStore_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _LocalObjStore_Copy_Handler,
 		},
 		{
-			MethodName: "Init",
-			Handler:    _LocalObjStore_Init_Handler,
+			MethodName: "AvgBandwidth",
+			Handler:    _LocalObjStore_AvgBandwidth_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -439,7 +474,8 @@ var LocalObjStore_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	Worker_Run_FullMethodName = "/ray.Worker/Run"
+	Worker_Run_FullMethodName          = "/ray.Worker/Run"
+	Worker_WorkerStatus_FullMethodName = "/ray.Worker/WorkerStatus"
 )
 
 // WorkerClient is the client API for Worker service.
@@ -447,6 +483,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type WorkerClient interface {
 	Run(ctx context.Context, in *RunRequest, opts ...grpc.CallOption) (*StatusResponse, error)
+	WorkerStatus(ctx context.Context, in *StatusResponse, opts ...grpc.CallOption) (*WorkerStatusResponse, error)
 }
 
 type workerClient struct {
@@ -466,11 +503,21 @@ func (c *workerClient) Run(ctx context.Context, in *RunRequest, opts ...grpc.Cal
 	return out, nil
 }
 
+func (c *workerClient) WorkerStatus(ctx context.Context, in *StatusResponse, opts ...grpc.CallOption) (*WorkerStatusResponse, error) {
+	out := new(WorkerStatusResponse)
+	err := c.cc.Invoke(ctx, Worker_WorkerStatus_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorkerServer is the server API for Worker service.
 // All implementations must embed UnimplementedWorkerServer
 // for forward compatibility
 type WorkerServer interface {
 	Run(context.Context, *RunRequest) (*StatusResponse, error)
+	WorkerStatus(context.Context, *StatusResponse) (*WorkerStatusResponse, error)
 	mustEmbedUnimplementedWorkerServer()
 }
 
@@ -480,6 +527,9 @@ type UnimplementedWorkerServer struct {
 
 func (UnimplementedWorkerServer) Run(context.Context, *RunRequest) (*StatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Run not implemented")
+}
+func (UnimplementedWorkerServer) WorkerStatus(context.Context, *StatusResponse) (*WorkerStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method WorkerStatus not implemented")
 }
 func (UnimplementedWorkerServer) mustEmbedUnimplementedWorkerServer() {}
 
@@ -512,6 +562,24 @@ func _Worker_Run_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Worker_WorkerStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StatusResponse)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkerServer).WorkerStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Worker_WorkerStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkerServer).WorkerStatus(ctx, req.(*StatusResponse))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Worker_ServiceDesc is the grpc.ServiceDesc for Worker service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -523,14 +591,19 @@ var Worker_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "Run",
 			Handler:    _Worker_Run_Handler,
 		},
+		{
+			MethodName: "WorkerStatus",
+			Handler:    _Worker_WorkerStatus_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "rayclient.proto",
 }
 
 const (
-	GCSObj_NotifyOwns_FullMethodName      = "/ray.GCSObj/NotifyOwns"
-	GCSObj_RequestLocation_FullMethodName = "/ray.GCSObj/RequestLocation"
+	GCSObj_NotifyOwns_FullMethodName         = "/ray.GCSObj/NotifyOwns"
+	GCSObj_RequestLocation_FullMethodName    = "/ray.GCSObj/RequestLocation"
+	GCSObj_GetObjectLocations_FullMethodName = "/ray.GCSObj/GetObjectLocations"
 )
 
 // GCSObjClient is the client API for GCSObj service.
@@ -539,6 +612,7 @@ const (
 type GCSObjClient interface {
 	NotifyOwns(ctx context.Context, in *NotifyOwnsRequest, opts ...grpc.CallOption) (*StatusResponse, error)
 	RequestLocation(ctx context.Context, in *RequestLocationRequest, opts ...grpc.CallOption) (*RequestLocationResponse, error)
+	GetObjectLocations(ctx context.Context, in *ObjectLocationsRequest, opts ...grpc.CallOption) (*ObjectLocationsResponse, error)
 }
 
 type gCSObjClient struct {
@@ -567,12 +641,22 @@ func (c *gCSObjClient) RequestLocation(ctx context.Context, in *RequestLocationR
 	return out, nil
 }
 
+func (c *gCSObjClient) GetObjectLocations(ctx context.Context, in *ObjectLocationsRequest, opts ...grpc.CallOption) (*ObjectLocationsResponse, error) {
+	out := new(ObjectLocationsResponse)
+	err := c.cc.Invoke(ctx, GCSObj_GetObjectLocations_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GCSObjServer is the server API for GCSObj service.
 // All implementations must embed UnimplementedGCSObjServer
 // for forward compatibility
 type GCSObjServer interface {
 	NotifyOwns(context.Context, *NotifyOwnsRequest) (*StatusResponse, error)
 	RequestLocation(context.Context, *RequestLocationRequest) (*RequestLocationResponse, error)
+	GetObjectLocations(context.Context, *ObjectLocationsRequest) (*ObjectLocationsResponse, error)
 	mustEmbedUnimplementedGCSObjServer()
 }
 
@@ -585,6 +669,9 @@ func (UnimplementedGCSObjServer) NotifyOwns(context.Context, *NotifyOwnsRequest)
 }
 func (UnimplementedGCSObjServer) RequestLocation(context.Context, *RequestLocationRequest) (*RequestLocationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RequestLocation not implemented")
+}
+func (UnimplementedGCSObjServer) GetObjectLocations(context.Context, *ObjectLocationsRequest) (*ObjectLocationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetObjectLocations not implemented")
 }
 func (UnimplementedGCSObjServer) mustEmbedUnimplementedGCSObjServer() {}
 
@@ -635,6 +722,24 @@ func _GCSObj_RequestLocation_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GCSObj_GetObjectLocations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ObjectLocationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GCSObjServer).GetObjectLocations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GCSObj_GetObjectLocations_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GCSObjServer).GetObjectLocations(ctx, req.(*ObjectLocationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GCSObj_ServiceDesc is the grpc.ServiceDesc for GCSObj service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -649,6 +754,10 @@ var GCSObj_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RequestLocation",
 			Handler:    _GCSObj_RequestLocation_Handler,
+		},
+		{
+			MethodName: "GetObjectLocations",
+			Handler:    _GCSObj_GetObjectLocations_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -47,7 +47,11 @@ class Future:
 
     def get(self):
         # make a request to local object store
-        out = pickle.loads(local_object_store_gRPC.Get(rayclient_pb2.GetRequest(uid=self.uid)).objectBytes)
+        out = pickle.loads(
+            local_object_store_gRPC.Get(
+                rayclient_pb2.GetRequest(uid=self.uid)
+            ).objectBytes
+        )
         return out
 
 
@@ -70,9 +74,7 @@ class RemoteFunction:
     def register(self):
         # get our unique name from GCS
         self.name = gcs_func_gRPC.RegisterFunc(
-            rayclient_pb2.RegisterRequest(
-                serializedFunc=pickle.dumps(self.func)
-            )
+            rayclient_pb2.RegisterRequest(serializedFunc=pickle.dumps(self.func))
         ).name
 
 
