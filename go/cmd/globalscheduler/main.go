@@ -63,8 +63,7 @@ func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.
 
 func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) (*pb.StatusResponse, error) {
     localityFlag := false //Os.Getenv("locality_aware")
-    worker_id := getBestWorker(ctx, s, localityFlag, req.Args) // node ID
-    log.Printf("the best worker was nodeid=%v", worker_id)
+    worker_id := getBestWorker(ctx, s, localityFlag, req.Uids)
     workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, worker_id, cfg.Ports.LocalWorkerStart)
 
     conn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
@@ -85,7 +84,7 @@ func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) 
 
 }
 
-func getBestWorker(ctx context.Context, s *server, localityFlag bool, args []byte) (uint64) {
+func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uint64) (uint64) {
     var minId uint64
     minId = 0
     var minTime float32
@@ -93,7 +92,7 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, args []byt
 
     minTime = math.MaxFloat32
     if localityFlag {
-        locationsResp, err := s.gcsClient.GetObjectLocations(ctx, &pb.ObjectLocationsRequest{Args: args})
+        locationsResp, err := s.gcsClient.GetObjectLocations(ctx, &pb.ObjectLocationsRequest{Args: uids})
         if err != nil {
             log.Fatalf("Failed to ask gcs for object locations: %v", err)
         }
@@ -103,8 +102,12 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, args []byt
         var total uint64
         total = 0
         for _, val := range locationsResp.Locations {
-            locationToBytes[val.Location] += val.Bytes
-            total += val.Bytes
+            locs := val.Locations
+            for loc := range locs {
+                locationToBytes[uint64(loc)] += val.Bytes
+                total += val.Bytes
+            }
+            
         }
         
         for loc, bytes := range locationToBytes {
