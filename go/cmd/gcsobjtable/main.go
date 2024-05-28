@@ -174,12 +174,12 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 }
 
 func (s *GCSObjServer) GetObjectLocations(ctx context.Context, req *pb.ObjectLocationsRequest) (*pb.ObjectLocationsResponse, error) {
-	locations := make(map[uint64]uint64)
-	for u := range req.args {
+	locations := make(map[uint64]*pb.LocationByteTuple)
+	for u := range req.Args {
 		if _,ok := s.objectLocations[u]; ok {
 			locations[u] = &pb.LocationByteTuple{Location: Objects.objectLocations[u]}
 		}
 		
 	}
-	return &pb.ObjectLocationsResponse{Locations: locations}
+	return &pb.ObjectLocationsResponse{Locations: locations}, nil
 }
