@@ -29,6 +29,17 @@ message GlobalScheduleRequest {
   uint64 name = 2;
   bytes args = 3;
   bytes kwargs = 4;
+  repeated uint64 uids = 5; 
+ 
+}
+
+message HeartbeatRequest {
+  uint32 runningTasks = 1; 
+  uint32 queuedTasks = 2; 
+  float avgRunningTime = 3; 
+  float avgBandwidth = 4; 
+  uint64 nodeId = 5; 
+
 }
 
 /* END GLOBAL SCHEDULER */
