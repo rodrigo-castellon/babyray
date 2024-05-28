@@ -172,3 +172,7 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 		ImmediatelyFound: true,
 	}, nil
 }
+
+func (s GCSObjServer) GetObjectLocations(ctx context.Context, req *pb.ObjectLocationsRequest) (*pb.ObjectLocationsResponse, error) {
+	
+}

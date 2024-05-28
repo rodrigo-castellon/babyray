@@ -29,6 +29,7 @@ message GlobalScheduleRequest {
   uint64 name = 2;
   bytes args = 3;
   bytes kwargs = 4;
+  repeated uint64 uids = 5; 
 }
 
 /* END GLOBAL SCHEDULER */
@@ -42,6 +43,7 @@ message ScheduleRequest {
   uint64 name = 1;
   bytes args = 2;
   bytes kwargs = 3;
+  repeated uint64 uids = 4; 
 }
 
 // returns a Future, which is just the UID for
