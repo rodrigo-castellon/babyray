@@ -5,15 +5,19 @@ import (
     "log"
     "net"
     "strconv"
-    "math/rand"
+    // "math/rand"
     "math"
    // "bytes"
+   "sync"
     "fmt"
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
     "github.com/rodrigo-castellon/babyray/config"
 )
 var cfg *config.Config
+
+var mu sync.RWMutex
+
 func main() {
     cfg = config.LoadConfig() // Load configuration
     address := ":" + strconv.Itoa(cfg.Ports.GlobalScheduler) // Prepare the network address
@@ -26,7 +30,7 @@ func main() {
     s := grpc.NewServer()
     gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
 	conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
-    pb.RegisterGlobalSchedulerServer(s, &server{gcsClient: pb.NewGCSObjClient(conn)})
+    pb.RegisterGlobalSchedulerServer(s, &server{gcsClient: pb.NewGCSObjClient(conn), status: make(map[uint64]HeartbeatEntry)})
     defer conn.Close()
     log.Printf("server listening at %v", lis.Addr())
     if err := s.Serve(lis); err != nil {
@@ -50,15 +54,18 @@ type server struct {
 
 
 func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.StatusResponse, error) {
+    // log.Printf("heartbeat from %v", req.NodeId)
+    mu.Lock()
     s.status[req.NodeId] = HeartbeatEntry{numRunningTasks: req.RunningTasks, numQueuedTasks: req.QueuedTasks, avgRunningTime: req.AvgRunningTime, avgBandwidth: req.AvgBandwidth}
+    mu.Unlock()
     return &pb.StatusResponse{Success: true}, nil
 }
+
 func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) (*pb.StatusResponse, error) {
     localityFlag := false //Os.Getenv("locality_aware")
     worker_id := getBestWorker(ctx, s, localityFlag, req.Uids)
     workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, worker_id, cfg.Ports.LocalWorkerStart)
 
-    log.Printf("the worker address is %v", workerAddress)
     conn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
     if err != nil {
         log.Printf("failed to connect to %s: %v", workerAddress, err)
@@ -68,11 +75,10 @@ func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) 
 
     workerClient := pb.NewWorkerClient(conn)
 
-	uid := uint64(rand.Intn(100))
-    output_result, err := workerClient.Run(ctx, &pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
+    output_result, err := workerClient.Run(ctx, &pb.RunRequest{Uid: req.Uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
     if err != nil || !output_result.Success {
-        log.Fatalf(fmt.Sprintf("global scheduler failed to contact worker %d. Err: %v, Response code: %d", worker_id, err, output_result.ErrorCode))
-    } 
+        log.Fatalf(fmt.Sprintf("global scheduler failed to contact node %d. Err: %v", worker_id, err))
+    }
     return &pb.StatusResponse{Success: true}, nil
 
 
@@ -82,6 +88,8 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
     var minId uint64
     minId = 0
     var minTime float32
+    var foundBest bool
+
     minTime = math.MaxFloat32
     if localityFlag {
         locationsResp, err := s.gcsClient.GetObjectLocations(ctx, &pb.ObjectLocationsRequest{Args: uids})
@@ -103,26 +111,35 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
         }
         
         for loc, bytes := range locationToBytes {
+            mu.RLock()
             queueingTime := float32(s.status[loc].numQueuedTasks) * s.status[loc].avgRunningTime
             transferTime := float32(total - bytes) * s.status[loc].avgBandwidth
+            mu.RUnlock()
+
             waitingTime := queueingTime + transferTime
             if waitingTime < minTime {
                 minTime = waitingTime
                 minId = loc
+                foundBest = true
             }
         }
 
     } else {
   
+        // TODO: make iteration order random for maximum fairness
+        mu.RLock()
         for id, heartbeat := range s.status {
             if float32(heartbeat.numQueuedTasks) * heartbeat.avgRunningTime < minTime {
                 minId = id
                 minTime = float32(heartbeat.numQueuedTasks) * heartbeat.avgRunningTime
+                foundBest = true
             }
         }
+        mu.RUnlock()
         
     }
-    if minTime == math.MaxInt {
+
+    if !foundBest {
         log.Fatalf("global scheduler failed to pick a worker")
     }
     return minId
