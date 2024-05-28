@@ -94,7 +94,7 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
         var total uint64
         total = 0
         for _, val := range locationsResp.Locations {
-            for loc := range val {
+            for loc := range val.Locations {
                 locationToBytes[loc] += val.Bytes
                 total += val.Bytes
             }
