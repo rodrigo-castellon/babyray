@@ -121,6 +121,7 @@ message WorkerStatusResponse {
 service GCSObj {
   rpc NotifyOwns(NotifyOwnsRequest) returns (StatusResponse);
   rpc RequestLocation(RequestLocationRequest) returns (RequestLocationResponse);
+  rpc RegisterLineage(GlobalScheduleRequest) returns (StatusResponse); 
 }
 
 message NotifyOwnsRequest {
@@ -143,7 +144,7 @@ message RequestLocationResponse {
 service GCSFunc {
   rpc RegisterFunc(RegisterRequest) returns (RegisterResponse);
   rpc FetchFunc(FetchRequest) returns (FetchResponse);
-  rpc RegisterLineage(GlobalScheduleRequest) returns (StatusResponse); 
+
 }
 
 message RegisterRequest {
