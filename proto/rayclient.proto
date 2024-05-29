@@ -149,7 +149,16 @@ message RequestLocationRequest {
 message RequestLocationResponse { 
   bool immediatelyFound = 1;
 }
-
+message ObjectLocationsRequest {
+  repeated uint64 args = 1; 
+}
+message LocationByteTuple {
+  repeated uint64 locations = 1; 
+  uint64 bytes = 2;
+}
+message ObjectLocationsResponse {
+  map<uint64, LocationByteTuple> locations = 1; 
+}
 /* END GCS OBJECT TABLE */
 
 /* START GCS FUNCTION TABLE */
