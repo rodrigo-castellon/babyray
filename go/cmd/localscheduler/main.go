@@ -15,9 +15,22 @@ import (
 	"google.golang.org/grpc"
 )
 
+
+
 var globalSchedulerClient pb.GlobalSchedulerClient
 var localNodeID uint64
 var cfg *config.Config
+
+// LocalLog formats the message and logs it with a specific prefix
+func LocalLog(format string, v ...interface{}) {
+	var logMessage string
+	if len(v) == 0 {
+		logMessage = format // No arguments, use the format string as-is
+	} else {
+		logMessage = fmt.Sprintf(format, v...)
+	}
+	log.Printf("[lobs] %s", logMessage)
+}
 
 func main() {
 	cfg = config.GetConfig()                                // Load configuration
@@ -72,7 +85,11 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 	
 
 	_, err := s.gcsClient.RegisterLineage(ctx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
-	if scheduleLocally.NumRunningTasks < MAX_TASKS {
+	if err != nil {
+		LocalLog("unable to register lineage")
+	}
+	if worker_id != -1 {
+	//if scheduleLocally.NumRunningTasks < MAX_TASKS {
 		// LocalLog("Just running locally")
 
 		go func() {
