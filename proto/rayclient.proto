@@ -132,6 +132,8 @@ message WorkerStatusResponse {
 service GCSObj {
   rpc NotifyOwns(NotifyOwnsRequest) returns (StatusResponse);
   rpc RequestLocation(RequestLocationRequest) returns (RequestLocationResponse);
+  rpc GetObjectLocations(ObjectLocationsRequest) returns (ObjectLocationsResponse); 
+  rpc RegisterLineage(GlobalScheduleRequest) returns (StatusResponse); 
 }
 
 message NotifyOwnsRequest {

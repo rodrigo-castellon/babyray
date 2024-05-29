@@ -10,7 +10,7 @@ import (
 	"net"
 	"strconv"
 	"sync"
-
+	"fmt"
 	"github.com/rodrigo-castellon/babyray/config"
 	pb "github.com/rodrigo-castellon/babyray/pkg"
 	"google.golang.org/grpc"
@@ -46,12 +46,9 @@ type GCSObjServer struct {
 	objectLocations map[uint64][]uint64 // object uid -> list of nodeIds as uint64
 	waitlist        map[uint64][]string // object uid -> list of IP addresses as string
 	mu              sync.Mutex          // lock should be used for both objectLocations and waitlist
-<<<<<<< HEAD
-=======
 	objectSizes     map[uint64]uint64
-	lineage			map[uint64]*pb.GlobalScheduleRequest 
+	lineage			map[uint64]*pb.GlobalScheduleRequest
 	globalSchedulerClient pb.GlobalSchedulerClient
->>>>>>> f413c6e (first attempt)
 }
 
 func NewGCSObjServer() *GCSObjServer {
@@ -63,13 +60,10 @@ func NewGCSObjServer() *GCSObjServer {
 		objectLocations: make(map[uint64][]uint64),
 		waitlist:        make(map[uint64][]string),
 		mu:              sync.Mutex{},
-<<<<<<< HEAD
-=======
 		objectSizes:     make(map[uint64]uint64),
-		lineage:         make(map[uint64]*pb.GlobalScheduleRequest)
+		lineage:         make(map[uint64]*pb.GlobalScheduleRequest),
 		globalSchedulerClient: globalSchedulerClient
 		
->>>>>>> f413c6e (first attempt)
 	}
 	return server
 }
@@ -178,7 +172,7 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 		}
 		s.waitlist[uid] = append(s.waitlist[uid], clientAddress)
 		if exists {
-			_, err := s.GlobalSchedulerClient.Schedule(ctx, s.lineage[uid])
+			_, err := s.globalSchedulerClient.Schedule(ctx, s.lineage[uid])
 			if err != nil {
 				log.Fatalf("unable to contact global scheduler")
 			}
