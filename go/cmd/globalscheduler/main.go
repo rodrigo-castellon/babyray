@@ -1,18 +1,25 @@
 package main
 
 import (
-    // "context"
+    "context"
     "log"
     "net"
     "strconv"
-
+    // "math/rand"
+    "math"
+   // "bytes"
+   "sync"
+    "fmt"
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
     "github.com/rodrigo-castellon/babyray/config"
 )
+var cfg *config.Config
+
+var mu sync.RWMutex
 
 func main() {
-    cfg := config.LoadConfig() // Load configuration
+    cfg = config.LoadConfig() // Load configuration
     address := ":" + strconv.Itoa(cfg.Ports.GlobalScheduler) // Prepare the network address
 
     lis, err := net.Listen("tcp", address)
@@ -21,13 +28,23 @@ func main() {
     }
     _ = lis;
     s := grpc.NewServer()
-    pb.RegisterGlobalSchedulerServer(s, &server{})
+    gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
+	conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
+    pb.RegisterGlobalSchedulerServer(s, &server{gcsClient: pb.NewGCSObjClient(conn), status: make(map[uint64]HeartbeatEntry)})
+    defer conn.Close()
     log.Printf("server listening at %v", lis.Addr())
     if err := s.Serve(lis); err != nil {
        log.Fatalf("failed to serve: %v", err)
     }
 }
 
+type HeartbeatEntry struct {
+    numRunningTasks uint32
+    numQueuedTasks uint32
+    avgRunningTime float32
+    avgBandwidth float32
+
+}
 // server is used to implement your gRPC service.
 type server struct {
    pb.UnimplementedGlobalSchedulerServer
@@ -128,5 +145,4 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
     return minId
 }
 
-// Implement your service methods here.
 
