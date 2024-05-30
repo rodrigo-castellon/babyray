@@ -46,16 +46,19 @@ func main() {
 	// set up worker connection early
 	workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
 	workerConn, _ := grpc.Dial(workerAddress, grpc.WithInsecure())
-
 	workerClient := pb.NewWorkerClient(workerConn)
 
 	globalSchedulerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GlobalScheduler, cfg.Ports.GlobalScheduler)
-	conn, _ := grpc.Dial(globalSchedulerAddress, grpc.WithInsecure())
-	globalSchedulerClient := pb.NewGlobalSchedulerClient(conn)
+	scheduleConn, _ := grpc.Dial(globalSchedulerAddress, grpc.WithInsecure())
+	globalSchedulerClient := pb.NewGlobalSchedulerClient(scheduleConn)
+
+	gcsObjAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
+	gcsConn, _ := grpc.Dial(gcsObjAddress, grpc.WithInsecure())
+	gcsObjClient := pb.NewGCSObjClient(gcsConn)
+
+	
 	nodeId, _ := strconv.Atoi(os.Getenv("NODE_ID"))
-
-	pb.RegisterLocalSchedulerServer(s, &server{globalSchedulerClient: globalSchedulerClient, workerClient: workerClient, globalCtx: context.Background(), localNodeID: uint64(nodeId)})
-
+	pb.RegisterLocalSchedulerServer(s, &server{globalSchedulerClient: globalSchedulerClient, workerClient: workerClient, globalCtx: context.Background(), localNodeID: uint64(nodeId), gcsClient: gcsObjClient })
 	ctx := context.Background()
 	go SendHeartbeats(ctx, globalSchedulerClient, uint64(nodeId))
 
@@ -90,7 +93,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
     uid := rand.Uint64()
 
 	scheduleLocally, _ := s.workerClient.WorkerStatus(ctx, &pb.StatusResponse{})
-	
+	_, err := s.gcsClient.RegisterLineage(ctx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
 	if scheduleLocally.NumRunningTasks < MAX_TASKS {
 		// LocalLog("Just running locally")
 		go func() {

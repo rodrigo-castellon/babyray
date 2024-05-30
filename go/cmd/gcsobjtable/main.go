@@ -84,9 +84,17 @@ func (s *GCSObjServer) getNodeId(uid uint64) (*uint64, bool) {
 		return nil, true
 	}
 
+	nodesToReturn := []uint64
+	for _, n := range nodeIds {
+		if !s.liveNodes[n] {
+			nodesToReturn.append(nodesToReturn, n)
+		}
+	}
+	
+
 	// Note: policy is to pick a random one; in the future it will need to be locality-based
-	randomIndex := rand.Intn(len(nodeIds))
-	nodeId := &nodeIds[randomIndex]
+	randomIndex := rand.Intn(len(nodesToReturn))
+	nodeId := &nodesToReturn[randomIndex]
 	return nodeId, true
 }
 
