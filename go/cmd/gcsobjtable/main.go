@@ -51,6 +51,8 @@ type GCSObjServer struct {
 	lineage			map[uint64]*pb.GlobalScheduleRequest 
 	globalSchedulerClient pb.GlobalSchedulerClient
 	liveNodes      map[uint64]bool
+	generating     map[uint64]uint64   //object uid -> node id of original generator
+									   //used to determine when an original creation of a uid should be restarted
 }
 
 func NewGCSObjServer() *GCSObjServer {
@@ -77,11 +79,12 @@ Assumes that s's mutex is locked.
 */
 func (s *GCSObjServer) getNodeId(uid uint64) (*uint64, bool) {
 	nodeIds, exists := s.objectLocations[uid]
+
 	if !exists {
+		if !s.liveNodes[s.generating[uid]] {
+			return nil, true
+		}
 		return nil, false
-	}
-	if len(nodeIds) == 0 {
-		return nil, true
 	}
 
 	nodesToReturn := []uint64
@@ -89,6 +92,10 @@ func (s *GCSObjServer) getNodeId(uid uint64) (*uint64, bool) {
 		if !s.liveNodes[n] {
 			nodesToReturn.append(nodesToReturn, n)
 		}
+	}
+
+	if len(nodesToReturn) == 0 {
+		return nil, true
 	}
 
 
@@ -216,7 +223,9 @@ func (s *GCSObjServer) GetObjectLocations(ctx context.Context, req *pb.ObjectLoc
 		
 	}
 	return &pb.ObjectLocationsResponse{Locations: locations}, nil
-}func (s *GCSObjServer) RegisterLineage(ctx context.Context, req *pb.GlobalScheduleRequest) (*pb.StatusResponse, error) {
+}
+
+func (s *GCSObjServer) RegisterLineage(ctx context.Context, req *pb.GlobalScheduleRequest) (*pb.StatusResponse, error) {
 	if _, ok := s.lineage[req.Uid]; ok {
 		return &pb.StatusResponse{Success: false}, status.Error(codes.Internal, "tried to register duplicate lineage")
 	}
@@ -227,4 +236,12 @@ func (s *GCSObjServer) GetObjectLocations(ctx context.Context, req *pb.ObjectLoc
 func (s *GCSObjServer) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest) (*pb.StatusResponse, error) {
 	s.liveNodes = LiveNodesRequest.LiveNodes
 	return &pb.StatusResponse{Success: true}, nil
+}
+
+func (s *GCSObjServer) RegisterGenerating(ctx context.Context, req *pb.GeneratingRequest) (*pb.StatusResponse, error) {
+	if id, ok := s.generating[req.Uid]; ok {
+		return &pb.StatusResponse{Success: false}, status.Error(codes.Internal, "node  %d is already generating uid %d", id, req.Uid)
+	}
+	s.generating[req.Uid] = req.NodeId
+	return &pb.StatusResponse{Success: true}
 }

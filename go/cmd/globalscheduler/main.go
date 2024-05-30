@@ -91,6 +91,9 @@ func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) 
 
     workerClient := pb.NewWorkerClient(conn)
 
+    if req.NewObject {
+        s.gcsClient.RegisterGenerating(ctx, &pb.GeneratingRequest{Uid: req.Uid, NodeId: worker_id})
+    }
     output_result, err := workerClient.Run(ctx, &pb.RunRequest{Uid: req.Uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
     if err != nil || !output_result.Success {
         log.Fatalf(fmt.Sprintf("global scheduler failed to contact node %d. Err: %v", worker_id, err))

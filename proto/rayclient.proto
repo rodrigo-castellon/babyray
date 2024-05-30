@@ -137,7 +137,8 @@ service GCSObj {
   rpc RequestLocation(RequestLocationRequest) returns (RequestLocationResponse);
   rpc GetObjectLocations(ObjectLocationsRequest) returns (ObjectLocationsResponse); 
   rpc RegisterLineage(GlobalScheduleRequest) returns (StatusResponse); 
-  rpc RegiseterLiveNodes(LiveNodesRequest) returns (StatusResponse); 
+  rpc RegisterLiveNodes(LiveNodesRequest) returns (StatusResponse); 
+  rpc RegisterGenerating(GeneratingRequest) returns (StatusResponse); 
 }
 
 message NotifyOwnsRequest {
@@ -166,6 +167,11 @@ message ObjectLocationsResponse {
 }
 message LiveNodesRequest {
   map<uint64, bool> liveNodes = 1; 
+}
+
+message GeneratingRequest {
+  uint64 uid = 1; 
+  uint64 nodeId = 2; 
 }
 
 /* END GCS OBJECT TABLE */

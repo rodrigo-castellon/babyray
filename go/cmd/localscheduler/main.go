@@ -56,7 +56,7 @@ func main() {
 	gcsConn, _ := grpc.Dial(gcsObjAddress, grpc.WithInsecure())
 	gcsObjClient := pb.NewGCSObjClient(gcsConn)
 
-	
+
 	nodeId, _ := strconv.Atoi(os.Getenv("NODE_ID"))
 	pb.RegisterLocalSchedulerServer(s, &server{globalSchedulerClient: globalSchedulerClient, workerClient: workerClient, globalCtx: context.Background(), localNodeID: uint64(nodeId), gcsClient: gcsObjClient })
 	ctx := context.Background()
@@ -97,6 +97,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 	if scheduleLocally.NumRunningTasks < MAX_TASKS {
 		// LocalLog("Just running locally")
 		go func() {
+			_, err := s.gcsClient.RegisterGenerating(ctx, &pb.GeneratingRequest{Uid: uid, NodeId: s.localNodeID})
             _, err := s.workerClient.Run(s.globalCtx, &pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
             if err != nil {
                 LocalLog("cannot contact worker %d: %v", worker_id, err)
@@ -108,7 +109,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 	} else {
 		// LocalLog("contacting global scheduler")
 		go func() {
-            _, err := s.globalSchedulerClient.Schedule(s.globalCtx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
+            _, err := s.globalSchedulerClient.Schedule(s.globalCtx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs, NewObject: true})
             if err != nil {
                 LocalLog("cannot contact global scheduler")
             } else {
