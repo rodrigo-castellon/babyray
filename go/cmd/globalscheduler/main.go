@@ -71,7 +71,7 @@ func SendLiveNodes(s *server) (error) {
         for uid, heartbeat := range s.status {
             liveNodes[uid] = time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT
         }
-        s.gcsClient.RegisterLiveNodes(&pb.LiveNodesRequest{LiveNodes: liveNodes})
+        s.gcsClient.RegisterLiveNodes(ctx, &pb.LiveNodesRequest{LiveNodes: liveNodes})
         time.Sleep(HEARTBEAT_WAIT)
     }
 
