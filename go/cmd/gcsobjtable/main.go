@@ -137,7 +137,7 @@ func (s *GCSObjServer) NotifyOwns(ctx context.Context, req *pb.NotifyOwnsRequest
 	defer s.mu.Unlock()
 
 	uid, nodeId := req.Uid, req.NodeId
-
+	delete(s.generating, uid)
 	// Append the nodeId to the list for the given object uid
 	if _, exists := s.objectLocations[uid]; !exists {
 		s.objectLocations[uid] = []uint64{} // Initialize slice if it doesn't exist
@@ -240,6 +240,7 @@ func (s *GCSObjServer) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesR
 	s.liveNodes = LiveNodesRequest.LiveNodes
 	for uid, node := range s.generating {
 		if !s.liveNodes[node] {
+		   delete(s.generating, uid)
 		   s.globalSchedulerClient.Schedule(ctx, s.lineage[uid])
 		}
 	}
