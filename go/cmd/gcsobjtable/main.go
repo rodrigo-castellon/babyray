@@ -87,7 +87,7 @@ func (s *GCSObjServer) getNodeId(uid uint64) (*uint64, bool) {
 		return nil, false
 	}
 
-	nodesToReturn := []uint64
+	nodesToReturn := make([]uint64)
 	for _, n := range nodeIds {
 		if !s.liveNodes[n] {
 			nodesToReturn = append(nodesToReturn, n)
@@ -235,7 +235,7 @@ func (s *GCSObjServer) RegisterLineage(ctx context.Context, req *pb.GlobalSchedu
 }
 
 func (s *GCSObjServer) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest) (*pb.StatusResponse, error) {
-	s.liveNodes = LiveNodesRequest.LiveNodes
+	s.liveNodes = req.LiveNodes
 	for uid, node := range s.generating {
 		if !s.liveNodes[node] {
 		   delete(s.generating, uid)
@@ -247,8 +247,8 @@ func (s *GCSObjServer) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesR
 
 func (s *GCSObjServer) RegisterGenerating(ctx context.Context, req *pb.GeneratingRequest) (*pb.StatusResponse, error) {
 	if id, ok := s.generating[req.Uid]; ok {
-		return &pb.StatusResponse{Success: false}, status.Error(codes.Internal, "node %d is already generating uid %d", id, req.Uid)
+		return &pb.StatusResponse{Success: false}, status.Error(codes.Internal, fmt.Sprintf("node %d is already generating uid %d", id, req.Uid))
 	}
 	s.generating[req.Uid] = req.NodeId
-	return &pb.StatusResponse{Success: true}
+	return &pb.StatusResponse{Success: true}, nil
 }
