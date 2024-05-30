@@ -35,7 +35,7 @@ func main() {
     pb.RegisterGlobalSchedulerServer(s, &server{gcsClient: pb.NewGCSObjClient(conn), status: make(map[uint64]HeartbeatEntry)})
     defer conn.Close()
     log.Printf("server listening at %v", lis.Addr())
-    go SendLiveNodes(s)
+    go SendLiveNodes(&s)
     if err := s.Serve(lis); err != nil {
        log.Fatalf("failed to serve: %v", err)
     }
@@ -71,7 +71,7 @@ func SendLiveNodes(s *server) (error) {
         for uid, heartbeat := range s.status {
             liveNodes[uid] = time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT
         }
-        s.gcsClient.RegisterLiveNodes(ctx, &pb.LiveNodesRequest{LiveNodes: liveNodes})
+        s.gcsClient.RegisterLiveNodes(&pb.LiveNodesRequest{LiveNodes: liveNodes})
         time.Sleep(HEARTBEAT_WAIT)
     }
 
