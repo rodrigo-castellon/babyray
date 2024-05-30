@@ -20,6 +20,8 @@ services:
                 - node1
     ports:
       - "50001:50001"
+    environment:
+        LOCALITY_AWARE: "true"
 
   worker1:
     image: ray-node:driver

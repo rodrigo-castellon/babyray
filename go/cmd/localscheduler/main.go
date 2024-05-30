@@ -57,7 +57,6 @@ func main() {
 	ctx := context.Background()
 	go SendHeartbeats(ctx, globalSchedulerClient, uint64(nodeId))
 
-	// log.Printf("localsched server listening at %v", lis.Addr())
 	LocalLog("localsched server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
@@ -96,7 +95,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 	} else {
 		// LocalLog("contacting global scheduler")
 		go func() {
-            _, err := s.globalSchedulerClient.Schedule(s.globalCtx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
+            _, err := s.globalSchedulerClient.Schedule(s.globalCtx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs, Uids: req.Uids})
             if err != nil {
                 LocalLog("cannot contact global scheduler")
             } else {

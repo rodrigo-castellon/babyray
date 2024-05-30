@@ -8,6 +8,7 @@ import (
     // "math/rand"
     "math"
    // "bytes"
+   "os"
    "sync"
     "fmt"
     "google.golang.org/grpc"
@@ -43,7 +44,6 @@ type HeartbeatEntry struct {
     numQueuedTasks uint32
     avgRunningTime float32
     avgBandwidth float32
-
 }
 // server is used to implement your gRPC service.
 type server struct {
@@ -62,9 +62,14 @@ func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.
 }
 
 func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) (*pb.StatusResponse, error) {
-    localityFlag := false //Os.Getenv("locality_aware")
-    worker_id := getBestWorker(ctx, s, localityFlag, req.Uids)
-    workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, worker_id, cfg.Ports.LocalWorkerStart)
+    localityFlag := false
+    if os.Getenv("LOCALITY_AWARE") == "true" {
+        localityFlag = true
+    }
+
+    // gives us back the node id of the worker
+    node_id := getBestWorker(ctx, s, localityFlag, req.Uids)
+    workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, node_id, cfg.Ports.LocalWorkerStart)
 
     conn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
     if err != nil {
@@ -77,11 +82,9 @@ func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) 
 
     output_result, err := workerClient.Run(ctx, &pb.RunRequest{Uid: req.Uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
     if err != nil || !output_result.Success {
-        log.Fatalf(fmt.Sprintf("global scheduler failed to contact node %d. Err: %v", worker_id, err))
+        log.Fatalf(fmt.Sprintf("global scheduler failed to contact node %d. Err: %v", node_id, err))
     }
     return &pb.StatusResponse{Success: true}, nil
-
-
 }
 
 func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uint64) (uint64) {
@@ -96,20 +99,24 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
         if err != nil {
             log.Fatalf("Failed to ask gcs for object locations: %v", err)
         }
-       
-  
+
         locationToBytes := make(map[uint64]uint64)
+
+        // init every node with 0
+        for id, _ := range s.status {
+            locationToBytes[id] = 0
+        }
+
         var total uint64
         total = 0
         for _, val := range locationsResp.Locations {
             locs := val.Locations
-            for loc := range locs {
+            for _, loc := range locs {
                 locationToBytes[uint64(loc)] += val.Bytes
                 total += val.Bytes
             }
-            
         }
-        
+
         for loc, bytes := range locationToBytes {
             mu.RLock()
             queueingTime := float32(s.status[loc].numQueuedTasks) * s.status[loc].avgRunningTime
@@ -123,9 +130,7 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
                 foundBest = true
             }
         }
-
     } else {
-  
         // TODO: make iteration order random for maximum fairness
         mu.RLock()
         for id, heartbeat := range s.status {
@@ -136,7 +141,6 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
             }
         }
         mu.RUnlock()
-        
     }
 
     if !foundBest {
