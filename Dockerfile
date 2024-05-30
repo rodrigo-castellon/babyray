@@ -41,6 +41,16 @@ RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 # just to test things out
 RUN apt update && apt install -y iputils-ping
 
+
+# Create the required directory structure
+RUN mkdir -p go
+
+# Copy the go.mod and go.sum files into the go directory
+COPY go/go.mod go/go.sum go/
+
+# Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
+RUN cd go && go mod download
+
 # Copy everything from the current directory to the PWD(Present Working Directory) inside the container
 COPY . .
 
