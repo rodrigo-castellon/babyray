@@ -89,11 +89,11 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
     uid := rand.Uint64()
 
 	scheduleLocally, _ := s.workerClient.WorkerStatus(ctx, &pb.StatusResponse{})
-	_, err := s.gcsClient.RegisterLineage(ctx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
+	s.gcsClient.RegisterLineage(ctx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
 	if scheduleLocally.NumRunningTasks < MAX_TASKS {
 		// LocalLog("Just running locally")
 		go func() {
-			_, err := s.gcsClient.RegisterGenerating(ctx, &pb.GeneratingRequest{Uid: uid, NodeId: s.localNodeID})
+			s.gcsClient.RegisterGenerating(ctx, &pb.GeneratingRequest{Uid: uid, NodeId: s.localNodeID})
             _, err := s.workerClient.Run(s.globalCtx, &pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
             if err != nil {
                 LocalLog("cannot contact worker %d: %v", worker_id, err)
