@@ -90,7 +90,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
     uid := rand.Uint64()
 
 	scheduleLocally, _ := s.workerClient.WorkerStatus(ctx, &pb.StatusResponse{})
-
+	
 	if scheduleLocally.NumRunningTasks < MAX_TASKS {
 		// LocalLog("Just running locally")
 		go func() {

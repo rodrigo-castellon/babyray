@@ -9,13 +9,15 @@ import (
     "math"
    // "bytes"
    "sync"
+   "time"
     "fmt"
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
     "github.com/rodrigo-castellon/babyray/config"
 )
 var cfg *config.Config
-
+const LIVE_NODE_TIMEOUT time.Duration = 400 * time.Millisecond
+const HEARTBEAT_WAIT = 100 * time.Millisecond
 var mu sync.RWMutex
 
 func main() {
@@ -33,12 +35,14 @@ func main() {
     pb.RegisterGlobalSchedulerServer(s, &server{gcsClient: pb.NewGCSObjClient(conn), status: make(map[uint64]HeartbeatEntry)})
     defer conn.Close()
     log.Printf("server listening at %v", lis.Addr())
+    go SendLiveNodes(s)
     if err := s.Serve(lis); err != nil {
        log.Fatalf("failed to serve: %v", err)
     }
 }
 
 type HeartbeatEntry struct {
+    timeReceived    time.Time
     numRunningTasks uint32
     numQueuedTasks uint32
     avgRunningTime float32
@@ -56,9 +60,21 @@ type server struct {
 func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.StatusResponse, error) {
     // log.Printf("heartbeat from %v", req.NodeId)
     mu.Lock()
-    s.status[req.NodeId] = HeartbeatEntry{numRunningTasks: req.RunningTasks, numQueuedTasks: req.QueuedTasks, avgRunningTime: req.AvgRunningTime, avgBandwidth: req.AvgBandwidth}
+    s.status[req.NodeId] = HeartbeatEntry{timeReceived: time.Now(), numRunningTasks: req.RunningTasks, numQueuedTasks: req.QueuedTasks, avgRunningTime: req.AvgRunningTime, avgBandwidth: req.AvgBandwidth}
     mu.Unlock()
     return &pb.StatusResponse{Success: true}, nil
+}
+
+func SendLiveNodes(s *server) (error) {
+    liveNodes := make(map[uint64]bool)
+    for {
+        for uid, heartbeat := range s.status {
+            liveNodes[uid] = time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT
+        }
+        s.gcsClient.RegisterLiveNodes(&pb.LiveNodesRequest{LiveNodes: liveNodes})
+        time.Sleep(HEARTBEAT_WAIT)
+    }
+
 }
 
 func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) (*pb.StatusResponse, error) {
