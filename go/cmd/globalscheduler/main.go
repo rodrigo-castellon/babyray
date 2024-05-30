@@ -21,6 +21,7 @@ const HEARTBEAT_WAIT = 100 * time.Millisecond
 var mu sync.RWMutex
 
 func main() {
+    ctx := context.Background()
     cfg = config.LoadConfig() // Load configuration
     address := ":" + strconv.Itoa(cfg.Ports.GlobalScheduler) // Prepare the network address
 
@@ -35,7 +36,7 @@ func main() {
     pb.RegisterGlobalSchedulerServer(s, &server{gcsClient: pb.NewGCSObjClient(conn), status: make(map[uint64]HeartbeatEntry)})
     defer conn.Close()
     log.Printf("server listening at %v", lis.Addr())
-    go SendLiveNodes(&s)
+    go SendLiveNodes(&s, ctx)
     if err := s.Serve(lis); err != nil {
        log.Fatalf("failed to serve: %v", err)
     }
@@ -65,7 +66,7 @@ func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.
     return &pb.StatusResponse{Success: true}, nil
 }
 
-func SendLiveNodes(s *server) (error) {
+func SendLiveNodes(s *server, ctx context.Context) (error) {
     liveNodes := make(map[uint64]bool)
     for {
         for uid, heartbeat := range s.status {

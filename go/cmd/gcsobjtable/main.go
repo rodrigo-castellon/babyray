@@ -234,7 +234,7 @@ func (s *GCSObjServer) RegisterLineage(ctx context.Context, req *pb.GlobalSchedu
 	return &pb.StatusResponse{Success: false}, nil
 }
 
-func (s *GCSObjServer) RegisterLiveNodes(req *pb.LiveNodesRequest) (*pb.StatusResponse, error) {
+func (s *GCSObjServer) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest) (*pb.StatusResponse, error) {
 	s.liveNodes = req.LiveNodes
 	for uid, node := range s.generating {
 		if !s.liveNodes[node] {
