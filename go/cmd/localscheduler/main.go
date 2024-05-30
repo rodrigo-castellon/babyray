@@ -68,10 +68,6 @@ func main() {
 		log.Fatalf("failed to serve: %v", err)
 	}
 
-	globalSchedulerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GlobalScheduler, cfg.Ports.GlobalScheduler)
-	conn, _ := grpc.Dial(globalSchedulerAddress, grpc.WithInsecure())
-	globalSchedulerClient = pb.NewGlobalSchedulerClient(conn)
-	localNodeID = 0
 
 }
 
