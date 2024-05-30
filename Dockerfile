@@ -4,8 +4,15 @@ ARG CONFIG=base
 # Base stage for common setup
 FROM golang as base
 
-RUN apt update
-RUN apt install -y protobuf-compiler
+# Install gcc and other necessary tools
+# we need gcc for Golang SQLite bc uses C code
+RUN apt-get update && \
+    apt-get install -y gcc && \ 
+    install -y protobuf-compiler && \
+    apt-get clean
+
+# Set CGO_ENABLED=1 , we need this for Golang SQLite bc uses C code
+ENV CGO_ENABLED=1
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
