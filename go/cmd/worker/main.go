@@ -20,6 +20,17 @@ import (
     "github.com/rodrigo-castellon/babyray/config"
 )
 
+// LocalLog formats the message and logs it with a specific prefix
+func LocalLog(format string, v ...interface{}) {
+	var logMessage string
+	if len(v) == 0 {
+		logMessage = format // No arguments, use the format string as-is
+	} else {
+		logMessage = fmt.Sprintf(format, v...)
+	}
+	log.Printf("[worker] %s", logMessage)
+}
+
 // Declare the global config variable
 var cfg *config.Config
 
@@ -28,9 +39,9 @@ const EMA_PARAM = 0.9
 
 var semaphore = make(chan struct{}, MAX_CONCURRENT_TASKS)
 var mu sync.Mutex
-var numRunningTasks int
-var numQueuedTasks int
-var averageRunningTime float32
+var numRunningTasks uint32 = 0
+var numQueuedTasks uint32 = 0
+var averageRunningTime float32 = 0.1
 
 type ClientConstructor[T any] func(grpc.ClientConnInterface) T
 
@@ -63,7 +74,7 @@ func main() {
         storeClient: storeClient,
     })
 
-    log.Printf("server listening at %v", lis.Addr())
+    LocalLog("worker server listening at %v", lis.Addr())
     if err := s.Serve(lis); err != nil {
         log.Fatalf("failed to serve: %v", err)
     }
@@ -125,6 +136,7 @@ func executeFunction(f []byte, args []byte, kwargs []byte) ([]byte, error) {
 
 // run executes the function by fetching it, running it, and storing the result.
 func (s *workerServer) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusResponse, error) {
+    LocalLog("in Run() rn")
     mu.Lock()
     numQueuedTasks++
     mu.Unlock()
@@ -171,9 +183,10 @@ func (s *workerServer) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusR
 func (s *workerServer) WorkerStatus(ctx context.Context, req *pb.StatusResponse) (*pb.WorkerStatusResponse, error) {
     mu.Lock()
     defer mu.Unlock()
+    // log.Printf("num queued tasks is currently: %v", numQueuedTasks)
     return &pb.WorkerStatusResponse{
-        NumRunningTasks:    uint32(numRunningTasks),
-        NumQueuedTasks:     uint32(numQueuedTasks),
+        NumRunningTasks:    numRunningTasks,
+        NumQueuedTasks:     numQueuedTasks,
         AverageRunningTime: averageRunningTime,
     }, nil
 }
