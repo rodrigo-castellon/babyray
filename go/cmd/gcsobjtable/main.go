@@ -19,11 +19,17 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"database/sql"
+	"log"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var cfg *config.Config
 
 func main() {
+	/* Set up GCS Object Table */
 	cfg = config.GetConfig()                                // Load configuration
 	address := ":" + strconv.Itoa(cfg.Ports.GCSObjectTable) // Prepare the network address
 
@@ -38,6 +44,18 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+
+	/* Set up SQLite */
+	database, err := sql.Open("sqlite3", "./example.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer database.Close()
+
+	createTable(database)
+	insertUser(database, "Alice", 30)
+	insertUser(database, "Bob", 25)
+	queryUsers(database)
 }
 
 // server is used to implement your gRPC service.
