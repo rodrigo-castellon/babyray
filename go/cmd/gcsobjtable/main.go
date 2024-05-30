@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"sync"
 	"fmt"
-
+	
 	"github.com/rodrigo-castellon/babyray/config"
 	pb "github.com/rodrigo-castellon/babyray/pkg"
 	"google.golang.org/grpc"
@@ -49,25 +49,28 @@ type GCSObjServer struct {
 	mu              sync.Mutex          // lock should be used for both objectLocations and waitlist
 	lineage			map[uint64]*pb.GlobalScheduleRequest 
 	globalSchedulerClient pb.GlobalSchedulerClient
+	liveNodes      map[uint64]bool
 }
 
 func NewGCSObjServer() *GCSObjServer {
 	globalSchedulerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GlobalScheduler, cfg.Ports.GlobalScheduler)
 	conn, _ := grpc.Dial(globalSchedulerAddress, grpc.WithInsecure())
 	globalSchedulerClient := pb.NewGlobalSchedulerClient(conn)
+
 	server := &GCSObjServer{
 		objectLocations: make(map[uint64][]uint64),
 		waitlist:        make(map[uint64][]string),
 		mu:              sync.Mutex{},
 		lineage:         make(map[uint64]*pb.GlobalScheduleRequest),
 		globalSchedulerClient: globalSchedulerClient,
+		liveNodes:       make(map[uint64]bool)
 	}
 	return server
 }
 
 /*
-Returns a nodeId that has object uid. If it doesn't exist anywhere,
-then the second return value will be false.
+Returns a nodeId that has object uid. If it has never been added to objectLocations, 
+then return false. Otherwise, return True. 
 Assumes that s's mutex is locked.
 */
 func (s *GCSObjServer) getNodeId(uid uint64) (*uint64, bool) {
@@ -175,7 +178,7 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 				log.Fatalf("unable to contact global scheduler")
 			}
 		}
-		s.waitlist[uid] = append(s.waitlist[uid], clientAddress)
+			s.waitlist[uid] = append(s.waitlist[uid], clientAddress)
 
 		// Reply to this gRPC request
 		return &pb.RequestLocationResponse{
@@ -197,4 +200,9 @@ func (s *GCSObjServer) RegisterLineage(ctx context.Context, req *pb.GlobalSchedu
 	}
 	s.lineage[req.Uid] = req
 	return &pb.StatusResponse{Success: false}, nil
+}
+
+func (s *GCSObjServer) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest) (*pb.StatusResponse, error) {
+	s.liveNodes = LiveNodesRequest.LiveNodes
+	return &pb.StatusResponse{Success: true}, nil
 }

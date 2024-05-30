@@ -122,6 +122,7 @@ service GCSObj {
   rpc NotifyOwns(NotifyOwnsRequest) returns (StatusResponse);
   rpc RequestLocation(RequestLocationRequest) returns (RequestLocationResponse);
   rpc RegisterLineage(GlobalScheduleRequest) returns (StatusResponse); 
+  rpc RegiseterLiveNodes(LiveNodesRequest) returns (StatusResponse); 
 }
 
 message NotifyOwnsRequest {
@@ -136,6 +137,10 @@ message RequestLocationRequest {
 
 message RequestLocationResponse { 
   bool immediatelyFound = 1;
+}
+
+message LiveNodesRequest {
+  map<uint64, bool> liveNodes = 1; 
 }
 
 /* END GCS OBJECT TABLE */
