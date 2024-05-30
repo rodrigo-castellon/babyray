@@ -197,6 +197,9 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 				log.Fatalf("unable to contact global scheduler")
 			}
 		}
+		else {
+			log.Fatalf("asking for uid %d that we don't know exists", uid)
+		}
 			s.waitlist[uid] = append(s.waitlist[uid], clientAddress)
 
 		// Reply to this gRPC request
@@ -235,12 +238,17 @@ func (s *GCSObjServer) RegisterLineage(ctx context.Context, req *pb.GlobalSchedu
 
 func (s *GCSObjServer) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest) (*pb.StatusResponse, error) {
 	s.liveNodes = LiveNodesRequest.LiveNodes
+	for uid, node := range s.generating {
+		if !s.liveNodes[node] {
+		   s.globalSchedulerClient.Schedule(ctx, s.lineage[uid])
+		}
+	}
 	return &pb.StatusResponse{Success: true}, nil
 }
 
 func (s *GCSObjServer) RegisterGenerating(ctx context.Context, req *pb.GeneratingRequest) (*pb.StatusResponse, error) {
 	if id, ok := s.generating[req.Uid]; ok {
-		return &pb.StatusResponse{Success: false}, status.Error(codes.Internal, "node  %d is already generating uid %d", id, req.Uid)
+		return &pb.StatusResponse{Success: false}, status.Error(codes.Internal, "node %d is already generating uid %d", id, req.Uid)
 	}
 	s.generating[req.Uid] = req.NodeId
 	return &pb.StatusResponse{Success: true}
