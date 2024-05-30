@@ -33,10 +33,11 @@ func main() {
     s := grpc.NewServer()
     gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
 	conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
-    pb.RegisterGlobalSchedulerServer(s, &server{gcsClient: pb.NewGCSObjClient(conn), status: make(map[uint64]HeartbeatEntry)})
+    server := &server{gcsClient: pb.NewGCSObjClient(conn), status: make(map[uint64]HeartbeatEntry)}
+    pb.RegisterGlobalSchedulerServer(s, server)
     defer conn.Close()
     log.Printf("server listening at %v", lis.Addr())
-    go SendLiveNodes(&s, ctx)
+    go SendLiveNodes(server, ctx)
     if err := s.Serve(lis); err != nil {
        log.Fatalf("failed to serve: %v", err)
     }
