@@ -17,6 +17,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+const DEFAULT_AVG_BANDWIDTH = 0.1 // to start with
+
 // LocalLog formats the message and logs it with a specific prefix
 func LocalLog(format string, v ...interface{}) {
 	var logMessage string
@@ -28,10 +30,6 @@ func LocalLog(format string, v ...interface{}) {
 	log.Printf("[lobs] %s", logMessage)
 }
 
-// var localObjectStore map[uint64][]byte
-// var localObjectChannels map[uint64]chan []byte
-// var gcsObjClient pb.GCSObjClient
-// var localNodeID uint64
 var cfg *config.Config
 const EMA_PARAM float32 = .9
 var mu sync.RWMutex
@@ -42,28 +40,6 @@ func main() {
 	// Create a channel and block on it to prevent the main function from exiting
 	block := make(chan struct{})
 	<-block
-	// address := ":" + strconv.Itoa(cfg.Ports.LocalObjectStore) // Prepare the network address
-	// if address == "" {
-	// 	lis, err := net.Listen("tcp", address)
-	// 	if err != nil {
-	// 		log.Fatalf("failed to listen: %v", err)
-	// 	}
-	// 	_ = lis
-	// 	s := grpc.NewServer()
-	// 	pb.RegisterLocalObjStoreServer(s, &server{})
-	// 	log.Printf("server listening at %v", lis.Addr())
-	// 	if err := s.Serve(lis); err != nil {
-	// 		log.Fatalf("failed to serve: %v", err)
-	// 	}
-	// }
-
-	// localObjectStore = make(map[uint64][]byte)
-	// localObjectChannels = make(map[uint64]chan []byte)
-
-	// gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
-	// conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
-	// gcsObjClient = pb.NewGCSObjClient(conn)
-	// localNodeID = 0
 }
 
 func startServer(port string) (*grpc.Server, error) {
@@ -77,7 +53,7 @@ func startServer(port string) (*grpc.Server, error) {
     gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
 	conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
 	nodeId, _ := strconv.Atoi(os.Getenv("NODE_ID"))
-	pb.RegisterLocalObjStoreServer(s, &server{localObjectStore: make(map[uint64][]byte), localObjectChannels: make(map[uint64]chan []byte), gcsObjClient: pb.NewGCSObjClient(conn), localNodeID: uint64(nodeId)})
+	pb.RegisterLocalObjStoreServer(s, &server{localObjectStore: make(map[uint64][]byte), localObjectChannels: make(map[uint64]chan []byte), gcsObjClient: pb.NewGCSObjClient(conn), localNodeID: uint64(nodeId), avgBandwidth: DEFAULT_AVG_BANDWIDTH})
 	
 
 	LocalLog("lobs server listening at %v", lis.Addr())

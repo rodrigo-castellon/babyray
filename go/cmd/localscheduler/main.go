@@ -62,7 +62,6 @@ func main() {
 	ctx := context.Background()
 	go SendHeartbeats(ctx, globalSchedulerClient, uint64(nodeId))
 
-	// log.Printf("localsched server listening at %v", lis.Addr())
 	LocalLog("localsched server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
