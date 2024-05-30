@@ -47,6 +47,7 @@ type GCSObjServer struct {
 	objectLocations map[uint64][]uint64 // object uid -> list of nodeIds as uint64
 	waitlist        map[uint64][]string // object uid -> list of IP addresses as string
 	mu              sync.Mutex          // lock should be used for both objectLocations and waitlist
+	objectSizes     map[uint64]uint64
 	lineage			map[uint64]*pb.GlobalScheduleRequest 
 	globalSchedulerClient pb.GlobalSchedulerClient
 	liveNodes      map[uint64]bool
@@ -61,6 +62,7 @@ func NewGCSObjServer() *GCSObjServer {
 		objectLocations: make(map[uint64][]uint64),
 		waitlist:        make(map[uint64][]string),
 		mu:              sync.Mutex{},
+		objectSizes:     make(map[uint64]uint64),
 		lineage:         make(map[uint64]*pb.GlobalScheduleRequest),
 		globalSchedulerClient: globalSchedulerClient,
 		liveNodes:       make(map[uint64]bool)
@@ -123,6 +125,7 @@ func (s *GCSObjServer) NotifyOwns(ctx context.Context, req *pb.NotifyOwnsRequest
 	// Append the nodeId to the list for the given object uid
 	if _, exists := s.objectLocations[uid]; !exists {
 		s.objectLocations[uid] = []uint64{} // Initialize slice if it doesn't exist
+		s.objectSizes[uid] = req.ObjectSize
 	}
 	s.objectLocations[uid] = append(s.objectLocations[uid], nodeId)
 
@@ -194,7 +197,17 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 		ImmediatelyFound: true,
 	}, nil
 }
-func (s *GCSObjServer) RegisterLineage(ctx context.Context, req *pb.GlobalScheduleRequest) (*pb.StatusResponse, error) {
+
+func (s *GCSObjServer) GetObjectLocations(ctx context.Context, req *pb.ObjectLocationsRequest) (*pb.ObjectLocationsResponse, error) {
+	locations := make(map[uint64]*pb.LocationByteTuple)
+	for u := range req.Args {
+		if _,ok := s.objectLocations[uint64(u)]; ok {
+			locations[uint64(u)] = &pb.LocationByteTuple{Locations: s.objectLocations[uint64(u)], Bytes: s.objectSizes[uint64(u)]}
+		}
+		
+	}
+	return &pb.ObjectLocationsResponse{Locations: locations}, nil
+}func (s *GCSObjServer) RegisterLineage(ctx context.Context, req *pb.GlobalScheduleRequest) (*pb.StatusResponse, error) {
 	if _, ok := s.lineage[req.Uid]; ok {
 		return &pb.StatusResponse{Success: false}, status.Error(codes.Internal, "tried to register duplicate lineage")
 	}

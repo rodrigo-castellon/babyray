@@ -47,7 +47,11 @@ class Future:
 
     def get(self):
         # make a request to local object store
-        out = pickle.loads(local_object_store_gRPC.Get(rayclient_pb2.GetRequest(uid=self.uid)).objectBytes)
+        out = pickle.loads(
+            local_object_store_gRPC.Get(
+                rayclient_pb2.GetRequest(uid=self.uid)
+            ).objectBytes
+        )
         return out
 
 
@@ -58,11 +62,14 @@ class RemoteFunction:
 
     def remote(self, *args, **kwargs):
         # do gRPC here
-
+        arg_uids = []
+        for arg in args: 
+            if type(arg) is Future: 
+                arg_uids.append(arg.uid)
         if self.name is not None:
             uid = local_scheduler_gRPC.Schedule(
                 rayclient_pb2.ScheduleRequest(
-                    name=self.name, args=pickle.dumps(args), kwargs=pickle.dumps(kwargs)
+                    name=self.name, args=pickle.dumps(args), kwargs=pickle.dumps(kwargs), uids = arg_uids
                 )
             ).uid
             return Future(uid)
@@ -70,9 +77,7 @@ class RemoteFunction:
     def register(self):
         # get our unique name from GCS
         self.name = gcs_func_gRPC.RegisterFunc(
-            rayclient_pb2.RegisterRequest(
-                serializedFunc=pickle.dumps(self.func)
-            )
+            rayclient_pb2.RegisterRequest(serializedFunc=pickle.dumps(self.func))
         ).name
 
 
