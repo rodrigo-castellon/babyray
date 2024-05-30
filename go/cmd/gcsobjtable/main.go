@@ -67,7 +67,7 @@ func NewGCSObjServer() *GCSObjServer {
 		objectSizes:     make(map[uint64]uint64),
 		lineage:         make(map[uint64]*pb.GlobalScheduleRequest),
 		globalSchedulerClient: globalSchedulerClient,
-		liveNodes:       make(map[uint64]bool)
+		liveNodes:       make(map[uint64]bool),
 	}
 	return server
 }
@@ -90,7 +90,7 @@ func (s *GCSObjServer) getNodeId(uid uint64) (*uint64, bool) {
 	nodesToReturn := []uint64
 	for _, n := range nodeIds {
 		if !s.liveNodes[n] {
-			nodesToReturn.append(nodesToReturn, n)
+			nodesToReturn = append(nodesToReturn, n)
 		}
 	}
 
@@ -196,12 +196,10 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 			if err != nil {
 				log.Fatalf("unable to contact global scheduler")
 			}
-		}
-		else {
+		} else {
 			log.Fatalf("asking for uid %d that we don't know exists", uid)
 		}
-			s.waitlist[uid] = append(s.waitlist[uid], clientAddress)
-
+		//s.waitlist[uid] = append(s.waitlist[uid], clientAddress)
 		// Reply to this gRPC request
 		return &pb.RequestLocationResponse{
 			ImmediatelyFound: false,
