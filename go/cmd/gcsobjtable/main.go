@@ -87,7 +87,7 @@ func (s *GCSObjServer) getNodeId(uid uint64) (*uint64, bool) {
 		return nil, false
 	}
 
-	nodesToReturn := make([]uint64)
+	nodesToReturn := make([]uint64, 1, 1)
 	for _, n := range nodeIds {
 		if !s.liveNodes[n] {
 			nodesToReturn = append(nodesToReturn, n)
