@@ -16,23 +16,33 @@ local_scheduler_gRPC = None
 gcs_func_gRPC = None
 local_object_store_gRPC = None
 
+MAX_MESSAGE_SIZE = 1024 * 1024 * 1024  # 1GB
+
 
 def init_all_stubs():
+    channel_options = [
+        ("grpc.max_send_message_length", MAX_MESSAGE_SIZE),
+        ("grpc.max_receive_message_length", MAX_MESSAGE_SIZE),
+    ]
+
     # so boilerplate-y
     local_scheduler_channel = grpc.insecure_channel(
-        f"localhost:{str(LOCAL_SCHEDULER_PORT)}"
+        f"localhost:{str(LOCAL_SCHEDULER_PORT)}",
+        options=channel_options,
     )
     local_scheduler_gRPC = rayclient_pb2_grpc.LocalSchedulerStub(
         local_scheduler_channel
     )
 
     gcs_func_channel = grpc.insecure_channel(
-        f"node{GCS_NODE_ID}:{GCS_FUNCTION_TABLE_PORT}"
+        f"node{GCS_NODE_ID}:{GCS_FUNCTION_TABLE_PORT}",
+        options=channel_options,
     )
     gcs_func_gRPC = rayclient_pb2_grpc.GCSFuncStub(gcs_func_channel)
 
     local_object_store_channel = grpc.insecure_channel(
-        f"localhost:{str(LOCAL_OBJECT_STORE_PORT)}"
+        f"localhost:{str(LOCAL_OBJECT_STORE_PORT)}",
+        options=channel_options,
     )
     local_object_store_gRPC = rayclient_pb2_grpc.LocalObjStoreStub(
         local_object_store_channel
@@ -45,31 +55,54 @@ def init_all_stubs():
 class Future:
     uid: int
 
-    def get(self):
+    def get(self, copy=True):
+        # copy: whether we should actually copy the data over, or whether
+        # we should just block until the task is complete
+
         # make a request to local object store
-        out = pickle.loads(
+        if copy:
+            return pickle.loads(
+                local_object_store_gRPC.Get(
+                    rayclient_pb2.GetRequest(uid=self.uid, copy=True)
+                ).objectBytes
+            )
+        else:
             local_object_store_gRPC.Get(
-                rayclient_pb2.GetRequest(uid=self.uid)
-            ).objectBytes
-        )
-        return out
+                rayclient_pb2.GetRequest(uid=self.uid, copy=False)
+            )
+            return True
 
 
 class RemoteFunction:
     def __init__(self, func):
         self.func = func
         self.name = None
+        self.node_id = None
+
+    """These two methods exist purely for experimental reasons."""
+
+    def set_node(self, node_id):
+        # set the node ID to run this remote function on
+        self.node_id = node_id
+
+    def unset_node(self):
+        self.node_id = None
 
     def remote(self, *args, **kwargs):
         # do gRPC here
         arg_uids = []
-        for arg in args: 
-            if type(arg) is Future: 
+        for arg in args:
+            if type(arg) is Future:
                 arg_uids.append(arg.uid)
+
         if self.name is not None:
             uid = local_scheduler_gRPC.Schedule(
                 rayclient_pb2.ScheduleRequest(
-                    name=self.name, args=pickle.dumps(args), kwargs=pickle.dumps(kwargs), uids = arg_uids
+                    name=self.name,
+                    args=pickle.dumps(args),
+                    kwargs=pickle.dumps(kwargs),
+                    uids=arg_uids,
+                    nodeId=self.node_id,
                 )
             ).uid
             return Future(uid)
@@ -100,14 +133,14 @@ def remote(func):
     return rem
 
 
-def get(futures):
+def get(futures, copy=True):
     # recursive function
     if isinstance(futures, list):
-        return [get(future) for future in futures]
+        return [get(future, copy=copy) for future in futures]
     elif isinstance(futures, dict):
-        return {k: get(future) for k, future in futures.items()}
+        return {k: get(future, copy=copy) for k, future in futures.items()}
     else:
-        return futures.get() if hasattr(futures, "get") else futures
+        return futures.get(copy=copy) if hasattr(futures, "get") else futures
 
 
 def demo():

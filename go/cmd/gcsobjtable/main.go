@@ -10,11 +10,14 @@ import (
 	"net"
 	"strconv"
 	"sync"
+	"fmt"
 
 	"github.com/rodrigo-castellon/babyray/config"
+	"github.com/rodrigo-castellon/babyray/util"
+	"github.com/rodrigo-castellon/babyray/customlog"
 	pb "github.com/rodrigo-castellon/babyray/pkg"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	// "google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/peer"
 
 	"google.golang.org/grpc/codes"
@@ -23,7 +26,19 @@ import (
 
 var cfg *config.Config
 
+// LocalLog formats the message and logs it with a specific prefix
+func LocalLog(format string, v ...interface{}) {
+	var logMessage string
+	if len(v) == 0 {
+		logMessage = format // No arguments, use the format string as-is
+	} else {
+		logMessage = fmt.Sprintf(format, v...)
+	}
+	log.Printf("[lobs] %s", logMessage)
+}
+
 func main() {
+	customlog.Init()
 	cfg = config.GetConfig()                                // Load configuration
 	address := ":" + strconv.Itoa(cfg.Ports.GCSObjectTable) // Prepare the network address
 
@@ -32,7 +47,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	_ = lis
-	s := grpc.NewServer()
+	s := grpc.NewServer(util.GetServerOptions()...)
 	pb.RegisterGCSObjServer(s, NewGCSObjServer())
 	log.Printf("server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
@@ -82,7 +97,7 @@ func (s *GCSObjServer) sendCallback(clientAddress string, uid uint64, nodeId uin
 	// Set up a new gRPC connection to the client
 	// TODO: Refactor to save gRPC connections rather than creating a new one each time
 	// Dial is lazy-loading, but we should still save the connection for future use
-	conn, err := grpc.Dial(clientAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(clientAddress, util.GetDialOptions()...)
 	if err != nil {
 		// Log the error instead of returning it
 		log.Printf("Failed to connect back to client at %s: %v", clientAddress, err)
@@ -105,6 +120,8 @@ func (s *GCSObjServer) sendCallback(clientAddress string, uid uint64, nodeId uin
 func (s *GCSObjServer) NotifyOwns(ctx context.Context, req *pb.NotifyOwnsRequest) (*pb.StatusResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	log.Printf("WAS JUST NOTIFYOWNS()ED")
 
 	uid, nodeId := req.Uid, req.NodeId
 
@@ -178,6 +195,12 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 
 func (s *GCSObjServer) GetObjectLocations(ctx context.Context, req *pb.ObjectLocationsRequest) (*pb.ObjectLocationsResponse, error) {
 	locations := make(map[uint64]*pb.LocationByteTuple)
+	log.Printf("DEEP PRINT!")
+	log.Printf("length = %v", len(s.objectLocations))
+	for k, v := range s.objectLocations {
+		log.Printf("s.objectLocations[%v] = %v", k, v)
+	}
+
 	for _, u := range req.Args {
 		if _,ok := s.objectLocations[uint64(u)]; ok {
 			locations[uint64(u)] = &pb.LocationByteTuple{Locations: s.objectLocations[uint64(u)], Bytes: s.objectSizes[uint64(u)]}

@@ -13,6 +13,7 @@ var cfg *Config
 type Config struct {
     NumWorkerNodes int `yaml:"num_worker_nodes"`
     ClusterSize    int `yaml:"cluster_size"`
+    SimulatedDelay float32 `yaml:"simulated_delay"`
     NodeIDs        struct {
         GCS             int `yaml:"gcs"`
         GlobalScheduler int `yaml:"global_scheduler"`

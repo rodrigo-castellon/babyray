@@ -1,4 +1,6 @@
 num_worker_nodes: 5
+# simulating zero latency with some data throughput speed
+simulated_delay: 0.0
 node_ids:
   gcs: 0
   global_scheduler: 1

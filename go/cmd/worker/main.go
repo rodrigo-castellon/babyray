@@ -18,6 +18,8 @@ import (
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
     "github.com/rodrigo-castellon/babyray/config"
+    "github.com/rodrigo-castellon/babyray/customlog"
+    "github.com/rodrigo-castellon/babyray/util"
 )
 
 // LocalLog formats the message and logs it with a specific prefix
@@ -46,7 +48,7 @@ var averageRunningTime float32 = 0.1
 type ClientConstructor[T any] func(grpc.ClientConnInterface) T
 
 func createGRPCClient[T any](address string, constructor ClientConstructor[T]) T {
-    conn, err := grpc.Dial(address, grpc.WithInsecure())
+    conn, err := grpc.Dial(address, util.GetDialOptions()...)
     if err != nil {
         log.Fatalf("failed to connect to %s: %v", address, err)
     }
@@ -55,6 +57,7 @@ func createGRPCClient[T any](address string, constructor ClientConstructor[T]) T
 }
 
 func main() {
+    customlog.Init()
     cfg := config.GetConfig()
     address := ":" + strconv.Itoa(cfg.Ports.LocalWorkerStart)
 
@@ -68,7 +71,7 @@ func main() {
     funcClient := createGRPCClient[pb.GCSFuncClient](funcServiceAddr, pb.NewGCSFuncClient)
     storeClient := createGRPCClient[pb.LocalObjStoreClient]("localhost:50000", pb.NewLocalObjStoreClient)
 
-    s := grpc.NewServer()
+    s := grpc.NewServer(util.GetServerOptions()...)
     pb.RegisterWorkerServer(s, &workerServer{
         funcClient: funcClient,
         storeClient: storeClient,
@@ -125,6 +128,8 @@ func executeFunction(f []byte, args []byte, kwargs []byte) ([]byte, error) {
     }
 
     // Decode the Base64 output to get the original pickled data
+    // LocalLog("the output from this was: %s", string(output)[:min(len(string(output)), 282)])
+    // LocalLog("the length of the overall string was: %v", len(string(output)))
     data, err := base64.StdEncoding.DecodeString(string(output))
     if err != nil {
         log.Fatalf("Error decoding Base64: %v", err)
@@ -157,20 +162,27 @@ func (s *workerServer) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusR
 
     start := time.Now()
 
+    LocalLog("....fetching?")
     funcResponse, err := s.funcClient.FetchFunc(ctx, &pb.FetchRequest{Name: req.Name})
+    LocalLog("the err was %v", err)
     if err != nil {
         return nil, err
     }
 
+    LocalLog("gonna execute now")
     output, err := executeFunction(funcResponse.SerializedFunc, req.Args, req.Kwargs)
+    LocalLog("Executed!")
     if err != nil {
         return nil, err
     }
 
+    LocalLog("gonna store now")
     _, err = s.storeClient.Store(ctx, &pb.StoreRequest{Uid: req.Uid, ObjectBytes: output})
     if err != nil {
+        LocalLog("store client returned an err: %v", err)
         return nil, err
     }
+    LocalLog("stored...")
 
     runningTime := float32(time.Since(start).Seconds())
     mu.Lock()

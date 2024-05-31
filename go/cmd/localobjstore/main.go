@@ -9,10 +9,12 @@ import (
 	"net"
 	"strconv"
 	"os"
-	"time"
+	// "time"
 	"sync"
 
 	"github.com/rodrigo-castellon/babyray/config"
+	"github.com/rodrigo-castellon/babyray/customlog"
+	"github.com/rodrigo-castellon/babyray/util"
 	pb "github.com/rodrigo-castellon/babyray/pkg"
 	"google.golang.org/grpc"
 )
@@ -35,6 +37,7 @@ const EMA_PARAM float32 = .9
 var mu sync.RWMutex
 
 func main() {
+	customlog.Init()
 	cfg = config.GetConfig()                                  // Load configuration
     startServer(":" + strconv.Itoa(cfg.Ports.LocalObjectStore))
 	// Create a channel and block on it to prevent the main function from exiting
@@ -49,12 +52,12 @@ func startServer(port string) (*grpc.Server, error) {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(util.GetServerOptions()...)
     gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
-	conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
+	conn, _ := grpc.Dial(gcsAddress, util.GetDialOptions()...)
 	nodeId, _ := strconv.Atoi(os.Getenv("NODE_ID"))
-	pb.RegisterLocalObjStoreServer(s, &server{localObjectStore: make(map[uint64][]byte), localObjectChannels: make(map[uint64]chan []byte), gcsObjClient: pb.NewGCSObjClient(conn), localNodeID: uint64(nodeId), avgBandwidth: DEFAULT_AVG_BANDWIDTH})
-	
+	pb.RegisterLocalObjStoreServer(s, &server{localObjectStore: make(map[uint64][]byte), localObjectChannels: make(map[uint64]chan *pb.LocationFoundCallback), gcsObjClient: pb.NewGCSObjClient(conn), localNodeID: uint64(nodeId), avgBandwidth: DEFAULT_AVG_BANDWIDTH})
+
 
 	LocalLog("lobs server listening at %v", lis.Addr())
 	go func() {
@@ -71,7 +74,7 @@ func startServer(port string) (*grpc.Server, error) {
 type server struct {
 	pb.UnimplementedLocalObjStoreServer
 	localObjectStore    map[uint64][]byte
-	localObjectChannels map[uint64]chan []byte
+	localObjectChannels map[uint64]chan *pb.LocationFoundCallback
 	gcsObjClient        pb.GCSObjClient
 	localNodeID         uint64
 	avgBandwidth        float32
@@ -94,19 +97,21 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
 	}
 	mu.RUnlock()
 
-	s.localObjectChannels[req.Uid] = make(chan []byte)
+	LocalLog("IN GET() RN!")
+
+	s.localObjectChannels[req.Uid] = make(chan *pb.LocationFoundCallback)
 	if req.Testing == false {
 		s.gcsObjClient.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: req.Uid, Requester: s.localNodeID})
 	}
 
-	val := <-s.localObjectChannels[req.Uid]
-	mu.Lock()
-	defer mu.Unlock()
-	s.localObjectStore[req.Uid] = val
-	return &pb.GetResponse{Uid: req.Uid, ObjectBytes: s.localObjectStore[req.Uid], Local: false}, nil
-}
+	resp := <-s.localObjectChannels[req.Uid]
 
-func (s *server) LocationFound(ctx context.Context, resp *pb.LocationFoundCallback) (*pb.StatusResponse, error) {
+	LocalLog("GOT THE RESPONSE!")
+
+	// handle the response accordingly
+	if (!req.Copy) {
+		return &pb.GetResponse{Uid: req.Uid}, nil
+	}
 	var otherLocalAddress string
 
 	if resp.Port == 0 {
@@ -116,35 +121,45 @@ func (s *server) LocationFound(ctx context.Context, resp *pb.LocationFoundCallba
 		otherLocalAddress = fmt.Sprintf("%s:%d", resp.Address, resp.Port)
 	}
 
-	conn, err := grpc.Dial(otherLocalAddress, grpc.WithInsecure())
+	conn, err := grpc.Dial(otherLocalAddress, util.GetDialOptions()...)
 
 	if err != nil {
-		return &pb.StatusResponse{Success: false}, errors.New(fmt.Sprintf("failed to dial other LOS @:%s ", otherLocalAddress))
+		return &pb.GetResponse{Uid: req.Uid}, errors.New(fmt.Sprintf("failed to dial other LOS @:%s ", otherLocalAddress))
+		// return &pb.StatusResponse{Success: false}, errors.New(fmt.Sprintf("failed to dial other LOS @:%s ", otherLocalAddress))
 	}
 
 	c := pb.NewLocalObjStoreClient(conn)
 
-	start := time.Now()
+	// start := time.Now()
 
+	LocalLog("CALLING COPY() ON THIS NODE...")
 	x, err := c.Copy(ctx, &pb.CopyRequest{Uid: resp.Uid, Requester: s.localNodeID})
 
-	bandwidth := float32(len(x.ObjectBytes)) / float32((time.Now().Sub(start).Seconds()))
+	LocalLog("the err was: %v", err)
+	LocalLog("GETTING THE TOTAL BANDWIDTH FROM THIS...")
+	// bandwidth := float32(len(x.ObjectBytes)) / float32((time.Now().Sub(start).Seconds()))
 
-	s.avgBandwidth = EMA_PARAM * s.avgBandwidth + (1 - EMA_PARAM) * bandwidth 
+	// s.avgBandwidth = EMA_PARAM * s.avgBandwidth + (1 - EMA_PARAM) * bandwidth 
 
 	if x == nil || err != nil {
-		return &pb.StatusResponse{Success: false}, errors.New(fmt.Sprintf("failed to copy from other LOS @:%s ", otherLocalAddress))
+		return &pb.GetResponse{Uid: req.Uid}, errors.New(fmt.Sprintf("failed to copy from other LOS @:%s ", otherLocalAddress))
 	}
+
 	if resp.Port == 0 {
-
-	     s.gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: resp.Uid, NodeId: s.localNodeID})
+			s.gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: resp.Uid, NodeId: s.localNodeID})
 	}
 
-	channel, ok := s.localObjectChannels[resp.Uid]
-	if !ok {
-		return &pb.StatusResponse{Success: false}, errors.New("channel DNE")
-	}
-	channel <- x.ObjectBytes
+	// val := <-s.localObjectChannels[req.Uid]
+	mu.Lock()
+	defer mu.Unlock()
+	s.localObjectStore[req.Uid] = x.ObjectBytes
+	return &pb.GetResponse{Uid: req.Uid, ObjectBytes: s.localObjectStore[req.Uid], Local: false}, nil
+}
+
+func (s *server) LocationFound(ctx context.Context, resp *pb.LocationFoundCallback) (*pb.StatusResponse, error) {
+
+	channel, _ := s.localObjectChannels[resp.Uid]
+	channel <- resp
 
 	return &pb.StatusResponse{Success: true}, nil
 
