@@ -59,11 +59,13 @@ func insertOrUpdateObjectLocations(db *sql.DB, objectLocations map[uint64][]uint
 	}
 
 	// Prepare the bulk delete statement
-	deleteSQL := `DELETE FROM object_locations WHERE object_uid IN (` + strings.Join(strings.Split(strings.Repeat("?", len(objectLocations)), ""), ",") + `);`
+	objectUIDs := make([]string, 0, len(objectLocations))
 	deleteArgs := make([]interface{}, 0, len(objectLocations))
 	for objectUID := range objectLocations {
+		objectUIDs = append(objectUIDs, "?")
 		deleteArgs = append(deleteArgs, objectUID)
 	}
+	deleteSQL := `DELETE FROM object_locations WHERE object_uid IN (` + strings.Join(objectUIDs, ",") + `);`
 
 	// Prepare the bulk insert statement
 	insertSQL := `INSERT INTO object_locations (object_uid, node_id) VALUES `
@@ -78,6 +80,13 @@ func insertOrUpdateObjectLocations(db *sql.DB, objectLocations map[uint64][]uint
 	}
 
 	insertSQL = insertSQL + strings.Join(valueStrings, ",")
+
+	// // Log the SQL statements before executing them
+	// deleteSQLLog := fmt.Sprintf(deleteSQL, deleteArgs...)
+	// log.Printf("Executing SQL: %s", deleteSQLLog)
+
+	// insertSQLLog := fmt.Sprintf(insertSQL, valueArgs...)
+	// log.Printf("Executing SQL: %s", insertSQLLog)
 
 	// Execute the bulk delete and insert at the end of preparation
 	if _, err := tx.Exec(deleteSQL, deleteArgs...); err != nil {
@@ -96,7 +105,7 @@ func insertOrUpdateObjectLocations(db *sql.DB, objectLocations map[uint64][]uint
 		return err
 	}
 
-	//log.Println("Object locations inserted/updated successfully 🌟👾🦄")
+	log.Println("Object locations inserted/updated successfully 🌟👾🦄")
 	return nil
 }
 

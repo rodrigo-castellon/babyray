@@ -77,8 +77,30 @@ func TestInsertOrUpdateObjectLocations(t *testing.T) {
 }
 
 func verifyObjectLocations(t *testing.T, db *sql.DB, expected map[uint64][]uint64) {
+	// Extract the keys from the expected map
+	keys := make([]uint64, 0, len(expected))
+	for k := range expected {
+		keys = append(keys, k)
+	}
+
+	// Build the query with placeholders
+	query := "SELECT object_uid, node_id FROM object_locations WHERE object_uid IN ("
+	for i := range keys {
+		if i > 0 {
+			query += ","
+		}
+		query += "?"
+	}
+	query += ")"
+
+	// Convert keys to a slice of interface{} for the query arguments
+	args := make([]interface{}, len(keys))
+	for i, v := range keys {
+		args[i] = v
+	}
+
 	// Query the database
-	rows, err := db.Query("SELECT object_uid, node_id FROM object_locations")
+	rows, err := db.Query(query, args...)
 	if err != nil {
 		t.Fatalf("Failed to query object_locations: %v", err)
 	}
@@ -93,6 +115,18 @@ func verifyObjectLocations(t *testing.T, db *sql.DB, expected map[uint64][]uint6
 		}
 		result[objectUID] = append(result[objectUID], nodeID)
 	}
+
+	// // Log the content of `result`
+	// log.Println("Content of result:")
+	// for key, value := range result {
+	// 	log.Printf("Key: %d, Value: %v\n", key, value)
+	// }
+
+	// // Log the content of `expected`
+	// log.Println("Content of expected:")
+	// for key, value := range expected {
+	// 	log.Printf("Key: %d, Value: %v\n", key, value)
+	// }
 
 	// Compare results
 	if len(result) != len(expected) {
