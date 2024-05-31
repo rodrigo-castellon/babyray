@@ -116,18 +116,6 @@ func verifyObjectLocations(t *testing.T, db *sql.DB, expected map[uint64][]uint6
 		result[objectUID] = append(result[objectUID], nodeID)
 	}
 
-	// // Log the content of `result`
-	// log.Println("Content of result:")
-	// for key, value := range result {
-	// 	log.Printf("Key: %d, Value: %v\n", key, value)
-	// }
-
-	// // Log the content of `expected`
-	// log.Println("Content of expected:")
-	// for key, value := range expected {
-	// 	log.Printf("Key: %d, Value: %v\n", key, value)
-	// }
-
 	// Compare results
 	if len(result) != len(expected) {
 		t.Fatalf("Expected %d entries, got %d", len(expected), len(result))

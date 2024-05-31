@@ -81,13 +81,6 @@ func insertOrUpdateObjectLocations(db *sql.DB, objectLocations map[uint64][]uint
 
 	insertSQL = insertSQL + strings.Join(valueStrings, ",")
 
-	// // Log the SQL statements before executing them
-	// deleteSQLLog := fmt.Sprintf(deleteSQL, deleteArgs...)
-	// log.Printf("Executing SQL: %s", deleteSQLLog)
-
-	// insertSQLLog := fmt.Sprintf(insertSQL, valueArgs...)
-	// log.Printf("Executing SQL: %s", insertSQLLog)
-
 	// Execute the bulk delete and insert at the end of preparation
 	if _, err := tx.Exec(deleteSQL, deleteArgs...); err != nil {
 		tx.Rollback()
