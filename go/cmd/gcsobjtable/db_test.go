@@ -47,19 +47,38 @@ func TestInsertOrUpdateObjectLocations(t *testing.T) {
 		t.Fatalf("Failed to create object_locations table: %v", err)
 	}
 
-	// Example in-memory objectLocations map
+	// Initial example data
 	objectLocations := map[uint64][]uint64{
 		1: {100, 101},
 		2: {102, 103},
 	}
 
-	// Insert or update objectLocations
+	// Insert initial data
 	if err := insertOrUpdateObjectLocations(database, objectLocations); err != nil {
 		t.Fatalf("Failed to insert/update object locations: %v", err)
 	}
 
-	// Verify that data was inserted correctly
-	rows, err := database.Query("SELECT object_uid, node_id FROM object_locations")
+	// Verify initial data
+	verifyObjectLocations(t, database, objectLocations)
+
+	// Update example data
+	objectLocations = map[uint64][]uint64{
+		1: {100, 102}, // Change node_ids for object_uid 1
+		3: {104},      // Add new object_uid 3
+	}
+
+	// Insert updated data
+	if err := insertOrUpdateObjectLocations(database, objectLocations); err != nil {
+		t.Fatalf("Failed to insert/update object locations: %v", err)
+	}
+
+	// Verify updated data
+	verifyObjectLocations(t, database, objectLocations)
+}
+
+func verifyObjectLocations(t *testing.T, db *sql.DB, expected map[uint64][]uint64) {
+	// Query the database
+	rows, err := db.Query("SELECT object_uid, node_id FROM object_locations")
 	if err != nil {
 		t.Fatalf("Failed to query object_locations: %v", err)
 	}
@@ -75,7 +94,7 @@ func TestInsertOrUpdateObjectLocations(t *testing.T) {
 		result[objectUID] = append(result[objectUID], nodeID)
 	}
 
-	expected := objectLocations
+	// Compare results
 	if len(result) != len(expected) {
 		t.Fatalf("Expected %d entries, got %d", len(expected), len(result))
 	}

@@ -4,8 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 )
 
+// TODO: Address the fact that SQLite does not hold uint64 that exceeds positive int64
 func createObjectLocationsTable(db *sql.DB) error {
 	createTableSQL := `CREATE TABLE IF NOT EXISTS object_locations (
         "object_uid" INTEGER NOT NULL,
@@ -40,14 +42,15 @@ func createObjectLocationsTable(db *sql.DB) error {
 	return nil
 }
 
+// We assume that, for any object_uid in the possession of memory, it has the latest state
+// on all of the locations that it can be found, and hence it is imperate to overwrite the
+// corresponding "state" in the database. That is, the database might have a location which in fact
+// no longer exists for this object_uid, so we need to eliminate that from the database.
 func insertOrUpdateObjectLocations(db *sql.DB, objectLocations map[uint64][]uint64) error {
-	// Prepare the insert statement
-	insertSQL := `INSERT OR IGNORE INTO object_locations (object_uid, node_id) VALUES (?, ?);`
-	statement, err := db.Prepare(insertSQL)
-	if err != nil {
-		return err
-	}
-	defer statement.Close()
+	// NOTE ON IMPLEMENTATION DECISION:
+	// We DELETE all rows that have object_uid and then INSERT anew because this is a lot more
+	// efficient than having to query the db repeatedly to do comparisons about which rows
+	// no longer exist in the state, and trying to selectively delete those rows.
 
 	// Begin a transaction
 	tx, err := db.Begin()
@@ -55,15 +58,36 @@ func insertOrUpdateObjectLocations(db *sql.DB, objectLocations map[uint64][]uint
 		return err
 	}
 
-	// Iterate through the map and insert each pair
+	// Prepare the bulk delete statement
+	deleteSQL := `DELETE FROM object_locations WHERE object_uid IN (` + strings.Join(strings.Split(strings.Repeat("?", len(objectLocations)), ""), ",") + `);`
+	deleteArgs := make([]interface{}, 0, len(objectLocations))
+	for objectUID := range objectLocations {
+		deleteArgs = append(deleteArgs, objectUID)
+	}
+
+	// Prepare the bulk insert statement
+	insertSQL := `INSERT INTO object_locations (object_uid, node_id) VALUES `
+	valueStrings := []string{}
+	valueArgs := []interface{}{}
+
 	for objectUID, nodeIDs := range objectLocations {
 		for _, nodeID := range nodeIDs {
-			_, err := tx.Stmt(statement).Exec(objectUID, nodeID)
-			if err != nil {
-				tx.Rollback()
-				return err
-			}
+			valueStrings = append(valueStrings, "(?, ?)")
+			valueArgs = append(valueArgs, objectUID, nodeID)
 		}
+	}
+
+	insertSQL = insertSQL + strings.Join(valueStrings, ",")
+
+	// Execute the bulk delete and insert at the end of preparation
+	if _, err := tx.Exec(deleteSQL, deleteArgs...); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if _, err := tx.Exec(insertSQL, valueArgs...); err != nil {
+		tx.Rollback()
+		return err
 	}
 
 	// Commit the transaction
@@ -72,10 +96,11 @@ func insertOrUpdateObjectLocations(db *sql.DB, objectLocations map[uint64][]uint
 		return err
 	}
 
-	//log.Println("Object locations inserted/updated successfully")
+	//log.Println("Object locations inserted/updated successfully 🌟👾🦄")
 	return nil
 }
 
+// TODO: Address the fact that SQLite does not hold uint64 that exceeds positive int64
 func createWaitlistTable(db *sql.DB) error {
 	createTableSQL := `CREATE TABLE IF NOT EXISTS waitlist (
         "object_uid" INTEGER NOT NULL,
