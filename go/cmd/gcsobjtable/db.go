@@ -6,19 +6,108 @@ import (
 	"log"
 )
 
-func createTable(db *sql.DB) {
-	createTableSQL := `CREATE TABLE IF NOT EXISTS users (
-        "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-        "name" TEXT,
-        "age" INTEGER
+func createObjectLocationsTable(db *sql.DB) error {
+	createTableSQL := `CREATE TABLE IF NOT EXISTS object_locations (
+        "object_uid" INTEGER NOT NULL,
+        "node_id" INTEGER NOT NULL,
+        PRIMARY KEY (object_uid, node_id)
     );`
 
+	createIndexSQL := `CREATE INDEX IF NOT EXISTS idx_object_uid_object_locations ON object_locations (object_uid);`
+
+	// Create object_locations table
 	statement, err := db.Prepare(createTableSQL)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	statement.Exec()
-	fmt.Println("Table created successfully")
+	_, err = statement.Exec()
+	if err != nil {
+		return err
+	}
+	//log.Println("object_locations table created successfully")
+
+	// Create index on object_uid for object_locations table
+	statement, err = db.Prepare(createIndexSQL)
+	if err != nil {
+		return err
+	}
+	_, err = statement.Exec()
+	if err != nil {
+		return err
+	}
+	//log.Println("Index on object_uid for object_locations table created successfully")
+
+	return nil
+}
+
+func insertOrUpdateObjectLocations(db *sql.DB, objectLocations map[uint64][]uint64) error {
+	// Prepare the insert statement
+	insertSQL := `INSERT OR IGNORE INTO object_locations (object_uid, node_id) VALUES (?, ?);`
+	statement, err := db.Prepare(insertSQL)
+	if err != nil {
+		return err
+	}
+	defer statement.Close()
+
+	// Begin a transaction
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	// Iterate through the map and insert each pair
+	for objectUID, nodeIDs := range objectLocations {
+		for _, nodeID := range nodeIDs {
+			_, err := tx.Stmt(statement).Exec(objectUID, nodeID)
+			if err != nil {
+				tx.Rollback()
+				return err
+			}
+		}
+	}
+
+	// Commit the transaction
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	//log.Println("Object locations inserted/updated successfully")
+	return nil
+}
+
+func createWaitlistTable(db *sql.DB) error {
+	createTableSQL := `CREATE TABLE IF NOT EXISTS waitlist (
+        "object_uid" INTEGER NOT NULL,
+        "ip_address" TEXT NOT NULL,
+        PRIMARY KEY (object_uid, ip_address)
+    );`
+
+	createIndexSQL := `CREATE INDEX IF NOT EXISTS idx_object_uid_waitlist ON waitlist (object_uid);`
+
+	// Create waitlist table
+	statement, err := db.Prepare(createTableSQL)
+	if err != nil {
+		return err
+	}
+	_, err = statement.Exec()
+	if err != nil {
+		return err
+	}
+	//log.Println("waitlist table created successfully")
+
+	// Create index on object_uid for waitlist table
+	statement, err = db.Prepare(createIndexSQL)
+	if err != nil {
+		return err
+	}
+	_, err = statement.Exec()
+	if err != nil {
+		return err
+	}
+	//log.Println("Index on object_uid for waitlist table created successfully")
+
+	return nil
 }
 
 func insertUser(db *sql.DB, name string, age int) {

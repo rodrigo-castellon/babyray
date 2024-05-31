@@ -21,7 +21,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"database/sql"
-	"log"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -45,17 +44,6 @@ func main() {
 		log.Fatalf("failed to serve: %v", err)
 	}
 
-	/* Set up SQLite */
-	database, err := sql.Open("sqlite3", "./example.db")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer database.Close()
-
-	createTable(database)
-	insertUser(database, "Alice", 30)
-	insertUser(database, "Bob", 25)
-	queryUsers(database)
 }
 
 // server is used to implement your gRPC service.
@@ -64,13 +52,26 @@ type GCSObjServer struct {
 	objectLocations map[uint64][]uint64 // object uid -> list of nodeIds as uint64
 	waitlist        map[uint64][]string // object uid -> list of IP addresses as string
 	mu              sync.Mutex          // lock should be used for both objectLocations and waitlist
+	database        *sql.DB             // connection to SQLite persistent datastore
 }
 
 func NewGCSObjServer() *GCSObjServer {
+	/* Set up SQLite */
+	// Note: You don't need to call database.Close() in Golang: https://stackoverflow.com/a/50788205
+	database, err := sql.Open("sqlite3", "./gcsobjtable.db") // TODO: Remove hardcode to config
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Creates tables if they don't already exist
+	createObjectLocationsTable(database)
+	createWaitlistTable(database)
+
+	/* Create server object */
 	server := &GCSObjServer{
 		objectLocations: make(map[uint64][]uint64),
 		waitlist:        make(map[uint64][]string),
 		mu:              sync.Mutex{},
+		database:        database,
 	}
 	return server
 }
