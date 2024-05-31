@@ -58,7 +58,7 @@ type server struct {
 
 
 func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.StatusResponse, error) {
-    // log.Printf("heartbeat from %v", req.NodeId)
+    log.Printf("heartbeat from %v", req.NodeId)
     mu.Lock()
     numQueuedTasks := req.QueuedTasks
     if (req.RunningTasks == 10) {
@@ -117,7 +117,7 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
     var foundBest bool
 
     minTime = math.MaxFloat32
-    if localityFlag {
+    if (localityFlag && len(uids) > 0) {
         log.Printf("LOCALITY FLAG IS ON!")
         log.Printf("ASKING THE GCS FOR THESE OBJECTS: %v", uids)
         locationsResp, err := s.gcsClient.GetObjectLocations(ctx, &pb.ObjectLocationsRequest{Args: uids})
@@ -159,6 +159,7 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
             }
         }
     } else {
+        log.Printf("doing the statuses rn")
         // TODO: make iteration order random for maximum fairness
         mu.RLock()
         for id, heartbeat := range s.status {

@@ -25,7 +25,7 @@ services:
 
   worker1:
     image: ray-node:driver
-    command: ["/bin/sh", "-c", "./go/bin/worker & ./go/bin/localobjstore & ./go/bin/localscheduler & sleep infinity"]
+    command: ["/bin/sh", "-c", "python3 -u -m pythonserver.worker & ./go/bin/localobjstore & ./go/bin/localscheduler & sleep infinity"]
     networks:
         mynetwork:
             aliases:
@@ -37,7 +37,7 @@ services:
 
   worker2:
     image: ray-node:driver
-    command: ["/bin/sh", "-c", "./go/bin/worker & ./go/bin/localobjstore & ./go/bin/localscheduler & sleep infinity"]
+    command: ["/bin/sh", "-c", "python3 -u -m pythonserver.worker & ./go/bin/localobjstore & ./go/bin/localscheduler & sleep infinity"]
     networks:
         mynetwork:
             aliases:
@@ -49,7 +49,7 @@ services:
 
   worker3:
     image: ray-node:driver
-    command: ["/bin/sh", "-c", "./go/bin/worker & ./go/bin/localobjstore & ./go/bin/localscheduler & sleep infinity"]
+    command: ["/bin/sh", "-c", "python3 -u -m pythonserver.worker & ./go/bin/localobjstore & ./go/bin/localscheduler & sleep infinity"]
     #command: ["/bin/sh", "-c", "./go/bin/localscheduler & ./go/bin/localobjstore & ./go/bin/worker"]
     networks:
         mynetwork:

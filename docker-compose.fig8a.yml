@@ -2,7 +2,7 @@ version: '3'
 
 services:
   worker1:
-    command: ["/bin/sh", "-c", "./go/bin/worker & ./go/bin/localobjstore & ./go/bin/localscheduler & sleep 2 && python3 scripts/fig8a.py 1 & sleep infinity"]
+    command: ["/bin/sh", "-c", "python3 -u -m pythonserver.worker & ./go/bin/localobjstore & ./go/bin/localscheduler & sleep 2 && python3 -u scripts/fig8a.py & sleep infinity"]
     depends_on:
       - worker2
       - worker3

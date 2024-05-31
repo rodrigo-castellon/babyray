@@ -15,7 +15,7 @@ def log(*s):
     # Format the datetime
     formatted_datetime = current_datetime.strftime("%Y/%m/%d %H:%M:%S.%f")[:-3]
 
-    print(formatted_datetime, *s)
+    print(formatted_datetime, *s, flush=True)
 
 
 init()
@@ -61,20 +61,24 @@ NUM_TRIALS = 1
 log("running sleeper functions")
 for i in range(11):
     sleeper_func.remote()
+    log("wtf", i)
 
+log("done????")
 time.sleep(1)
 log("done with deploying sleepers")
 
 for i in range(NUM_TRIALS):
     # create an object either on node 3 or node 4
     # if random.random() < 0.5:
-    # create_bytearr.set_node(3)
+    create_bytearr.set_node(3)
     # else:
     #     create_bytearr.set_node(4)
 
-    # obj = create_bytearr.remote(BYTEARR_SIZE)
-    # start = time.time()
-    # get(obj, copy=False)  # block on this task
+    log("now actually creating the object...")
+    obj = create_bytearr.remote(BYTEARR_SIZE)
+    log("its created. now lets get it.")
+    start = time.time()
+    get(obj, copy=False)  # block on this task
     # time.sleep(2)
 
     start = time.time()

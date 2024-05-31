@@ -98,10 +98,12 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 		return &pb.ScheduleResponse{Uid: uid}, nil
 	}
 
+	LocalLog("asking about the worker status")
 	scheduleLocally, _ := s.workerClient.WorkerStatus(ctx, &pb.StatusResponse{})
+	LocalLog("heard back from the worker status: %v", scheduleLocally.NumRunningTasks)
 
 	if scheduleLocally.NumRunningTasks < MAX_TASKS {
-		// LocalLog("Just running locally")
+		LocalLog("Just running locally")
 		go func() {
             _, err := s.workerClient.Run(s.globalCtx, &pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
             if err != nil {
@@ -112,7 +114,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
         }()
 		
 	} else {
-		// LocalLog("contacting global scheduler")
+		LocalLog("contacting global scheduler")
 		go func() {
 			LocalLog("THE REQ UIDS AT LOCAL SCHEDULER ARE %v", req.Uids)
             _, err := s.globalSchedulerClient.Schedule(s.globalCtx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs, Uids: req.Uids})
@@ -200,6 +202,7 @@ func SendHeartbeats(ctx context.Context, globalSchedulerClient pb.GlobalSchedule
 		// 	heartbeatRequest.AvgBandwidth,
 		// 	heartbeatRequest.NodeId)
 
+		LocalLog("SENDING GLOBAL SCHEDULER A HEARTBEAT!!!")
 		globalSchedulerClient.Heartbeat(ctx, heartbeatRequest)
 	    time.Sleep(HEARTBEAT_WAIT)
 	}
