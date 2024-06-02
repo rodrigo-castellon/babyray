@@ -55,7 +55,7 @@ type GCSObjServer struct {
 									   //used to determine when an original creation of a uid should be restarted
 }
 
-interface SchedulerClient {
+type SchedulerClient interface {
 	Schedule(ctx context.Context , req *pb.GlobalScheduleRequest, opts ...grpc.CallOption ) (*pb.StatusResponse, error)
 	Heartbeat(ctx context.Context, req *pb.HeartbeatRequest, opts ...grpc.CallOption ) (*pb.StatusResponse, error)
 	LiveNodesHeartbeat(ctx context.Context) (error) 
