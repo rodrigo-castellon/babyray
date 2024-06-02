@@ -357,22 +357,22 @@ func TestRequestLocation(t *testing.T) {
 	}
 }
 
-type MockSchedulerClient struct {
+type mockSchedulerClient struct {
 	pb.GlobalSchedulerClient
 	requestsReceived map[uint64]*pb.GlobalScheduleRequest
 }
 
-func (m *MockSchedulerClient) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest, opts ...grpc.CallOption ) (*pb.StatusResponse, error) {
+func (m *mockSchedulerClient) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest, opts ...grpc.CallOption ) (*pb.StatusResponse, error) {
 	requestsReceived[req.Uid] = req
 	return nil, nil
 }
-func (m *MockSchedulerClient) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest, opts ...grpc.CallOption ) (*pb.StatusResponse, error) {
+func (m *mockSchedulerClient) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest, opts ...grpc.CallOption ) (*pb.StatusResponse, error) {
 	return nil, nil
 }
-func (m *MockSchedulerClient) LiveNodesHeartbeat(ctx context.Context) (error)  {
+func (m *mockSchedulerClient) LiveNodesHeartbeat(ctx context.Context) (error)  {
 	return nil
 }
-func (m *MockSchedulerClient) SendLiveNodes(ctx context.Context) {
+func (m *mockSchedulerClient) SendLiveNodes(ctx context.Context) {
 	return nil
 }
 func TestNodeDiesWhileGenerating(t *testing.T) {
@@ -384,7 +384,7 @@ func TestNodeDiesWhileGenerating(t *testing.T) {
 	*/
 	ctx = context.Background()
 	req := &pb.GlobalScheduleRequest{Uid: 200, Name: "func_name", Args: [], Kwargs: []}
-	m := MockSchedulerClient {
+	m := mockSchedulerClient {
 		requestsReceived: make(map[uint64]bool), 
 	}
 
