@@ -59,7 +59,10 @@ type server struct {
 }
 
 type ObjClient interface {
-    RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest) (*pb.StatusResponse, error) 
+    RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest, opts ...grpc.CallOption) (*pb.StatusResponse, error) 
+    RequestLocation(ctx context.Context, req *pb.RequestLocationRequest, opts ...grpc.CallOption) (*pb.RequestLocationResponse, error)
+    RegisterGenerating(ctx context.Context, req *pb.GeneratingRequest,  opts ...grpc.CallOption) (*pb.StatusResponse, error)
+    GetObjectLocations(ctx context.Context, req *pb.ObjectLocationsRequest,  opts ...grpc.CallOption) (*pb.ObjectLocationsResponse, error) 
 }
 
 

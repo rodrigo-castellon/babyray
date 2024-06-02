@@ -39,6 +39,19 @@ func (m *mockGCSClient) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodes
 	m.liveNodes = req.LiveNodes; 
 	return &pb.StatusResponse{Success: true}, nil
 }
+
+func (m *mockGCSClient) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest, opts ...grpc.CallOption) (*pb.StatusResponse, error) {
+	return nil, nil
+}
+func (m *mockGCSClient) RequestLocation(ctx context.Context, req *pb.RequestLocationRequest, opts ...grpc.CallOption) (*pb.RequestLocationResponse, error){
+	return nil, nil
+}
+func (m *mockGCSClient) RegisterGenerating(ctx context.Context, req *pb.GeneratingRequest,  opts ...grpc.CallOption) (*pb.StatusResponse, error){
+	return nil, nil
+}
+func (m *mockGCSClient) GetObjectLocations(ctx context.Context, req *pb.ObjectLocationsRequest,  opts ...grpc.CallOption) (*pb.ObjectLocationsResponse, error) {
+	return nil, nil
+}
 func TestHeartbeats(t *testing.T) {
 	ctx :=context.Background()
 
