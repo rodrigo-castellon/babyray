@@ -40,9 +40,7 @@ func (m *mockGCSClient) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodes
 	return &pb.StatusResponse{Success: true}, nil
 }
 
-func (m *mockGCSClient) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest, opts ...grpc.CallOption) (*pb.StatusResponse, error) {
-	return nil, nil
-}
+
 func (m *mockGCSClient) RequestLocation(ctx context.Context, req *pb.RequestLocationRequest, opts ...grpc.CallOption) (*pb.RequestLocationResponse, error){
 	return nil, nil
 }
@@ -59,7 +57,7 @@ func TestHeartbeats(t *testing.T) {
 		liveNodes: make(map[uint64]bool),
 	}
 	s := server {
-		gcsClient: m, 
+		gcsClient: &m, 
 		status: make(map[uint64]HeartbeatEntry),
 	}
 
