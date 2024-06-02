@@ -90,6 +90,10 @@ message GetRequest {
   // normally is true, but is false whenever we want to just block
   // for a task to complete
   bool copy = 3;
+  // normally is true, but is false whenever we want to copy the
+  // object over but not cache it (so we can keep measuring the copy
+  // speed)
+  bool cache = 4;
 }
 
 message GetResponse {

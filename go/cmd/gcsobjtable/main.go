@@ -195,11 +195,11 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 
 func (s *GCSObjServer) GetObjectLocations(ctx context.Context, req *pb.ObjectLocationsRequest) (*pb.ObjectLocationsResponse, error) {
 	locations := make(map[uint64]*pb.LocationByteTuple)
-	log.Printf("DEEP PRINT!")
-	log.Printf("length = %v", len(s.objectLocations))
-	for k, v := range s.objectLocations {
-		log.Printf("s.objectLocations[%v] = %v", k, v)
-	}
+	// log.Printf("DEEP PRINT!")
+	// log.Printf("length = %v", len(s.objectLocations))
+	// for k, v := range s.objectLocations {
+	// 	log.Printf("s.objectLocations[%v] = %v", k, v)
+	// }
 
 	for _, u := range req.Args {
 		if _,ok := s.objectLocations[uint64(u)]; ok {

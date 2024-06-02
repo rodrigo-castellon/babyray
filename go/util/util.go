@@ -25,7 +25,7 @@ func GetDialOptions() []grpc.DialOption {
 
 // GetServerOptions returns the gRPC server options with max message size set.
 func GetServerOptions() []grpc.ServerOption {
-	const MAX_MSG_SIZE = 200 * 1024 * 1024 // 200MB
+	const MAX_MSG_SIZE = 1024 * 1024 * 1024 // 1GB
 
 	return []grpc.ServerOption{
 		grpc.MaxRecvMsgSize(MAX_MSG_SIZE),

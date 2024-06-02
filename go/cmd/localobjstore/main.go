@@ -97,7 +97,7 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
 	}
 	mu.RUnlock()
 
-	LocalLog("IN GET() RN!")
+	// LocalLog("IN GET() RN!")
 
 	s.localObjectChannels[req.Uid] = make(chan *pb.LocationFoundCallback)
 	if req.Testing == false {
@@ -106,7 +106,8 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
 
 	resp := <-s.localObjectChannels[req.Uid]
 
-	LocalLog("GOT THE RESPONSE!")
+	// LocalLog("GOT THE RESPONSE! %v", resp)
+	// LocalLog("the locaiton is: %v", resp.Location)
 
 	// handle the response accordingly
 	if (!req.Copy) {
@@ -132,11 +133,11 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
 
 	// start := time.Now()
 
-	LocalLog("CALLING COPY() ON THIS NODE...")
+	// LocalLog("CALLING COPY() ON THIS NODE...")
 	x, err := c.Copy(ctx, &pb.CopyRequest{Uid: resp.Uid, Requester: s.localNodeID})
 
-	LocalLog("the err was: %v", err)
-	LocalLog("GETTING THE TOTAL BANDWIDTH FROM THIS...")
+	// LocalLog("the err was: %v", err)
+	// LocalLog("GETTING THE TOTAL BANDWIDTH FROM THIS...")
 	// bandwidth := float32(len(x.ObjectBytes)) / float32((time.Now().Sub(start).Seconds()))
 
 	// s.avgBandwidth = EMA_PARAM * s.avgBandwidth + (1 - EMA_PARAM) * bandwidth 
@@ -145,15 +146,18 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
 		return &pb.GetResponse{Uid: req.Uid}, errors.New(fmt.Sprintf("failed to copy from other LOS @:%s ", otherLocalAddress))
 	}
 
-	if resp.Port == 0 {
+	if (resp.Port == 0 && req.Cache) {
 			s.gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: resp.Uid, NodeId: s.localNodeID})
 	}
 
 	// val := <-s.localObjectChannels[req.Uid]
-	mu.Lock()
-	defer mu.Unlock()
-	s.localObjectStore[req.Uid] = x.ObjectBytes
-	return &pb.GetResponse{Uid: req.Uid, ObjectBytes: s.localObjectStore[req.Uid], Local: false}, nil
+	if (req.Cache) {
+		mu.Lock()
+		s.localObjectStore[req.Uid] = x.ObjectBytes
+		mu.Unlock()
+	}
+
+	return &pb.GetResponse{Uid: req.Uid, ObjectBytes: x.ObjectBytes, Local: false}, nil
 }
 
 func (s *server) LocationFound(ctx context.Context, resp *pb.LocationFoundCallback) (*pb.StatusResponse, error) {

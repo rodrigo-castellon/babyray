@@ -55,20 +55,21 @@ def init_all_stubs():
 class Future:
     uid: int
 
-    def get(self, copy=True):
+    def get(self, copy=True, cache=True):
         # copy: whether we should actually copy the data over, or whether
         # we should just block until the task is complete
+        # cache: whether we should cache it locally in our LOBS
 
         # make a request to local object store
         if copy:
             return pickle.loads(
                 local_object_store_gRPC.Get(
-                    rayclient_pb2.GetRequest(uid=self.uid, copy=True)
+                    rayclient_pb2.GetRequest(uid=self.uid, copy=True, cache=cache)
                 ).objectBytes
             )
         else:
             local_object_store_gRPC.Get(
-                rayclient_pb2.GetRequest(uid=self.uid, copy=False)
+                rayclient_pb2.GetRequest(uid=self.uid, copy=False, cache=cache)
             )
             return True
 
@@ -138,14 +139,16 @@ def remote(func):
     return rem
 
 
-def get(futures, copy=True):
+def get(futures, copy=True, cache=True):
     # recursive function
     if isinstance(futures, list):
-        return [get(future, copy=copy) for future in futures]
+        return [get(future, copy=copy, cache=cache) for future in futures]
     elif isinstance(futures, dict):
-        return {k: get(future, copy=copy) for k, future in futures.items()}
+        return {k: get(future, copy=copy, cache=cache) for k, future in futures.items()}
     else:
-        return futures.get(copy=copy) if hasattr(futures, "get") else futures
+        return (
+            futures.get(copy=copy, cache=cache) if hasattr(futures, "get") else futures
+        )
 
 
 def demo():
