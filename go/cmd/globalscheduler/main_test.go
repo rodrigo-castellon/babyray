@@ -43,11 +43,11 @@ func TestHeartbeats(t *testing.T) {
 	ctx := Context.Background()
 
 	m := mockGCSClient {
-		liveNodes: make(map[uint64]bool)
+		liveNodes: make(map[uint64]bool),
 	}
 	s := server {
 		gcsClient: m, 
-		status: make(map[uint64]HeartbeatEntry)
+		status: make(map[uint64]HeartbeatEntry),
 	}
 
 	s.Heartbeat(ctx, &pb.HeartbeatRequest{NodeId: 200})
