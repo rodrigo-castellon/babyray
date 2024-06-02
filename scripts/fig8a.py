@@ -33,7 +33,7 @@ def create_bytearr(n):
 
 @remote
 def dummy_func(fut):
-    bytearr = get(fut)
+    bytearr = get(fut, pickle_load=False)
 
     return 10
 
@@ -56,7 +56,9 @@ time.sleep(1)
 log("done with deploying sleepers")
 
 SIZES = [100_000, 1_000_000, 10_000_000, 100_000_000]
-NUM_TRIALS = 100
+# SIZES = [100_000_000]
+# SIZES = [10_000] * 4
+NUM_TRIALS = 10
 
 for size in SIZES:
     log("#" * 100)

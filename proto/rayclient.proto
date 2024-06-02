@@ -99,7 +99,8 @@ message GetRequest {
 message GetResponse {
   uint64 uid = 1; 
   bytes objectBytes = 2;
-  bool local = 3; 
+  bool local = 3;
+  uint64 size = 4;
 }
 
 message BandwidthResponse {

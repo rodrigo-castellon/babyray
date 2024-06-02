@@ -1,6 +1,8 @@
 # generic libraries
 import cloudpickle as pickle
 import grpc
+import posix_ipc
+import mmap
 
 from dataclasses import dataclass
 
@@ -51,22 +53,55 @@ def init_all_stubs():
     return local_scheduler_gRPC, gcs_func_gRPC, local_object_store_gRPC
 
 
+def read_shared_memory(uid, size):
+    # read object "uid" of "size" # of bytes from shared memory (POSIX IPC)
+
+    # Open the shared memory segment
+    shm = posix_ipc.SharedMemory(f"/{uid}")
+
+    # Map the shared memory into the address space
+    mem_map = mmap.mmap(shm.fd, size)
+
+    # Read data from shared memory
+    data = mem_map.read(size)
+
+    # Close the memory map and shared memory object
+    mem_map.close()
+    shm.close_fd()
+
+    return data
+
+
 @dataclass
 class Future:
     uid: int
 
-    def get(self, copy=True, cache=True):
+    def get(self, copy=True, cache=True, pickle_load=True):
         # copy: whether we should actually copy the data over, or whether
         # we should just block until the task is complete
         # cache: whether we should cache it locally in our LOBS
 
         # make a request to local object store
         if copy:
-            return pickle.loads(
-                local_object_store_gRPC.Get(
-                    rayclient_pb2.GetRequest(uid=self.uid, copy=True, cache=cache)
-                ).objectBytes
+            response = local_object_store_gRPC.Get(
+                rayclient_pb2.GetRequest(uid=self.uid, copy=True, cache=cache)
             )
+
+            print(f"reading from shared memory: {self.uid}, {response.size}")
+
+            bytes_ = read_shared_memory(self.uid, response.size)
+
+            if pickle_load:
+                return pickle.loads(bytes_)
+            else:
+                return bytes_  # pickle.loads(bytes_)
+
+            if response.local:
+                # in this case we were just handed
+                bytes_ = read_shared_memory(self.uid, response.size)
+            else:
+                bytes_ = response.objectBytes
+            return pickle.loads(bytes_)
         else:
             local_object_store_gRPC.Get(
                 rayclient_pb2.GetRequest(uid=self.uid, copy=False, cache=cache)
@@ -139,15 +174,23 @@ def remote(func):
     return rem
 
 
-def get(futures, copy=True, cache=True):
+def get(futures, copy=True, cache=True, pickle_load=True):
     # recursive function
     if isinstance(futures, list):
-        return [get(future, copy=copy, cache=cache) for future in futures]
+        return [
+            get(future, copy=copy, cache=cache, pickle_load=pickle_load)
+            for future in futures
+        ]
     elif isinstance(futures, dict):
-        return {k: get(future, copy=copy, cache=cache) for k, future in futures.items()}
+        return {
+            k: get(future, copy=copy, cache=cache, pickle_load=pickle_load)
+            for k, future in futures.items()
+        }
     else:
         return (
-            futures.get(copy=copy, cache=cache) if hasattr(futures, "get") else futures
+            futures.get(copy=copy, cache=cache, pickle_load=pickle_load)
+            if hasattr(futures, "get")
+            else futures
         )
 
 
