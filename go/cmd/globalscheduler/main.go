@@ -8,6 +8,7 @@ import (
     // "math/rand"
     "math"
    // "bytes"
+   "reflect"
    "os"
    "sync"
    "time"
@@ -89,7 +90,7 @@ func(s *server) SendLiveNodes(ctx context.Context) (error) {
     for uid, heartbeat := range s.status {
         timeSince := time.Since(heartbeat.timeReceived)
         log.Printf("time since heartbeat: %v", timeSince)
-        log.Printf("type of time since: %v", type(timeSince))
+        log.Printf("type of time since: %v", reflect.TypeOf(timeSince))
         liveNodes[uid] =  timeSince < LIVE_NODE_TIMEOUT
         if _, val := liveNodes[uid]; val {
             log.Printf("%v sent as live", uid)
