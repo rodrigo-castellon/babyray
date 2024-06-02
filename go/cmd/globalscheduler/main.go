@@ -23,7 +23,7 @@ var mu sync.RWMutex
 
 func main() {
     ctx := context.Background()
-    cfg = config.GetConfig() // Load configuration
+    //cfg = config.GetConfig() // Load configuration
     address := ":" + strconv.Itoa(cfg.Ports.GlobalScheduler) // Prepare the network address
 
     lis, err := net.Listen("tcp", address)
