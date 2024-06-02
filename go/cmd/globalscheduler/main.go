@@ -88,16 +88,8 @@ func (s *server) LiveNodesHeartbeat(ctx context.Context) (error) {
 func(s *server) SendLiveNodes(ctx context.Context) (error) {
     liveNodes := make(map[uint64]bool)
     for uid, heartbeat := range s.status {
-        timeSince := time.Since(heartbeat.timeReceived)
-
-        log.Printf("%v < %v = %v", timeSince, LIVE_NODE_TIMEOUT,  timeSince < LIVE_NODE_TIMEOUT)
-        liveNodes[uid] =  timeSince < LIVE_NODE_TIMEOUT
-        log.Printf("set as %v", liveNodes[uid])
-        if _, val := liveNodes[uid]; val {
-            log.Printf("%v sent as live", uid)
-        } else {
-            log.Printf("%v sent as dead", uid)
-        }
+        liveNodes[uid] =  time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT
+       
     }
     s.gcsClient.RegisterLiveNodes(ctx, &pb.LiveNodesRequest{LiveNodes: liveNodes})
     return nil
