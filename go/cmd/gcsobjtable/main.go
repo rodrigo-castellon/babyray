@@ -59,7 +59,6 @@ type SchedulerClient interface {
 	Schedule(ctx context.Context , req *pb.GlobalScheduleRequest, opts ...grpc.CallOption ) (*pb.StatusResponse, error)
 	Heartbeat(ctx context.Context, req *pb.HeartbeatRequest, opts ...grpc.CallOption ) (*pb.StatusResponse, error)
 	
-	SendLiveNodes(ctx context.Context)
 }
 
 func NewGCSObjServer() *GCSObjServer {
