@@ -90,7 +90,7 @@ func(s *server) SendLiveNodes(ctx context.Context) (error) {
     for uid, heartbeat := range s.status {
         timeSince := time.Since(heartbeat.timeReceived)
 
-        log.Printf("%v < %v = %b", timeSince, LIVE_NODE_TIMEOUT,  timeSince < LIVE_NODE_TIMEOUT)
+        log.Printf("%v < %v = %v", timeSince, LIVE_NODE_TIMEOUT,  timeSince < LIVE_NODE_TIMEOUT)
         liveNodes[uid] =  timeSince < LIVE_NODE_TIMEOUT
         if _, val := liveNodes[uid]; val {
             log.Printf("%v sent as live", uid)
