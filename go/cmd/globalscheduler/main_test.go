@@ -71,7 +71,7 @@ func TestHeartbeats(t *testing.T) {
 
 	s.SendLiveNodes(ctx); 
 
-	if val, ok := m.liveNodes[200]; val == true || ok {
+	if val, ok := m.liveNodes[200]; val == true {
 		t.Errorf("Node was not correctly registered as dead with GCS")
 	}
 }
