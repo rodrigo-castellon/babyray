@@ -54,8 +54,12 @@ type HeartbeatEntry struct {
 // server is used to implement your gRPC service.
 type server struct {
    pb.UnimplementedGlobalSchedulerServer
-   gcsClient pb.GCSObjClient
+   gcsClient ObjClient
    status map[uint64]HeartbeatEntry
+}
+
+type ObjClient interface {
+    RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest) (*pb.StatusResponse, error) 
 }
 
 

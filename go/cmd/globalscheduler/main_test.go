@@ -32,7 +32,7 @@ func init() {
 // }
 
 type mockGCSClient struct {
-	pb.GCSObjServer
+	pb.GCSObjClient
 	liveNodes map[uint64]bool
 }
 func (m *mockGCSClient) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest) (*pb.StatusResponse, error) {
