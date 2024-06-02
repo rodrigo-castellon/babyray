@@ -8,7 +8,7 @@ import (
 	"time"
 
 	pb "github.com/rodrigo-castellon/babyray/pkg"
-
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 	"github.com/rodrigo-castellon/babyray/config"
 )
