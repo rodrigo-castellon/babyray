@@ -67,7 +67,7 @@ type ObjClient interface {
 
 
 func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.StatusResponse, error) {
-    // log.Printf("heartbeat from %v", req.NodeId)
+    log.Printf("heartbeat from %v", req.NodeId)
     mu.Lock()
     s.status[req.NodeId] = HeartbeatEntry{timeReceived: time.Now(), numRunningTasks: req.RunningTasks, numQueuedTasks: req.QueuedTasks, avgRunningTime: req.AvgRunningTime, avgBandwidth: req.AvgBandwidth}
     mu.Unlock()
@@ -87,7 +87,14 @@ func (s *server) LiveNodesHeartbeat(ctx context.Context) (error) {
 func(s *server) SendLiveNodes(ctx context.Context) (error) {
     liveNodes := make(map[uint64]bool)
     for uid, heartbeat := range s.status {
+
         liveNodes[uid] = time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT
+        if _, val := liveNodes[uid]; val {
+            log.Printf("%v sent as live", req.NodeId)
+        }
+        else {
+            log.Printf("%v sent as dead", req.NodeId)
+        }
     }
     s.gcsClient.RegisterLiveNodes(ctx, &pb.LiveNodesRequest{LiveNodes: liveNodes})
     return nil
