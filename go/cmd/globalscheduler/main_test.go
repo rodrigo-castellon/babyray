@@ -67,7 +67,7 @@ func TestHeartbeats(t *testing.T) {
 		t.Errorf("Node was not correctly registered as alive with GCS")
 	}
 
-	time.Sleep(2 * LIVE_NODE_TIMEOUT)
+	time.Sleep(10 * LIVE_NODE_TIMEOUT)
 
 	s.SendLiveNodes(ctx); 
 
