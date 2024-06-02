@@ -18,7 +18,7 @@ const bufSize = 1024 * 1024
 var lis *bufconn.Listener
 
 func init() {
-	cfg = config.GetConfig()  
+	//cfg = config.GetConfig()  
 }
 
 // type mockFuncClient struct {
@@ -35,7 +35,7 @@ type mockGCSClient struct {
 	pb.GCSObjClient
 	liveNodes map[uint64]bool
 }
-func (m *mockGCSClient) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest, opts ...grpc.CallOption) (*pb.StatusResponse, error) {
+func (m *mockGCSClient) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest, opts ...grpc.CallOptiono) (*pb.StatusResponse, error) {
 	m.liveNodes = req.LiveNodes; 
 	return &pb.StatusResponse{Success: true}, nil
 }
