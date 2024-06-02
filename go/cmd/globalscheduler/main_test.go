@@ -10,7 +10,7 @@ import (
 	pb "github.com/rodrigo-castellon/babyray/pkg"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
-	"github.com/rodrigo-castellon/babyray/config"
+//	"github.com/rodrigo-castellon/babyray/config"
 )
 
 const bufSize = 1024 * 1024
@@ -35,7 +35,7 @@ type mockGCSClient struct {
 	pb.GCSObjClient
 	liveNodes map[uint64]bool
 }
-func (m *mockGCSClient) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest, opts ...grpc.CallOptiono) (*pb.StatusResponse, error) {
+func (m *mockGCSClient) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest, opts ...grpc.CallOption) (*pb.StatusResponse, error) {
 	m.liveNodes = req.LiveNodes; 
 	return &pb.StatusResponse{Success: true}, nil
 }
