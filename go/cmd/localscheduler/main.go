@@ -58,7 +58,7 @@ func main() {
 
 
 	nodeId, _ := strconv.Atoi(os.Getenv("NODE_ID"))
-	server := &server{globalSchedulerClient: globalSchedulerClient, workerClient: workerClient, globalCtx: context.Background(), localNodeID: uint64(nodeId), gcsClient: gcsObjClient, alive: true })
+	server := &server{globalSchedulerClient: globalSchedulerClient, workerClient: workerClient, globalCtx: context.Background(), localNodeID: uint64(nodeId), gcsClient: gcsObjClient, alive: true }
 	pb.RegisterLocalSchedulerServer(s, server)
 	ctx := context.Background()
 	go server.SendHeartbeats(ctx, globalSchedulerClient, uint64(nodeId))
