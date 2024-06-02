@@ -3,10 +3,9 @@ package main
 import (
 
 	"context"
-	"log"
+	
 	"testing"
 	"time"
-	"fmt"
 	pb "github.com/rodrigo-castellon/babyray/pkg"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
@@ -61,14 +60,14 @@ func TestHeartbeats(t *testing.T) {
 		gcsClient: &m, 
 		status: make(map[uint64]HeartbeatEntry),
 	}
-	
+
 	s.Heartbeat(ctx, &pb.HeartbeatRequest{NodeId: 200})
 	s.SendLiveNodes(ctx) 
 	if val, ok := m.liveNodes[200]; val != true || !ok {
 		t.Errorf("Node was not correctly registered as alive with GCS")
 	}
 
-	time.Sleep(10 * LIVE_NODE_TIMEOUT)
+	time.Sleep(2 * LIVE_NODE_TIMEOUT)
 
 	s.SendLiveNodes(ctx); 
 
