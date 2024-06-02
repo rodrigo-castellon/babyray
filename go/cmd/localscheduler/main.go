@@ -118,12 +118,12 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 
 }
 
-func (s *server) KillServer(ctx context.Context, *pb.StatusResponse) (*pb.StatusResponse, error) {
+func (s *server) KillServer(ctx context.Context, req *pb.StatusResponse) (*pb.StatusResponse, error) {
 	s.alive = false
 	return &pb.StatusResponse{Success: true}, nil
 }
 
-func (s *server) ReviveServer(ctx context.Context, *pb.StatusResponse) (*pb.StatusResponse, error) {
+func (s *server) ReviveServer(ctx context.Context, req *pb.StatusResponse) (*pb.StatusResponse, error) {
 	s.alive = true
 	return &pb.StatusResponse{Success: true}, nil
 }
