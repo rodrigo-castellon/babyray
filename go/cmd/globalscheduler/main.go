@@ -90,9 +90,9 @@ func(s *server) SendLiveNodes(ctx context.Context) (error) {
 
         liveNodes[uid] = time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT
         if _, val := liveNodes[uid]; val {
-            log.Printf("%v sent as live", req.NodeId)
+            log.Printf("%v sent as live", uid)
         } else {
-            log.Printf("%v sent as dead", req.NodeId)
+            log.Printf("%v sent as dead", uid)
         }
     }
     s.gcsClient.RegisterLiveNodes(ctx, &pb.LiveNodesRequest{LiveNodes: liveNodes})
