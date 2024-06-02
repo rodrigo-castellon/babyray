@@ -357,7 +357,7 @@ func TestRequestLocation(t *testing.T) {
 	}
 }
 
-type MockSchedulerClient {
+type MockSchedulerClient struct {
 	pb.GlobalSchedulerClient
 	requestsReceived map[uint64]*pb.GlobalScheduleRequest
 }
