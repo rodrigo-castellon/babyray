@@ -58,7 +58,7 @@ type GCSObjServer struct {
 type SchedulerClient interface {
 	Schedule(ctx context.Context , req *pb.GlobalScheduleRequest, opts ...grpc.CallOption ) (*pb.StatusResponse, error)
 	Heartbeat(ctx context.Context, req *pb.HeartbeatRequest, opts ...grpc.CallOption ) (*pb.StatusResponse, error)
-	LiveNodesHeartbeat(ctx context.Context) (error) 
+	
 	SendLiveNodes(ctx context.Context)
 }
 
