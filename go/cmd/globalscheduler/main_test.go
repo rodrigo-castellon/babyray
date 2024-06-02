@@ -37,7 +37,7 @@ type mockGCSClient struct {
 }
 func (m *mockGCSClient) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest, opts ...grpc.CallOption) (*pb.StatusResponse, error) {
 	m.liveNodes = req.LiveNodes; 
-	log.Printf(fmt.Sprintf(m.liveNodes))
+	log.Printf(fmt.Sprint(m.liveNodes))
 	return &pb.StatusResponse{Success: true}, nil
 }
 
@@ -72,7 +72,7 @@ func TestHeartbeats(t *testing.T) {
 
 	s.SendLiveNodes(ctx); 
 
-	if val, ok := m.liveNodes[200]; val == true {
+	if val, _ := m.liveNodes[200]; val == true {
 		t.Errorf("Node was not correctly registered as dead with GCS")
 	}
 }
