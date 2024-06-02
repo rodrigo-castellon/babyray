@@ -96,3 +96,29 @@ func insertOrUpdateObjectLocations(db *sql.DB, objectLocations map[uint64][]uint
 
 	return nil
 }
+
+func getObjectLocations(db *sql.DB, objectUID uint64) ([]uint64, error) {
+	querySQL := `SELECT node_id FROM object_locations WHERE object_uid = ?;`
+
+	rows, err := db.Query(querySQL, objectUID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var nodeIDs []uint64
+	for rows.Next() {
+		var nodeID uint64
+		if err := rows.Scan(&nodeID); err != nil {
+			return nil, err
+		}
+		nodeIDs = append(nodeIDs, nodeID)
+	}
+
+	// Check for errors from iterating over rows.
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return nodeIDs, nil
+}

@@ -132,3 +132,62 @@ func verifyObjectLocations(t *testing.T, db *sql.DB, expected map[uint64][]uint6
 		}
 	}
 }
+
+func TestGetObjectLocations(t *testing.T) {
+	// Create an in-memory SQLite database
+	db, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open database: %v", err)
+	}
+	defer db.Close()
+
+	// Create the object_locations table
+	err = createObjectLocationsTable(db)
+	if err != nil {
+		t.Fatalf("Failed to create object_locations table: %v", err)
+	}
+
+	// Insert test data
+	objectLocations := map[uint64][]uint64{
+		1: {101, 102, 103},
+		2: {201, 202},
+	}
+
+	err = insertOrUpdateObjectLocations(db, objectLocations)
+	if err != nil {
+		t.Fatalf("Failed to insert test data: %v", err)
+	}
+
+	// Test getObjectLocations
+	tests := []struct {
+		objectUID uint64
+		expected  []uint64
+	}{
+		{1, []uint64{101, 102, 103}},
+		{2, []uint64{201, 202}},
+		{3, []uint64{}}, // Test for an objectUID that does not exist
+	}
+
+	for _, test := range tests {
+		nodeIDs, err := getObjectLocations(db, test.objectUID)
+		if err != nil {
+			t.Errorf("Error getting object locations for objectUID %d: %v", test.objectUID, err)
+		}
+		if !equal(nodeIDs, test.expected) {
+			t.Errorf("Expected %v, got %v for objectUID %d", test.expected, nodeIDs, test.objectUID)
+		}
+	}
+}
+
+// Helper function to compare two slices for equality
+func equal(a, b []uint64) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
