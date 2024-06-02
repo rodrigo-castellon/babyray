@@ -22,6 +22,7 @@ message StatusResponse {
 service GlobalScheduler {
   rpc Schedule(GlobalScheduleRequest) returns (StatusResponse);
   rpc Heartbeat(HeartbeatRequest) returns (StatusResponse); 
+  rpc GetLiveNodes(StatusResponse) returns (LiveNodesResponse); 
 }
 
 message GlobalScheduleRequest {
@@ -42,11 +43,14 @@ message HeartbeatRequest {
 
 }
 
+
 /* END GLOBAL SCHEDULER */
 
 /* START WORKER NODE LOCAL SCHEDULER */
 service LocalScheduler {
   rpc Schedule(ScheduleRequest) returns (ScheduleResponse);
+  rpc KillServer(StatusResponse) returns (StatusResponse);
+  rpc ReviveServer(StatusResponse) returns (StatusResponse); 
 }
 
 message ScheduleRequest {
@@ -115,6 +119,7 @@ message CopyResponse {
 service Worker {
   rpc Run(RunRequest) returns (StatusResponse);
   rpc WorkerStatus(StatusResponse) returns (WorkerStatusResponse);
+  
 }
 
 message RunRequest {

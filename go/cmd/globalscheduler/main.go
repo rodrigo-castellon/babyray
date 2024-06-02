@@ -38,7 +38,7 @@ func main() {
     pb.RegisterGlobalSchedulerServer(s, server)
     defer conn.Close()
     log.Printf("server listening at %v", lis.Addr())
-    go SendLiveNodes(server, ctx)
+    go server.SendLiveNodes(ctx)
     if err := s.Serve(lis); err != nil {
        log.Fatalf("failed to serve: %v", err)
     }
@@ -67,16 +67,20 @@ func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.
     return &pb.StatusResponse{Success: true}, nil
 }
 
-func SendLiveNodes(s *server, ctx context.Context) (error) {
+func (s *server) LiveNodesHeartbeat(ctx context.Context) (error) {
     liveNodes := make(map[uint64]bool)
     for {
-        for uid, heartbeat := range s.status {
-            liveNodes[uid] = time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT
-        }
-        s.gcsClient.RegisterLiveNodes(ctx, &pb.LiveNodesRequest{LiveNodes: liveNodes})
+        s.SendLiveNodes(ctx)
         time.Sleep(HEARTBEAT_WAIT)
     }
 
+}
+
+func(s *server) SendLiveNodes(ctx context.Context) (error) {
+    for uid, heartbeat := range s.status {
+        liveNodes[uid] = time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT
+    }
+    s.gcsClient.RegisterLiveNodes(ctx, &pb.LiveNodesRequest{LiveNodes: liveNodes})
 }
 
 func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) (*pb.StatusResponse, error) {

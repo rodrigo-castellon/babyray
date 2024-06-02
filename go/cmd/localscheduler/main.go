@@ -58,7 +58,7 @@ func main() {
 
 
 	nodeId, _ := strconv.Atoi(os.Getenv("NODE_ID"))
-	pb.RegisterLocalSchedulerServer(s, &server{globalSchedulerClient: globalSchedulerClient, workerClient: workerClient, globalCtx: context.Background(), localNodeID: uint64(nodeId), gcsClient: gcsObjClient })
+	pb.RegisterLocalSchedulerServer(s, &server{globalSchedulerClient: globalSchedulerClient, workerClient: workerClient, globalCtx: context.Background(), localNodeID: uint64(nodeId), gcsClient: gcsObjClient, alive: true })
 	ctx := context.Background()
 	go SendHeartbeats(ctx, globalSchedulerClient, uint64(nodeId))
 
@@ -78,6 +78,7 @@ type server struct {
 	gcsClient pb.GCSObjClient
 	globalCtx context.Context
 	localNodeID uint64
+	bool alive
 }
 
 // Implement your service methods here.
@@ -117,6 +118,16 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 
 }
 
+func (s *server) KillServer(ctx context.Context, *pb.StatusResponse) (*pb.StatusResponse, error) {
+	s.alive = false
+	return &pb.StatusResponse{Success: true}, nil
+}
+
+func (s *server) ReviveServer(ctx context.Context, *pb.StatusResponse) (*pb.StatusResponse, error) {
+	s.alive = true
+	return &pb.StatusResponse{Success: true}, nil
+}
+
 func SendHeartbeats(ctx context.Context, globalSchedulerClient pb.GlobalSchedulerClient, nodeId uint64 ) {
 	workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
 	workerConn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
@@ -137,6 +148,7 @@ func SendHeartbeats(ctx context.Context, globalSchedulerClient pb.GlobalSchedule
 	workerClient := pb.NewWorkerClient(workerConn)
 	lobsClient := pb.NewLocalObjStoreClient(lobsConn)
 	for {
+		if s.alive {
 		backoff := 1
 		var status *pb.WorkerStatusResponse
 
@@ -190,6 +202,8 @@ func SendHeartbeats(ctx context.Context, globalSchedulerClient pb.GlobalSchedule
 		// 	heartbeatRequest.NodeId)
 
 		globalSchedulerClient.Heartbeat(ctx, heartbeatRequest)
+		}
 	    time.Sleep(HEARTBEAT_WAIT)
 	}
 }
+
