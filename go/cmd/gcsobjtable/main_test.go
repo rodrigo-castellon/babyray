@@ -363,7 +363,7 @@ type mockSchedulerClient struct {
 }
 
 func (m *mockSchedulerClient) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest, opts ...grpc.CallOption ) (*pb.StatusResponse, error) {
-	requestsReceived[req.Uid] = req
+	m.requestsReceived[req.Uid] = req
 	return nil, nil
 }
 func (m *mockSchedulerClient) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest, opts ...grpc.CallOption ) (*pb.StatusResponse, error) {
