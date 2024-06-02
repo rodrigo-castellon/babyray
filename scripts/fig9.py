@@ -28,30 +28,33 @@ MAX_TIME = 1.0  # just time 1 second at a time
 # ask for a node that is not ourself
 @remote
 def f(size):
-    return bytearray(size)
+    return bytearray(size * 1024)
 
 
-def get_iops(uid, max_time):
+def get_iops(size, max_time):
     counter = 0
     start = time.time()
     while time.time() - start < max_time:
-        get(uid)
+        get(f.remote(size), copy=False)
         counter += 1
 
     return counter
 
 
-NUM_TRIALS = 10
+NUM_TRIALS = 1
 sizes = [1, 10, 100, 1_000, 10_000, 100_000, 1_000_000]  # in KBs
 max_times = [1.0] * 4 + [5.0, 50, 5 * 60]
 f.set_node(2)
 for size in sizes:
     for i in range(NUM_TRIALS):
-        log("creating the object")
-        uid = f.remote(size)
-        get(uid, copy=False)  # block until it completes
-        log("object created")
-
-        iops = get_iops(uid, MAX_TIME) / MAX_TIME
+        # log("creating the object")
+        # uid = f.remote(size)
+        # get(uid, copy=False)  # block until it completes
+        # log("object created")
+        start = time.time()
+        get(f.remote(size), copy=False)
+        elapsed = time.time() - start
+        iops = 1 / elapsed
         thpt = iops * size
+
         log(f"RES:{size},{iops},{thpt}")
