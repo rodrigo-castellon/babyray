@@ -383,7 +383,7 @@ func TestNodeDiesWhileGenerating(t *testing.T) {
 		-global scheduler should receive a schedule request for that object
 	*/
 	ctx = context.Background()
-	req := &pb.GlobalScheduleRequest{Uid: 200, Name: "func_name", Args: [], Kwargs: []}
+	req := &pb.GlobalScheduleRequest{Uid: 200, Name: "func_name"}
 	m := mockSchedulerClient {
 		requestsReceived: make(map[uint64]bool), 
 	}
