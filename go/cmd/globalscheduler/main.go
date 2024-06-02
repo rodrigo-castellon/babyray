@@ -68,19 +68,22 @@ func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.
 }
 
 func (s *server) LiveNodesHeartbeat(ctx context.Context) (error) {
-    liveNodes := make(map[uint64]bool)
+    
     for {
         s.SendLiveNodes(ctx)
         time.Sleep(HEARTBEAT_WAIT)
     }
+    return nil
 
 }
 
 func(s *server) SendLiveNodes(ctx context.Context) (error) {
+    liveNodes := make(map[uint64]bool)
     for uid, heartbeat := range s.status {
         liveNodes[uid] = time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT
     }
     s.gcsClient.RegisterLiveNodes(ctx, &pb.LiveNodesRequest{LiveNodes: liveNodes})
+    return nil
 }
 
 func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) (*pb.StatusResponse, error) {
