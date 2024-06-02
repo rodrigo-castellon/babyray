@@ -3,7 +3,7 @@ package main
 import (
 
 	"context"
-
+	"log"
 	"testing"
 	"time"
 
@@ -37,6 +37,7 @@ type mockGCSClient struct {
 }
 func (m *mockGCSClient) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest, opts ...grpc.CallOption) (*pb.StatusResponse, error) {
 	m.liveNodes = req.LiveNodes; 
+	log.Printf(m.liveNodes)
 	return &pb.StatusResponse{Success: true}, nil
 }
 
