@@ -62,9 +62,8 @@ func NewGCSObjServer() *GCSObjServer {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Creates tables if they don't already exist
+	// Creates table if it doesn't already exist
 	createObjectLocationsTable(database)
-	createWaitlistTable(database)
 
 	/* Create server object */
 	server := &GCSObjServer{

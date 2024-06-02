@@ -132,30 +132,3 @@ func verifyObjectLocations(t *testing.T, db *sql.DB, expected map[uint64][]uint6
 		}
 	}
 }
-
-func TestCreateWaitlistTable(t *testing.T) {
-	// Use an in-memory SQLite database for testing
-	database, err := sql.Open("sqlite3", ":memory:")
-	if err != nil {
-		t.Fatalf("Failed to open database: %v", err)
-	}
-	defer database.Close()
-
-	// Call the function to create the waitlist table and index
-	if err := createWaitlistTable(database); err != nil {
-		t.Fatalf("Failed to create waitlist table: %v", err)
-	}
-
-	// Check if waitlist table exists
-	var tableName string
-	err = database.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name='waitlist';").Scan(&tableName)
-	if err != nil {
-		t.Fatalf("waitlist table was not created: %v", err)
-	}
-
-	// Check if index on object_uid for waitlist table exists
-	err = database.QueryRow("SELECT name FROM sqlite_master WHERE type='index' AND name='idx_object_uid_waitlist';").Scan(&tableName)
-	if err != nil {
-		t.Fatalf("Index on object_uid for waitlist table was not created: %v", err)
-	}
-}
