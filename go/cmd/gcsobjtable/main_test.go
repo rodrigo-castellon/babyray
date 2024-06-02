@@ -357,6 +357,64 @@ func TestRequestLocation(t *testing.T) {
 	}
 }
 
+type MockSchedulerClient {
+	pb.GlobalSchedulerClient
+	requestsReceived map[uint64]*pb.GlobalScheduleRequest
+}
+
+func (m *MockSchedulerClient) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest, opts ...grpc.CallOption ) (*pb.StatusResponse, error) {
+	requestsReceived[req.Uid] = req
+	return nil, nil
+}
+func (m *MockSchedulerClient) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest, opts ...grpc.CallOption ) (*pb.StatusResponse, error) {
+	return nil, nil
+}
+func (m *MockSchedulerClient) LiveNodesHeartbeat(ctx context.Context) (error)  {
+	return nil
+}
+func (m *MockSchedulerClient) SendLiveNodes(ctx context.Context) {
+	return nil
+}
+func TestNodeDiesWhileGenerating(t *testing.T) {
+	/*
+		-Worker tells GCS that its generating
+		-Global Scheduler tells it that that node is dead
+		-another node asks for object
+		-global scheduler should receive a schedule request for that object
+	*/
+	ctx = context.Background()
+	req := &pb.GlobalScheduleRequest{Uid: 200, Name: "func_name", Args: [], Kwargs: []}
+	m := MockSchedulerClient {
+		requestsReceived: make(map[uint64]bool), 
+	}
+
+	s := GCSObjServer {
+		generating: make(map[uint64]uint64),
+		globalSchedulerClient: m, 
+		lineage: make(map[uint64]*pb.GlobalScheduleRequest),
+		liveNodes: make(map[uint64]bool), 
+	}
+
+	s.RegisterLineage(ctx, req)
+
+	s.RegisterGenerating(ctx, &pb.GeneratingRequest{Uid: 200, NodeId: 5})
+
+	//Node 5 is assumed to be dead b/c we're not sending heartbeats. 
+
+	s.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: 200})
+
+	if val, ok := m.requestsReceived[200]; !ok || val.Name != "func_name"{
+		t.Errorf("Global scheduler never received new schedule request")
+	}
+
+
+
+
+
+
+	
+}
+
 // // MockGCSObjServer inherits GCSObjServer and overrides sendCallback
 // type MockGCSObjServer struct {
 // 	*GCSObjServer

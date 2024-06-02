@@ -75,3 +75,4 @@ func TestHeartbeats(t *testing.T) {
 		t.Errorf("Node was not correctly registered as dead with GCS")
 	}
 }
+

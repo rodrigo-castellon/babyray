@@ -49,10 +49,17 @@ type GCSObjServer struct {
 	mu              sync.Mutex          // lock should be used for both objectLocations and waitlist
 	objectSizes     map[uint64]uint64
 	lineage			map[uint64]*pb.GlobalScheduleRequest 
-	globalSchedulerClient pb.GlobalSchedulerClient
+	globalSchedulerClient SchedulerClient
 	liveNodes      map[uint64]bool
 	generating     map[uint64]uint64   //object uid -> node id of original generator
 									   //used to determine when an original creation of a uid should be restarted
+}
+
+interface SchedulerClient {
+	Schedule(ctx context.Context , req *pb.GlobalScheduleRequest, opts ...grpc.CallOption ) (*pb.StatusResponse, error)
+	Heartbeat(ctx context.Context, req *pb.HeartbeatRequest, opts ...grpc.CallOption ) (*pb.StatusResponse, error)
+	LiveNodesHeartbeat(ctx context.Context) (error) 
+	SendLiveNodes(ctx context.Context)
 }
 
 func NewGCSObjServer() *GCSObjServer {
