@@ -1,14 +1,14 @@
 package main
 
 import (
-	"bytes"
+
 	"context"
-	"net"
+
 	"testing"
 	"time"
 
 	pb "github.com/rodrigo-castellon/babyray/pkg"
-	"google.golang.org/grpc"
+
 	"google.golang.org/grpc/test/bufconn"
 	"github.com/rodrigo-castellon/babyray/config"
 )
@@ -32,7 +32,7 @@ func init() {
 // }
 
 type mockGCSClient struct {
-	pb.GCSObjClient
+	pb.GCSObjServer
 	liveNodes map[uint64]bool
 }
 func (m *mockGCSClient) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest) (*pb.StatusResponse, error) {
@@ -40,7 +40,7 @@ func (m *mockGCSClient) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodes
 	return &pb.StatusResponse{Success: true}, nil
 }
 func TestHeartbeats(t *testing.T) {
-	ctx := Context.Background()
+	ctx :=context.Background()
 
 	m := mockGCSClient {
 		liveNodes: make(map[uint64]bool),
