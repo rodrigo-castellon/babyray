@@ -117,7 +117,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 		LocalLog("contacting global scheduler")
 		go func() {
 			LocalLog("THE REQ UIDS AT LOCAL SCHEDULER ARE %v", req.Uids)
-            _, err := s.globalSchedulerClient.Schedule(s.globalCtx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs, Uids: req.Uids})
+            _, err := s.globalSchedulerClient.Schedule(s.globalCtx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs, Uids: req.Uids, LocalityFlag: req.LocalityFlag})
             if err != nil {
                 LocalLog("cannot contact global scheduler")
             } else {
@@ -202,7 +202,7 @@ func SendHeartbeats(ctx context.Context, globalSchedulerClient pb.GlobalSchedule
 		// 	heartbeatRequest.AvgBandwidth,
 		// 	heartbeatRequest.NodeId)
 
-		LocalLog("SENDING GLOBAL SCHEDULER A HEARTBEAT!!!")
+		// LocalLog("SENDING GLOBAL SCHEDULER A HEARTBEAT!!!")
 		globalSchedulerClient.Heartbeat(ctx, heartbeatRequest)
 	    time.Sleep(HEARTBEAT_WAIT)
 	}

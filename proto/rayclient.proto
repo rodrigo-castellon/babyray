@@ -33,6 +33,7 @@ message GlobalScheduleRequest {
   // optional but in case the client wants to specify a node ID
   // to send a computation to
   uint64 nodeId = 6;
+  bool localityFlag = 7;
 }
 
 message HeartbeatRequest {
@@ -59,6 +60,7 @@ message ScheduleRequest {
   // optional but in case the client wants to specify a node ID
   // to send a computation to
   uint64 nodeId = 5;
+  bool localityFlag = 6;
 }
 
 // returns a Future, which is just the UID for

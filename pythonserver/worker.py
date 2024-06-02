@@ -9,6 +9,7 @@ import threading
 import os
 from datetime import datetime
 import cloudpickle as pickle
+from babyray import init, get, remote, Future
 
 from .constants import *
 
@@ -65,7 +66,7 @@ def init_all_stubs():
 
 class WorkerServer(rayclient_pb2_grpc.WorkerServicer):
     def __init__(self):
-        pass
+        init()
 
     def Run(self, request, context):
         global num_running_tasks, num_queued_tasks, average_running_time

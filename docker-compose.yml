@@ -1,6 +1,13 @@
 version: '3'
 
 services:
+  # zookeeper:
+  #   image: zookeeper:3.6.3
+  #   ports:
+  #     - "2181:2181"
+  #   networks:
+  #     mynetwork:
+
   gcs:
     image: ray-node:base
     command: ["/bin/sh", "-c", "./go/bin/gcsfunctable & ./go/bin/gcsobjtable"]
@@ -8,6 +15,8 @@ services:
         mynetwork:
             aliases:
                 - node0
+    # depends_on:
+    #   - zookeeper
     ports:
       - "50000:50000"
 
@@ -30,6 +39,8 @@ services:
         mynetwork:
             aliases:
                 - node2
+    # depends_on:
+    #   - zookeeper
     ports:
       - "50002:50002"
     environment:
@@ -42,6 +53,8 @@ services:
         mynetwork:
             aliases:
                 - node3
+    # depends_on:
+    #   - zookeeper
     ports:
       - "50003:50003"
     environment:
@@ -55,6 +68,8 @@ services:
         mynetwork:
             aliases:
                 - node4
+    # depends_on:
+    #   - zookeeper
     ports:
       - "50004:50004"
     environment:

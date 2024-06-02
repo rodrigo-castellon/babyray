@@ -42,8 +42,8 @@ def create_bytearr(n):
 
 
 @remote
-def dummy_func():
-    # bytearr = get(fut)
+def dummy_func(fut):
+    bytearr = get(fut)
 
     return 10
 
@@ -53,8 +53,6 @@ def sleeper_func():
     time.sleep(999999)
     return ""
 
-
-NUM_TRIALS = 1
 
 # sleeper functions are to ensure that any task we try to run will go to the
 # global scheduler first (instead of routed only locally)
@@ -67,25 +65,48 @@ log("done????")
 time.sleep(1)
 log("done with deploying sleepers")
 
-for i in range(NUM_TRIALS):
-    # create an object either on node 3 or node 4
-    # if random.random() < 0.5:
-    create_bytearr.set_node(3)
-    # else:
-    #     create_bytearr.set_node(4)
+SIZES = [100_000, 1_000_000, 10_000_000, 100_000_000]
+NUM_TRIALS = 100
 
-    log("now actually creating the object...")
-    obj = create_bytearr.remote(BYTEARR_SIZE)
-    log("its created. now lets get it.")
-    start = time.time()
-    get(obj, copy=False)  # block on this task
-    # time.sleep(2)
+for size in SIZES:
+    log("#" * 100)
+    log(f"DOING SIZE = {size}")
+    log("#" * 100)
 
-    start = time.time()
-    out = get(dummy_func.remote())
-    elapsed = time.time() - start
+    for i in range(NUM_TRIALS):
+        # create an object either on node 3 or node 4
+        # if random.random() < 0.5:
+        create_bytearr.set_node(3)
+        # else:
+        #     create_bytearr.set_node(4)
 
-    log("elapsed time:", elapsed)
+        log("now actually creating the object...")
+        obj = create_bytearr.remote(size)
+        log("its created. now lets get it.")
+        get(obj, copy=False)  # block on this task
+        # time.sleep(2)
+
+        log("#" * 100)
+        log("DOING LOCALITY-AWARE")
+        log("#" * 100)
+        # dummy_func.set_node(3)
+        dummy_func.set_locality_flag(True)
+        start = time.time()
+        out = get(dummy_func.remote(obj))
+        elapsed = time.time() - start
+
+        log(f"SIZE={size} | SAME NODE | elapsed time:", elapsed)
+
+        log("#" * 100)
+        log("DOING LOCALITY UNAWARE")
+        log("#" * 100)
+
+        dummy_func.set_locality_flag(False)
+        start = time.time()
+        out = get(dummy_func.remote(obj))
+        elapsed = time.time() - start
+
+        log(f"SIZE={size} | DIFFERENT NODE | elapsed time:", elapsed)
 
 # creating a byte array of size BYTEARR_SIZE on node 3
 # create_bytearr.set_node(3)

@@ -78,8 +78,12 @@ class RemoteFunction:
         self.func = func
         self.name = None
         self.node_id = None
+        self.locality_flag = True
 
-    """These two methods exist purely for experimental reasons."""
+    """These three methods exist purely for experimental reasons."""
+
+    def set_locality_flag(self, locality_flag):
+        self.locality_flag = locality_flag
 
     def set_node(self, node_id):
         # set the node ID to run this remote function on
@@ -103,6 +107,7 @@ class RemoteFunction:
                     kwargs=pickle.dumps(kwargs),
                     uids=arg_uids,
                     nodeId=self.node_id,
+                    localityFlag=self.locality_flag,
                 )
             ).uid
             return Future(uid)

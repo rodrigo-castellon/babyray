@@ -5,11 +5,11 @@ import (
     "log"
     "net"
     "strconv"
-    // "math/rand"
+    "math/rand"
     "math"
    // "bytes"
    "time"
-   "os"
+//    "os"
    "sync"
     "fmt"
     "google.golang.org/grpc"
@@ -17,14 +17,51 @@ import (
     "github.com/rodrigo-castellon/babyray/config"
     "github.com/rodrigo-castellon/babyray/customlog"
     "github.com/rodrigo-castellon/babyray/util"
+
+    // "github.com/go-zookeeper/zk"
 )
 var cfg *config.Config
 
 var mu sync.RWMutex
 
+// func connectToZookeeper(servers []string) (*zk.Conn, error) {
+//     var conn *zk.Conn
+//     var err error
+//     for i := 0; i < 10; i++ { // retry 10 times
+//         conn, _, err = zk.Connect(servers, time.Second*10)
+//         if err == nil {
+//             return conn, nil
+//         }
+//         log.Printf("Failed to connect to Zookeeper, retrying in 5 seconds... (attempt %d/10)", i+1)
+//         time.Sleep(5 * time.Second)
+//     }
+//     return nil, err
+// }
+
 func main() {
     customlog.Init()
     cfg = config.LoadConfig() // Load configuration
+
+    // connect to zookeeper
+    // servers := []string{"zookeeper:2181"}
+    // // zkConn, _, err := zk.Connect(servers, time.Second)
+    // zkConn, err := connectToZookeeper(servers)
+    // if err != nil {
+    //     log.Fatalf("Unable to connect to Zookeeper: %v", err)
+    // }
+
+    // defer zkConn.Close()
+
+    // path := "/services/globalsched"
+    // data := []byte("node1")
+
+    // _, err = zkConn.Create(path, data, zk.FlagEphemeral, zk.WorldACL(zk.PermAll))
+    // if err != nil {
+    //     log.Fatalf("Unable to create znode: %v", err)
+    // }
+
+    // log.Println("Service registered with Zookeeper")
+
     address := ":" + strconv.Itoa(cfg.Ports.GlobalScheduler) // Prepare the network address
 
     lis, err := net.Listen("tcp", address)
@@ -58,7 +95,7 @@ type server struct {
 
 
 func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.StatusResponse, error) {
-    log.Printf("heartbeat from %v", req.NodeId)
+    // log.Printf("heartbeat from %v", req.NodeId)
     mu.Lock()
     numQueuedTasks := req.QueuedTasks
     if (req.RunningTasks == 10) {
@@ -71,10 +108,13 @@ func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.
 }
 
 func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) (*pb.StatusResponse, error) {
-    localityFlag := false
-    if os.Getenv("LOCALITY_AWARE") == "true" {
-        localityFlag = true
-    }
+    localityFlag := req.LocalityFlag
+    // localityFlag := false
+    // if os.Getenv("LOCALITY_AWARE") == "true" {
+    //     localityFlag = true
+    // }
+
+    log.Printf("locality aware? it's: %v", localityFlag)
 
     log.Printf("THE REQ UIDS ARE = %v", req.Uids)
 
@@ -162,15 +202,39 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
         log.Printf("doing the statuses rn")
         // TODO: make iteration order random for maximum fairness
         mu.RLock()
-        for id, heartbeat := range s.status {
-            log.Printf("worker = %v; queued time = %v", id, float32(heartbeat.numQueuedTasks) * heartbeat.avgRunningTime)
-            if float32(heartbeat.numQueuedTasks) * heartbeat.avgRunningTime < minTime {
+
+        // Collect keys from the map
+        keys := make([]uint64, 0, len(s.status))
+        for id := range s.status {
+            keys = append(keys, id)
+        }
+
+        // Shuffle the keys
+        rand.Shuffle(len(keys), func(i, j int) {
+            keys[i], keys[j] = keys[j], keys[i]
+        })
+
+        for _, id := range keys {
+            heartbeat := s.status[id]
+            log.Printf("worker = %v; queued time = %v", id, float32(heartbeat.numQueuedTasks)*heartbeat.avgRunningTime)
+            if float32(heartbeat.numQueuedTasks)*heartbeat.avgRunningTime < minTime {
                 minId = id
                 minTime = float32(heartbeat.numQueuedTasks) * heartbeat.avgRunningTime
                 foundBest = true
             }
         }
         mu.RUnlock()
+
+        // mu.RLock()
+        // for id, heartbeat := range s.status {
+        //     log.Printf("worker = %v; queued time = %v", id, float32(heartbeat.numQueuedTasks) * heartbeat.avgRunningTime)
+        //     if float32(heartbeat.numQueuedTasks) * heartbeat.avgRunningTime < minTime {
+        //         minId = id
+        //         minTime = float32(heartbeat.numQueuedTasks) * heartbeat.avgRunningTime
+        //         foundBest = true
+        //     }
+        // }
+        // mu.RUnlock()
     }
 
     if !foundBest {
