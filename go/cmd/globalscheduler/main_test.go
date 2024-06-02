@@ -35,7 +35,7 @@ type mockGCSClient struct {
 	pb.GCSObjClient
 	liveNodes map[uint64]bool
 }
-func (m *mockGCSClient) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest) (*pb.StatusResponse, error) {
+func (m *mockGCSClient) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest, opts ...grpc.CallOption) (*pb.StatusResponse, error) {
 	m.liveNodes = req.LiveNodes; 
 	return &pb.StatusResponse{Success: true}, nil
 }
