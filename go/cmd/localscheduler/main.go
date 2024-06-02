@@ -58,9 +58,10 @@ func main() {
 
 
 	nodeId, _ := strconv.Atoi(os.Getenv("NODE_ID"))
-	pb.RegisterLocalSchedulerServer(s, &server{globalSchedulerClient: globalSchedulerClient, workerClient: workerClient, globalCtx: context.Background(), localNodeID: uint64(nodeId), gcsClient: gcsObjClient, alive: true })
+	server := &server{globalSchedulerClient: globalSchedulerClient, workerClient: workerClient, globalCtx: context.Background(), localNodeID: uint64(nodeId), gcsClient: gcsObjClient, alive: true })
+	pb.RegisterLocalSchedulerServer(s, server)
 	ctx := context.Background()
-	go SendHeartbeats(ctx, globalSchedulerClient, uint64(nodeId))
+	go server.SendHeartbeats(ctx, globalSchedulerClient, uint64(nodeId))
 
 	LocalLog("localsched server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
@@ -78,7 +79,7 @@ type server struct {
 	gcsClient pb.GCSObjClient
 	globalCtx context.Context
 	localNodeID uint64
-	bool alive
+	alive bool
 }
 
 // Implement your service methods here.
@@ -128,7 +129,7 @@ func (s *server) ReviveServer(ctx context.Context, req *pb.StatusResponse) (*pb.
 	return &pb.StatusResponse{Success: true}, nil
 }
 
-func SendHeartbeats(ctx context.Context, globalSchedulerClient pb.GlobalSchedulerClient, nodeId uint64 ) {
+func (s *server) SendHeartbeats(ctx context.Context, globalSchedulerClient pb.GlobalSchedulerClient, nodeId uint64 ) {
 	workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
 	workerConn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
 	if err != nil {
