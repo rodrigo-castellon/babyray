@@ -87,8 +87,9 @@ func (s *server) LiveNodesHeartbeat(ctx context.Context) (error) {
 func(s *server) SendLiveNodes(ctx context.Context) (error) {
     liveNodes := make(map[uint64]bool)
     for uid, heartbeat := range s.status {
-
-        liveNodes[uid] = time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT
+        timeSince := time.Since(heartbeat.timeReceived)
+        log.Printf("time since heartbeat: %v", timeSince)
+        liveNodes[uid] =  timeSince < LIVE_NODE_TIMEOUT
         if _, val := liveNodes[uid]; val {
             log.Printf("%v sent as live", uid)
         } else {
