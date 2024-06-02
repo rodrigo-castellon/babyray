@@ -6,7 +6,7 @@ import (
 	"log"
 	"testing"
 	"time"
-
+	"fmt"
 	pb "github.com/rodrigo-castellon/babyray/pkg"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
@@ -37,7 +37,7 @@ type mockGCSClient struct {
 }
 func (m *mockGCSClient) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest, opts ...grpc.CallOption) (*pb.StatusResponse, error) {
 	m.liveNodes = req.LiveNodes; 
-	log.Printf(m.liveNodes)
+	log.Printf(fmt.Sprintf(m.liveNodes))
 	return &pb.StatusResponse{Success: true}, nil
 }
 
