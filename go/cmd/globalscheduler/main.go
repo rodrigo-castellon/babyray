@@ -5,17 +5,23 @@ import (
     "log"
     "net"
     "strconv"
-    // "math/rand"
+    "math/rand"
     "math"
    // "bytes"
 
-   "os"
+//    "os"
+//    "time"
+//    "os"
    "sync"
    "time"
     "fmt"
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
     "github.com/rodrigo-castellon/babyray/config"
+    "github.com/rodrigo-castellon/babyray/customlog"
+    "github.com/rodrigo-castellon/babyray/util"
+
+    // "github.com/go-zookeeper/zk"
 )
 var cfg *config.Config
 const LIVE_NODE_TIMEOUT time.Duration = 400 * time.Millisecond
@@ -34,6 +40,7 @@ func LocalLog(format string, v ...interface{}) {
 }
 
 func main() {
+    customlog.Init()
     ctx := context.Background()
     cfg = config.GetConfig() // Load configuration
     address := ":" + strconv.Itoa(cfg.Ports.GlobalScheduler) // Prepare the network address
@@ -43,14 +50,14 @@ func main() {
         log.Fatalf("failed to listen: %v", err)
     }
     _ = lis;
-    s := grpc.NewServer()
+    s := grpc.NewServer(util.GetServerOptions()...)
     gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
-	conn, _ := grpc.Dial(gcsAddress, grpc.WithInsecure())
-    server := &server{gcsClient: pb.NewGCSObjClient(conn), status: make(map[uint64]HeartbeatEntry)}
-    pb.RegisterGlobalSchedulerServer(s, server)
+	conn, _ := grpc.Dial(gcsAddress, util.GetDialOptions()...)
+    serverInstance := &server{gcsClient: pb.NewGCSObjClient(conn), status: make(map[uint64]HeartbeatEntry)}
+    pb.RegisterGlobalSchedulerServer(s, serverInstance)
     defer conn.Close()
     log.Printf("server listening at %v", lis.Addr())
-    go server.LiveNodesHeartbeat(ctx)
+    go serverInstance.LiveNodesHeartbeat(ctx)
     if err := s.Serve(lis); err != nil {
        log.Fatalf("failed to serve: %v", err)
     }
@@ -81,6 +88,11 @@ type ObjClient interface {
 func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.StatusResponse, error) {
     //log.Printf("heartbeat from %v", req.NodeId)
     mu.Lock()
+    numQueuedTasks := req.QueuedTasks
+    if (req.RunningTasks == 10) {
+        numQueuedTasks = numQueuedTasks + 1 // also need to wait for something currently running to finish
+    }
+
     s.status[req.NodeId] = HeartbeatEntry{timeReceived: time.Now(), numRunningTasks: req.RunningTasks, numQueuedTasks: req.QueuedTasks, avgRunningTime: req.AvgRunningTime, avgBandwidth: req.AvgBandwidth}
     mu.Unlock()
     return &pb.StatusResponse{Success: true}, nil
@@ -113,19 +125,26 @@ func(s *server) SendLiveNodes(ctx context.Context) (error) {
 }
 
 func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) (*pb.StatusResponse, error) {
-    localityFlag := false
-    if os.Getenv("LOCALITY_AWARE") == "true" {
-        localityFlag = true
-    }
-    LocalLog("Got a global schedule request")
+    localityFlag := req.LocalityFlag
+    // localityFlag := false
+    // if os.Getenv("LOCALITY_AWARE") == "true" {
+    //     localityFlag = true
+    // }
+
+    log.Printf("locality aware? it's: %v", localityFlag)
+
+    log.Printf("THE REQ UIDS ARE = %v", req.Uids)
+
     // gives us back the node id of the worker
     node_id := req.NodeId
     if (req.NodeId == 0) {
         node_id = getBestWorker(ctx, s, localityFlag, req.Uids)
     }
+
+    log.Printf("best worker was node_id = %v", node_id)
     workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, node_id, cfg.Ports.LocalWorkerStart)
 
-    conn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
+    conn, err := grpc.Dial(workerAddress, util.GetDialOptions()...)
     if err != nil {
         log.Printf("failed to connect to %s: %v", workerAddress, err)
         return nil, err
@@ -152,7 +171,9 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
     var foundBest bool
 
     minTime = math.MaxFloat32
-    if localityFlag {
+    if (localityFlag && len(uids) > 0) {
+        log.Printf("LOCALITY FLAG IS ON!")
+        log.Printf("ASKING THE GCS FOR THESE OBJECTS: %v", uids)
         locationsResp, err := s.gcsClient.GetObjectLocations(ctx, &pb.ObjectLocationsRequest{Args: uids})
         if err != nil {
             log.Fatalf("Failed to ask gcs for object locations: %v", err)
@@ -169,6 +190,7 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
         total = 0
         for _, val := range locationsResp.Locations {
             locs := val.Locations
+            log.Printf("the locations resp val = %v", val)
             for _, loc := range locs {
                 locationToBytes[uint64(loc)] += val.Bytes
                 total += val.Bytes
@@ -182,8 +204,10 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
             }
             mu.RLock()
             queueingTime := float32(s.status[loc].numQueuedTasks) * s.status[loc].avgRunningTime
-            transferTime := float32(total - bytes) * s.status[loc].avgBandwidth
+            transferTime := float32(total - bytes) / s.status[loc].avgBandwidth
             mu.RUnlock()
+
+            log.Printf("worker = %v; queueing and transfer = %v, %v", loc, queueingTime, transferTime)
 
             waitingTime := queueingTime + transferTime
             if waitingTime < minTime {
@@ -193,21 +217,46 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
             }
         }
     } else {
+        log.Printf("doing the statuses rn")
         // TODO: make iteration order random for maximum fairness
         mu.RLock()
-        for id, heartbeat := range s.status {
-            // skip dead nodes
+
+        // Collect keys from the map
+        keys := make([]uint64, 0, len(s.status))
+        for id := range s.status {
+            keys = append(keys, id)
+        }
+
+        // Shuffle the keys
+        rand.Shuffle(len(keys), func(i, j int) {
+            keys[i], keys[j] = keys[j], keys[i]
+        })
+
+        for _, id := range keys {
+            heartbeat := s.status[id]
             if !(time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT) {
                 continue
             }
 
-            if float32(heartbeat.numQueuedTasks) * heartbeat.avgRunningTime < minTime {
+            log.Printf("worker = %v; queued time = %v", id, float32(heartbeat.numQueuedTasks)*heartbeat.avgRunningTime)
+            if float32(heartbeat.numQueuedTasks)*heartbeat.avgRunningTime < minTime {
                 minId = id
                 minTime = float32(heartbeat.numQueuedTasks) * heartbeat.avgRunningTime
                 foundBest = true
             }
         }
         mu.RUnlock()
+
+        // mu.RLock()
+        // for id, heartbeat := range s.status {
+        //     log.Printf("worker = %v; queued time = %v", id, float32(heartbeat.numQueuedTasks) * heartbeat.avgRunningTime)
+        //     if float32(heartbeat.numQueuedTasks) * heartbeat.avgRunningTime < minTime {
+        //         minId = id
+        //         minTime = float32(heartbeat.numQueuedTasks) * heartbeat.avgRunningTime
+        //         foundBest = true
+        //     }
+        // }
+        // mu.RUnlock()
     }
 
     if !foundBest {

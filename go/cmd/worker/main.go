@@ -19,6 +19,8 @@ import (
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
     "github.com/rodrigo-castellon/babyray/config"
+    "github.com/rodrigo-castellon/babyray/customlog"
+    "github.com/rodrigo-castellon/babyray/util"
 )
 
 // LocalLog formats the message and logs it with a specific prefix
@@ -47,7 +49,7 @@ var averageRunningTime float32 = 0.1
 type ClientConstructor[T any] func(grpc.ClientConnInterface) T
 
 func createGRPCClient[T any](address string, constructor ClientConstructor[T]) T {
-    conn, err := grpc.Dial(address, grpc.WithInsecure())
+    conn, err := grpc.Dial(address, util.GetDialOptions()...)
     if err != nil {
         log.Fatalf("failed to connect to %s: %v", address, err)
     }
@@ -56,6 +58,7 @@ func createGRPCClient[T any](address string, constructor ClientConstructor[T]) T
 }
 
 func main() {
+    customlog.Init()
     cfg := config.GetConfig()
     address := ":" + strconv.Itoa(cfg.Ports.LocalWorkerStart)
 
@@ -69,7 +72,7 @@ func main() {
     funcClient := createGRPCClient[pb.GCSFuncClient](funcServiceAddr, pb.NewGCSFuncClient)
     storeClient := createGRPCClient[pb.LocalObjStoreClient]("localhost:50000", pb.NewLocalObjStoreClient)
 
-    s := grpc.NewServer()
+    s := grpc.NewServer(util.GetServerOptions()...)
     pb.RegisterWorkerServer(s, &workerServer{
         funcClient: funcClient,
         storeClient: storeClient,
@@ -98,41 +101,61 @@ type StoreClient interface {
 }
 
 func executeFunction(f []byte, args []byte, kwargs []byte) ([]byte, error) {
+    startTime := time.Now()
+
     // Prepare the command to run the Python script
     rootPath := os.Getenv("PROJECT_ROOT")
     executeFile := filepath.Join(rootPath, "go", "cmd", "worker", "execute.py")
     cmd := exec.Command("/usr/bin/python3", executeFile)
 
+    LocalLog("Time to prepare command: %v\n", time.Since(startTime))
+
     // Create a buffer to hold the serialized data
     inputBuffer := bytes.NewBuffer(nil)
 
     // Assume data is the serialized data you want to encode in base64
+    encodeStartTime := time.Now()
     fB64 := []byte(base64.StdEncoding.EncodeToString(f))
     argsB64 := []byte(base64.StdEncoding.EncodeToString(args))
     kwargsB64 := []byte(base64.StdEncoding.EncodeToString(kwargs))
 
+    LocalLog("Time to encode inputs: %v\n", time.Since(encodeStartTime))
+
     // Write the function, args, and kwargs to the buffer
+    bufferWriteStartTime := time.Now()
     inputBuffer.Write(fB64)
     inputBuffer.WriteByte('\n')
     inputBuffer.Write(argsB64)
     inputBuffer.WriteByte('\n')
     inputBuffer.Write(kwargsB64)
 
+    LocalLog("Time to write to buffer: %v\n", time.Since(bufferWriteStartTime))
+
     // Set the stdin to our input buffer
     cmd.Stdin = inputBuffer
 
     // Capture the output
     LocalLog("Running the function here yo")
+    cmdExecStartTime := time.Now()
     output, err := cmd.Output()
     if err != nil {
         log.Fatalf("Error executing function: %v", err)
     }
 
+    LocalLog("Time to execute command: %v\n", time.Since(cmdExecStartTime))
+
     // Decode the Base64 output to get the original pickled data
+    // LocalLog("the output from this was: %s", string(output)[:min(len(string(output)), 282)])
+    // LocalLog("the length of the overall string was: %v", len(string(output)))
+    decodeStartTime := time.Now()
     data, err := base64.StdEncoding.DecodeString(string(output))
     if err != nil {
         log.Fatalf("Error decoding Base64: %v", err)
     }
+    LocalLog("Time to decode output: %v\n", time.Since(decodeStartTime))
+
+    totalTime := time.Since(startTime)
+    log.Printf("Total execution time: %v\n", totalTime)
 
     // Return the output from the Python script
     return data, nil
@@ -162,13 +185,17 @@ func (s *workerServer) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusR
 
     start := time.Now()
 
+    LocalLog("....fetching?")
     funcResponse, err := s.funcClient.FetchFunc(ctx, &pb.FetchRequest{Name: req.Name})
+    LocalLog("the err was %v", err)
     if err != nil {
         LocalLog("Failed to hit func table: %v", err)
         return nil, err
     }
 
+    LocalLog("gonna execute now")
     output, err := executeFunction(funcResponse.SerializedFunc, req.Args, req.Kwargs)
+    LocalLog("Executed!")
     if err != nil {
         LocalLog("failed to exec func %v", err)
         return nil, err
@@ -188,7 +215,7 @@ func (s *workerServer) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusR
         LocalLog("failed to hit gcs %v", err)
         return nil, err
     }
-    
+
     runningTime := float32(time.Since(start).Seconds())
     mu.Lock()
     averageRunningTime = EMA_PARAM*averageRunningTime + (1-EMA_PARAM)*runningTime
