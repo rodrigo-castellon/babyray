@@ -24,7 +24,7 @@ var mu sync.RWMutex
 
 func main() {
     ctx := context.Background()
-    //cfg = config.GetConfig() // Load configuration
+    cfg = config.GetConfig() // Load configuration
     address := ":" + strconv.Itoa(cfg.Ports.GlobalScheduler) // Prepare the network address
 
     lis, err := net.Listen("tcp", address)
@@ -68,7 +68,7 @@ type ObjClient interface {
 
 
 func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.StatusResponse, error) {
-    log.Printf("heartbeat from %v", req.NodeId)
+    //log.Printf("heartbeat from %v", req.NodeId)
     mu.Lock()
     s.status[req.NodeId] = HeartbeatEntry{timeReceived: time.Now(), numRunningTasks: req.RunningTasks, numQueuedTasks: req.QueuedTasks, avgRunningTime: req.AvgRunningTime, avgBandwidth: req.AvgBandwidth}
     mu.Unlock()

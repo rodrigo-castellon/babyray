@@ -22,7 +22,7 @@ message StatusResponse {
 service GlobalScheduler {
   rpc Schedule(GlobalScheduleRequest) returns (StatusResponse);
   rpc Heartbeat(HeartbeatRequest) returns (StatusResponse); 
-  rpc GetLiveNodes(StatusResponse) returns (LiveNodesResponse); 
+ 
 }
 
 message GlobalScheduleRequest {
