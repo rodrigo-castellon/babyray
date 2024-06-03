@@ -198,6 +198,7 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 	LocalLog("Starting get Node ID")
 	nodeId := s.getNodeId(uid)
 	LocalLog("finished get node ID")
+	LocalLog("node id = %v", nodeId)
 	if nodeId == nil {
 		// Add client to waiting list
 		if _, waiting := s.waitlist[uid]; !waiting {

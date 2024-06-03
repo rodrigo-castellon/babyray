@@ -59,19 +59,40 @@ class RemoteFunction:
     def __init__(self, func):
         self.func = func
         self.name = None
+        self.node_id = None
+
+    def set_node(self, node_id):
+        # set the node ID to run this remote function on
+        self.node_id = node_id
+
+    def unset_node(self):
+        self.node_id = None
 
     def remote(self, *args, **kwargs):
         # do gRPC here
         arg_uids = []
-        for arg in args: 
-            if type(arg) is Future: 
+        for arg in args:
+            if type(arg) is Future:
                 arg_uids.append(arg.uid)
         if self.name is not None:
             uid = local_scheduler_gRPC.Schedule(
                 rayclient_pb2.ScheduleRequest(
-                    name=self.name, args=pickle.dumps(args), kwargs=pickle.dumps(kwargs), uids = arg_uids
+                    name=self.name,
+                    args=pickle.dumps(args),
+                    kwargs=pickle.dumps(kwargs),
+                    uids=arg_uids,
+                    nodeId=self.node_id,
                 )
             ).uid
+
+            # uid = local_scheduler_gRPC.Schedule(
+            #     rayclient_pb2.ScheduleRequest(
+            #         name=self.name,
+            #         args=pickle.dumps(args),
+            #         kwargs=pickle.dumps(kwargs),
+            #         uids=arg_uids,
+            #     )
+            # ).uid
             return Future(uid)
 
     def register(self):
@@ -108,6 +129,19 @@ def get(futures):
         return {k: get(future) for k, future in futures.items()}
     else:
         return futures.get() if hasattr(futures, "get") else futures
+
+
+def kill_node(node_id):
+    # kill node node_id
+
+    local_scheduler_channel = grpc.insecure_channel(
+        f"node{node_id}:{str(LOCAL_SCHEDULER_PORT)}"
+    )
+    node_local_scheduler_gRPC = rayclient_pb2_grpc.LocalSchedulerStub(
+        local_scheduler_channel
+    )
+
+    node_local_scheduler_gRPC.KillServer(rayclient_pb2.StatusResponse())
 
 
 def demo():

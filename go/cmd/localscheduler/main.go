@@ -97,6 +97,22 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 	if err != nil {
 		LocalLog("cant hit gcs: %v", err)
 	}
+
+	// custom behavior if the client itself specifies where we should send this
+	// computation
+	if (req.NodeId != 0) {
+		LocalLog("Doing something special with req.NodeId = %v", req.NodeId)
+		go func() {
+            _, err := s.globalSchedulerClient.Schedule(s.globalCtx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs, Uids: req.Uids, NodeId: req.NodeId})
+            if err != nil {
+                LocalLog("cannot contact global scheduler")
+            } else {
+				// LocalLog("Just ran it on global!")
+			}
+        }()
+		return &pb.ScheduleResponse{Uid: uid}, nil
+	}
+
 	if scheduleLocally.NumRunningTasks < MAX_TASKS {
 		// LocalLog("Just running locally")
 		go func() {

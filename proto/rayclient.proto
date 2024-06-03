@@ -32,6 +32,9 @@ message GlobalScheduleRequest {
   bytes kwargs = 4;
   repeated uint64 uids = 5; 
   bool newObject = 6; 
+  // optional but in case the client wants to specify a node ID
+  // to send a computation to
+  uint64 nodeId = 7;
 }
 
 message HeartbeatRequest {
@@ -58,6 +61,7 @@ message ScheduleRequest {
   bytes args = 2;
   bytes kwargs = 3;
   repeated uint64 uids = 4; 
+  uint64 nodeId = 5;
 }
 
 // returns a Future, which is just the UID for

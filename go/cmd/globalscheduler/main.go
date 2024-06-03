@@ -113,7 +113,10 @@ func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) 
     }
     LocalLog("Got a global schedule request")
     // gives us back the node id of the worker
-    node_id := getBestWorker(ctx, s, localityFlag, req.Uids)
+    node_id := req.NodeId
+    if (req.NodeId == 0) {
+        node_id = getBestWorker(ctx, s, localityFlag, req.Uids)
+    }
     workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, node_id, cfg.Ports.LocalWorkerStart)
 
     conn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
