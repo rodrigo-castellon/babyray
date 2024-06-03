@@ -28,7 +28,7 @@ MAX_TIME = 1.0  # just time 1 second at a time
 # ask for a node that is not ourself
 @remote
 def f(size):
-    return bytearray(size * 1024)
+    return bytearray(size)
 
 
 def get_iops(size, max_time):
@@ -41,8 +41,9 @@ def get_iops(size, max_time):
     return counter
 
 
-NUM_TRIALS = 1
+NUM_TRIALS = 3
 sizes = [1, 10, 100, 1_000, 10_000, 100_000, 1_000_000]  # in KBs
+sizes = [size * 1000 for size in sizes]
 max_times = [1.0] * 4 + [5.0, 50, 5 * 60]
 f.set_node(2)
 for size in sizes:
@@ -58,3 +59,5 @@ for size in sizes:
         thpt = iops * size
 
         log(f"RES:{size},{iops},{thpt}")
+
+log("DONE!")
