@@ -14,6 +14,10 @@ py: proto
 	@echo "Modifying import statements for relative imports..."
 	# below line is now compatible with both MacOS (BSD) and GNU
 	sed -i'' -e 's/import rayclient_pb2 as rayclient__pb2/from . import rayclient_pb2 as rayclient__pb2/' python/babyray/rayclient_pb2_grpc.py
+	# need to copy these to pythonserver/, for worker.py
+	cp python/babyray/rayclient_pb2_grpc.py pythonserver
+	cp python/babyray/rayclient_pb2.py pythonserver
+    
 
 build: servers
 
