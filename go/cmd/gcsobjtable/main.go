@@ -24,6 +24,17 @@ import (
 
 var cfg *config.Config
 
+// LocalLog formats the message and logs it with a specific prefix
+func LocalLog(format string, v ...interface{}) {
+	var logMessage string
+	if len(v) == 0 {
+		logMessage = format // No arguments, use the format string as-is
+	} else {
+		logMessage = fmt.Sprintf(format, v...)
+	}
+	log.Printf("[worker] %s", logMessage)
+}
+
 func main() {
 	cfg = config.GetConfig()                                // Load configuration
 	address := ":" + strconv.Itoa(cfg.Ports.GCSObjectTable) // Prepare the network address
@@ -84,10 +95,10 @@ Returns a nodeId that has object uid. If it has never been added to objectLocati
 then return false. Otherwise, return True. 
 Assumes that s's mutex is locked.
 */
-func (s *GCSObjServer) getNodeId(uid uint64) (*uint64, bool) {
+func (s *GCSObjServer) getNodeId(uid uint64) (*uint64) {
 	nodeIds, exists := s.objectLocations[uid]
 	if !exists || len(nodeIds) == 0 {
-		return nil, false
+		return nil
 	}
 
 	nodesToReturn := make([]uint64, 1, 1)
@@ -98,13 +109,13 @@ func (s *GCSObjServer) getNodeId(uid uint64) (*uint64, bool) {
 	}
 
 	if len(nodesToReturn) == 0 {
-		return nil, true
+		return nil
 	}
 
 	// Note: policy is to pick a random one; in the future it will need to be locality-based
 	randomIndex := rand.Intn(len(nodesToReturn))
 	nodeId := &nodesToReturn[randomIndex]
-	return nodeId, true
+	return nodeId
 }
 
 // sendCallback sends a location found callback to the local object store client
@@ -185,7 +196,7 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 
 	uid := req.Uid
 	LocalLog("Starting get Node ID")
-	nodeId, exists := s.getNodeId(uid)
+	nodeId := s.getNodeId(uid)
 	LocalLog("finished get node ID")
 	if nodeId == nil {
 		// Add client to waiting list
@@ -194,14 +205,14 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 		}
 		s.waitlist[uid] = append(s.waitlist[uid], clientAddress)
 		
-		if exists {
-			_, err := s.globalSchedulerClient.Schedule(ctx, s.lineage[uid])
-			if err != nil {
-				log.Fatalf("unable to contact global scheduler")
-			}
-		} else {
-			log.Fatalf("asking for uid %d that we don't know exists", uid)
-		}
+		// if exists {
+		// 	_, err := s.globalSchedulerClient.Schedule(ctx, s.lineage[uid])
+		// 	if err != nil {
+		// 		log.Fatalf("unable to contact global scheduler")
+		// 	}
+		// } else {
+		// 	//log.Fatalf("asking for uid %d that we don't know exists", uid)
+		//}
 		//s.waitlist[uid] = append(s.waitlist[uid], clientAddress)
 		// Reply to this gRPC request
 		return &pb.RequestLocationResponse{
@@ -244,6 +255,20 @@ func (s *GCSObjServer) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesR
 		   delete(s.generating, uid)
 		   s.globalSchedulerClient.Schedule(ctx, s.lineage[uid])
 		}
+	}
+
+	for uid, nodes := range s.objectLocations {
+		allDead := true
+		for node := range nodes {
+			if s.liveNodes[uint64(node)] {
+				allDead = false
+				break
+			}
+		}
+		if allDead {
+			s.globalSchedulerClient.Schedule(ctx, s.lineage[uint64(uid)])
+		}
+		
 	}
 	return &pb.StatusResponse{Success: true}, nil
 }
