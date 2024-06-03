@@ -38,12 +38,11 @@ func main() {
 	}
 	_ = lis
 	s := grpc.NewServer()
-	pb.RegisterGCSObjServer(s, NewGCSObjServer())
+	pb.RegisterGCSObjServer(s, NewGCSObjServer(cfg.GCS.FlushIntervalSec))
 	log.Printf("server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
-
 }
 
 // server is used to implement your gRPC service.
@@ -53,9 +52,11 @@ type GCSObjServer struct {
 	waitlist        map[uint64][]string // object uid -> list of IP addresses as string
 	mu              sync.Mutex          // lock should be used for both objectLocations and waitlist
 	database        *sql.DB             // connection to SQLite persistent datastore
+	ticker          *time.Ticker        // for GCS flushing
 }
 
-func NewGCSObjServer() *GCSObjServer {
+/* set flushIntervalSec to -1 to disable GCS flushing */
+func NewGCSObjServer(flushIntervalSec int) *GCSObjServer {
 	/* Set up SQLite */
 	// Note: You don't need to call database.Close() in Golang: https://stackoverflow.com/a/50788205
 	database, err := sql.Open("sqlite3", "./gcsobjtable.db") // TODO: Remove hardcode to config
@@ -71,8 +72,35 @@ func NewGCSObjServer() *GCSObjServer {
 		waitlist:        make(map[uint64][]string),
 		mu:              sync.Mutex{},
 		database:        database,
+		ticker:          nil,
+	}
+	if flushIntervalSec != -1 {
+		// Launch periodic disk flushing
+		interval := time.Duration(flushIntervalSec) * time.Second
+		server.ticker = time.NewTicker(interval)
+		go func() {
+			for range server.ticker.C {
+				err := server.flushToDisk()
+				if err != nil {
+					log.Printf("Error flushing to disk: %v", err)
+				}
+			}
+		}()
 	}
 	return server
+}
+
+func (s *GCSObjServer) flushToDisk() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	err := insertOrUpdateObjectLocations(s.database, s.objectLocations)
+	if err != nil {
+		return err
+	}
+	// Completely delete the current map in memory and start blank
+	s.objectLocations = make(map[uint64][]uint64) // orphaning the old map will get it garbage collected in Go
+	return nil
 }
 
 /*

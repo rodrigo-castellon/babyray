@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"math/rand"
@@ -27,7 +28,7 @@ func init() {
 	cfg = config.GetConfig() // Load configuration
 	lis = bufconn.Listen(bufSize)
 	s := grpc.NewServer()
-	pb.RegisterGCSObjServer(s, NewGCSObjServer())
+	pb.RegisterGCSObjServer(s, NewGCSObjServer(-1))
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("Server exited with error: %v", err)
@@ -93,7 +94,7 @@ func TestGetNodeId(t *testing.T) {
 // Test the getNodeId function
 func TestGetNodeId_2(t *testing.T) {
 	// Initialize the server
-	server := NewGCSObjServer()
+	server := NewGCSObjServer(-1)
 
 	// Seed the random number generator to produce consistent results
 	rand.Seed(time.Now().UnixNano())
@@ -565,4 +566,75 @@ func contains(slice []uint64, value uint64) bool {
 		}
 	}
 	return false
+}
+
+func TestFlushToDisk(t *testing.T) {
+	// Set up in-memory SQLite database for testing
+	database, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open SQLite database: %v", err)
+	}
+	defer database.Close()
+
+	// Create the table schema
+	createObjectLocationsTable(database)
+
+	// Create the server object with a short flush interval for testing
+	server := &GCSObjServer{
+		objectLocations: make(map[uint64][]uint64),
+		waitlist:        make(map[uint64][]string),
+		mu:              sync.Mutex{},
+		database:        database,
+		ticker:          nil,
+	}
+
+	// Populate the objectLocations map
+	server.objectLocations[1] = []uint64{100, 101, 102}
+	server.objectLocations[2] = []uint64{200, 201}
+
+	// Call the flushToDisk method
+	err = server.flushToDisk()
+	if err != nil {
+		t.Fatalf("flushToDisk failed: %v", err)
+	}
+
+	// Verify the data has been written to the database
+	rows, err := database.Query("SELECT object_uid, node_id FROM object_locations")
+	if err != nil {
+		t.Fatalf("Failed to query database: %v", err)
+	}
+	defer rows.Close()
+
+	// Read the results
+	results := make(map[uint64][]uint64)
+	for rows.Next() {
+		var objectUID uint64
+		var nodeID uint64
+		if err := rows.Scan(&objectUID, &nodeID); err != nil {
+			t.Fatalf("Failed to scan row: %v", err)
+		}
+		results[objectUID] = append(results[objectUID], nodeID)
+	}
+
+	// Expected results
+	expectedResults := map[uint64][]uint64{
+		1: {100, 101, 102},
+		2: {200, 201},
+	}
+
+	// Compare the results
+	if len(results) != len(expectedResults) {
+		t.Fatalf("Expected %d results, got %d", len(expectedResults), len(results))
+	}
+
+	for objectUID, nodeIDs := range expectedResults {
+		if len(results[objectUID]) != len(nodeIDs) {
+			t.Fatalf("Expected %d nodeIDs for object %d, got %d", len(nodeIDs), objectUID, len(results[objectUID]))
+		}
+		for i, nodeID := range nodeIDs {
+			if results[objectUID][i] != nodeID {
+				t.Fatalf("Expected nodeID %d for object %d, got %d", nodeID, objectUID, results[objectUID][i])
+			}
+		}
+	}
 }
