@@ -8,7 +8,7 @@ FROM golang as base
 # we need gcc for Golang SQLite bc uses C code
 RUN apt-get update && \
     apt-get install -y gcc && \ 
-    install -y protobuf-compiler && \
+    apt-get install -y protobuf-compiler && \
     apt-get clean
 
 # Set CGO_ENABLED=1 , we need this for Golang SQLite bc uses C code
