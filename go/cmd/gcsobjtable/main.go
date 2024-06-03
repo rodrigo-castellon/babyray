@@ -107,17 +107,30 @@ func (s *GCSObjServer) flushToDisk() error {
 Returns a nodeId that has object uid. If it doesn't exist anywhere,
 then the second return value will be false.
 Assumes that s's mutex is locked.
+The return values are the location, boolean if it exists, and error
 */
-func (s *GCSObjServer) getNodeId(uid uint64) (*uint64, bool) {
+func (s *GCSObjServer) getNodeId(uid uint64) (*uint64, bool, error) {
 	nodeIds, exists := s.objectLocations[uid]
 	if !exists || len(nodeIds) == 0 {
-		return nil, false
+		// Not found in memory; it's a cache miss so let's try disk
+		var err error
+		nodeIds, err = getObjectLocations(s.database, uid)
+		if err != nil {
+			return nil, false, err
+		}
+		// Move state into cache, even if it's empty so we know how to answer in the future
+		s.objectLocations[uid] = nodeIds
+		if len(nodeIds) == 0 {
+			// Not found
+			return nil, false, nil
+		}
+		// Proceed below
 	}
 
 	// Note: policy is to pick a random one; in the future it will need to be locality-based
 	randomIndex := rand.Intn(len(nodeIds))
 	nodeId := &nodeIds[randomIndex]
-	return nodeId, true
+	return nodeId, true, nil
 }
 
 // sendCallback sends a location found callback to the local object store client
@@ -181,11 +194,6 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 		return nil, status.Error(codes.Internal, "could not get peer information; hence, failed to extract client address")
 	}
 
-	// /////
-	// log.SetOutput(os.Stdout)
-	// log.Println(p.Addr.String())
-	// //////////
-
 	host, _, err := net.SplitHostPort(p.Addr.String()) // Strip out the ephemeral port
 	if err != nil {
 		//return nil, status.Error(codes.Internal, "could not split host and port")
@@ -196,7 +204,11 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 	clientAddress := net.JoinHostPort(host, clientPort)
 
 	uid := req.Uid
-	nodeId, exists := s.getNodeId(uid)
+	nodeId, exists, err := s.getNodeId(uid)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "could not get node id: "+err.Error())
+	}
+
 	if !exists {
 		// Add client to waiting list
 		if _, exists := s.waitlist[uid]; !exists {

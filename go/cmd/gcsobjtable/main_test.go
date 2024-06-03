@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -13,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/rodrigo-castellon/babyray/config"
 	pb "github.com/rodrigo-castellon/babyray/pkg"
 	"google.golang.org/grpc"
@@ -45,15 +47,14 @@ func TestGetNodeId(t *testing.T) {
 	rand.Seed(1)
 
 	// Initialize the GCSObjServer
-	server := &GCSObjServer{
-		objectLocations: make(map[uint64][]uint64),
-		waitlist:        make(map[uint64][]string),
-		mu:              sync.Mutex{},
-	}
+	server := NewGCSObjServer(-1)
 
 	// Test case: UID exists with multiple NodeIds
 	server.objectLocations[1] = []uint64{100, 101, 102}
-	nodeId, exists := server.getNodeId(1)
+	nodeId, exists, err := server.getNodeId(1)
+	if err != nil {
+		t.Fatalf("failed test with unexpected error: %v", err)
+	}
 	if !exists {
 		t.Errorf("Expected UID 1 to exist")
 	}
@@ -63,7 +64,10 @@ func TestGetNodeId(t *testing.T) {
 
 	// Test case: UID exists with a single NodeId
 	server.objectLocations[2] = []uint64{200}
-	nodeId, exists = server.getNodeId(2)
+	nodeId, exists, err = server.getNodeId(2)
+	if err != nil {
+		t.Fatalf("failed test with unexpected error: %v", err)
+	}
 	if !exists {
 		t.Errorf("Expected UID 2 to exist")
 	}
@@ -72,7 +76,10 @@ func TestGetNodeId(t *testing.T) {
 	}
 
 	// Test case: UID does not exist
-	nodeId, exists = server.getNodeId(3)
+	nodeId, exists, err = server.getNodeId(3)
+	if err != nil {
+		t.Fatalf("failed test with unexpected error: %v", err)
+	}
 	if exists {
 		t.Errorf("Expected UID 3 to not exist")
 	}
@@ -82,7 +89,10 @@ func TestGetNodeId(t *testing.T) {
 
 	// Test case: UID exists but with an empty NodeId list
 	server.objectLocations[4] = []uint64{}
-	nodeId, exists = server.getNodeId(4)
+	nodeId, exists, err = server.getNodeId(4)
+	if err != nil {
+		t.Fatalf("failed test with unexpected error: %v", err)
+	}
 	if exists {
 		t.Errorf("Expected UID 4 to not exist due to empty NodeId list")
 	}
@@ -118,7 +128,10 @@ func TestGetNodeId_2(t *testing.T) {
 		}
 
 		// Call getNodeId
-		nodeId, exists := server.getNodeId(tc.uid)
+		nodeId, exists, err := server.getNodeId(tc.uid)
+		if err != nil {
+			t.Fatalf("failed test with unexpected error: %v", err)
+		}
 
 		// Check if the result is nil or not as expected
 		if tc.expectNil && nodeId != nil {
@@ -138,6 +151,187 @@ func TestGetNodeId_2(t *testing.T) {
 		if nodeId != nil && !contains(tc.nodeIds, *nodeId) {
 			t.Errorf("NodeId %d is not in expected nodeIds %v for uid %d", *nodeId, tc.nodeIds, tc.uid)
 		}
+	}
+}
+
+func TestGetNodeId_CacheMissWithError(t *testing.T) {
+	// Create sqlmock database connection and mock object
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("An error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+
+	// Define the mock expectation: when querying the database, it should return an error
+	mock.ExpectQuery("SELECT node_id FROM object_locations WHERE object_uid = ?").
+		WithArgs(3).
+		WillReturnError(errors.New("database error"))
+
+	// Initialize the server with the mocked database
+	server := &GCSObjServer{
+		objectLocations: make(map[uint64][]uint64),
+		waitlist:        make(map[uint64][]string),
+		mu:              sync.Mutex{},
+		database:        db,
+	}
+
+	// Test case: Cache miss with error
+	_, exists, err := server.getNodeId(3)
+	if err == nil {
+		t.Errorf("Expected error, but got nil")
+	}
+	if exists {
+		t.Errorf("Expected UID 3 to not exist")
+	}
+
+	// Ensure all expectations were met
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There were unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetNodeId_CacheMissWithEmptyResult(t *testing.T) {
+	// Create sqlmock database connection and mock object
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("An error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+
+	// Define the mock expectation: when querying the database, it should return no rows
+	mock.ExpectQuery("SELECT node_id FROM object_locations WHERE object_uid = ?").
+		WithArgs(2).
+		WillReturnRows(sqlmock.NewRows([]string{"node_id"}))
+
+	// Initialize the server with the mocked database
+	server := &GCSObjServer{
+		objectLocations: make(map[uint64][]uint64),
+		waitlist:        make(map[uint64][]string),
+		mu:              sync.Mutex{},
+		database:        db,
+	}
+
+	// Test case: Cache miss with empty result
+	nodeId, exists, err := server.getNodeId(2)
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
+	if exists {
+		t.Errorf("Expected UID 2 to not exist")
+	}
+	if nodeId != nil {
+		t.Errorf("Expected nodeId to be nil, got %v", nodeId)
+	}
+
+	// Ensure all expectations were met
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There were unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetNodeId_CacheMissWithResult(t *testing.T) {
+	// Create sqlmock database connection and mock object
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("An error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+
+	// Define the mock expectation: when querying the database, it should return specific rows
+	rows := sqlmock.NewRows([]string{"node_id"}).AddRow(100).AddRow(101).AddRow(102)
+	mock.ExpectQuery("SELECT node_id FROM object_locations WHERE object_uid = ?").
+		WithArgs(1).
+		WillReturnRows(rows)
+
+	// Initialize the server with the mocked database
+	server := &GCSObjServer{
+		objectLocations: make(map[uint64][]uint64),
+		waitlist:        make(map[uint64][]string),
+		mu:              sync.Mutex{},
+		database:        db,
+	}
+
+	// Test case: Cache miss with result
+	nodeId, exists, err := server.getNodeId(1)
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
+	if !exists {
+		t.Errorf("Expected UID 1 to exist")
+	}
+	if nodeId == nil || (*nodeId != 100 && *nodeId != 101 && *nodeId != 102) {
+		t.Errorf("Expected nodeId to be one of [100, 101, 102], got %v", nodeId)
+	}
+
+	// Ensure all expectations were met
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There were unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetNodeId_CacheMissWithResult_RealDB(t *testing.T) {
+	// Set up in-memory SQLite database for testing
+	database, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open SQLite database: %v", err)
+	}
+	defer database.Close()
+
+	// Create the table schema
+	createObjectLocationsTable(database)
+
+	// Insert test data
+	_, err = database.Exec(`INSERT INTO object_locations (object_uid, node_id) VALUES (1, 100), (1, 101), (1, 102)`)
+	if err != nil {
+		t.Fatalf("Failed to insert test data: %v", err)
+	}
+
+	// Initialize the server
+	server := NewGCSObjServer(-1)
+	server.database = database
+
+	// Test case: Cache miss with result
+	nodeId, exists, err := server.getNodeId(1)
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
+	if !exists {
+		t.Errorf("Expected UID 1 to exist")
+	}
+	if nodeId == nil || (*nodeId != 100 && *nodeId != 101 && *nodeId != 102) {
+		t.Errorf("Expected nodeId to be one of [100, 101, 102], got %v", nodeId)
+	}
+}
+
+func TestGetNodeId_CacheMissWithEmptyResult_RealDB(t *testing.T) {
+	// Set up in-memory SQLite database for testing
+	database, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open SQLite database: %v", err)
+	}
+	defer database.Close()
+
+	// Create the table schema
+	createObjectLocationsTable(database)
+
+	// Initialize the server
+	server := &GCSObjServer{
+		objectLocations: make(map[uint64][]uint64),
+		waitlist:        make(map[uint64][]string),
+		mu:              sync.Mutex{},
+		database:        database,
+	}
+
+	// Test case: Cache miss with empty result
+	nodeId, exists, err := server.getNodeId(2)
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
+	if exists {
+		t.Errorf("Expected UID 2 to not exist")
+	}
+	if nodeId != nil {
+		t.Errorf("Expected nodeId to be nil, got %v", nodeId)
 	}
 }
 

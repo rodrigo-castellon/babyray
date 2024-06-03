@@ -97,6 +97,7 @@ func insertOrUpdateObjectLocations(db *sql.DB, objectLocations map[uint64][]uint
 	return nil
 }
 
+// returns an empty []uint64 if nothing found
 func getObjectLocations(db *sql.DB, objectUID uint64) ([]uint64, error) {
 	querySQL := `SELECT node_id FROM object_locations WHERE object_uid = ?;`
 
