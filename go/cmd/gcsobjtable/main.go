@@ -74,6 +74,7 @@ func NewGCSObjServer() *GCSObjServer {
 		lineage:         make(map[uint64]*pb.GlobalScheduleRequest),
 		globalSchedulerClient: globalSchedulerClient,
 		liveNodes:       make(map[uint64]bool),
+		generating:      make(map[uint64]uint64),
 	}
 	return server
 }

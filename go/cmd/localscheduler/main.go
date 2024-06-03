@@ -89,8 +89,14 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 	worker_id, _ = strconv.Atoi(os.Getenv("NODE_ID"))
     uid := rand.Uint64()
 
-	scheduleLocally, _ := s.workerClient.WorkerStatus(ctx, &pb.StatusResponse{})
-	s.gcsClient.RegisterLineage(ctx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
+	scheduleLocally, err := s.workerClient.WorkerStatus(ctx, &pb.StatusResponse{})
+	if err != nil {
+		LocalLog("got error from WorkerStatus() in Sched: %v", err)
+	}
+	_ , err = s.gcsClient.RegisterLineage(ctx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
+	if err != nil {
+		LocalLog("cant hit gcs: %v", err)
+	}
 	if scheduleLocally.NumRunningTasks < MAX_TASKS {
 		// LocalLog("Just running locally")
 		go func() {
@@ -130,6 +136,7 @@ func (s *server) ReviveServer(ctx context.Context, req *pb.StatusResponse) (*pb.
 }
 
 func (s *server) SendHeartbeats(ctx context.Context, globalSchedulerClient pb.GlobalSchedulerClient, nodeId uint64 ) {
+
 	workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
 	workerConn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
 	if err != nil {
@@ -176,7 +183,7 @@ func (s *server) SendHeartbeats(ctx context.Context, globalSchedulerClient pb.Gl
 		for {
 			avgBandwidth, err  = lobsClient.AvgBandwidth(ctx, &pb.StatusResponse{})
 			if err != nil {
-				LocalLog("got error from WorkerStatus(): %v", err)
+				LocalLog("got error from AvgBand(): %v", err)
 				LocalLog("retrying in %v seconds", backoff)
 				time.Sleep(time.Duration(backoff) * time.Second)
 				backoff *= 2

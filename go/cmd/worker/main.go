@@ -137,6 +137,7 @@ func executeFunction(f []byte, args []byte, kwargs []byte) ([]byte, error) {
 // run executes the function by fetching it, running it, and storing the result.
 func (s *workerServer) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusResponse, error) {
     LocalLog("in Run() rn")
+    defer LocalLog("Finished running")
     mu.Lock()
     numQueuedTasks++
     mu.Unlock()
@@ -159,16 +160,19 @@ func (s *workerServer) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusR
 
     funcResponse, err := s.funcClient.FetchFunc(ctx, &pb.FetchRequest{Name: req.Name})
     if err != nil {
+        LocalLog("Failed to hit func table: %v", err)
         return nil, err
     }
 
     output, err := executeFunction(funcResponse.SerializedFunc, req.Args, req.Kwargs)
     if err != nil {
+        LocalLog("failed to exec func %v", err)
         return nil, err
     }
 
     _, err = s.storeClient.Store(ctx, &pb.StoreRequest{Uid: req.Uid, ObjectBytes: output})
     if err != nil {
+        LocalLog("failed to hit gcs %v", err)
         return nil, err
     }
 
@@ -183,7 +187,7 @@ func (s *workerServer) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusR
 func (s *workerServer) WorkerStatus(ctx context.Context, req *pb.StatusResponse) (*pb.WorkerStatusResponse, error) {
     mu.Lock()
     defer mu.Unlock()
-    // log.Printf("num queued tasks is currently: %v", numQueuedTasks)
+    //log.Printf("num queued tasks is currently: %v", numQueuedTasks)
     return &pb.WorkerStatusResponse{
         NumRunningTasks:    numRunningTasks,
         NumQueuedTasks:     numQueuedTasks,
