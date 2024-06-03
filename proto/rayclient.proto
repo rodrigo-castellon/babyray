@@ -29,7 +29,11 @@ message GlobalScheduleRequest {
   uint64 name = 2;
   bytes args = 3;
   bytes kwargs = 4;
-  repeated uint64 uids = 5; 
+  repeated uint64 uids = 5;
+  // optional but in case the client wants to specify a node ID
+  // to send a computation to
+  uint64 nodeId = 6;
+  bool localityFlag = 7;
 }
 
 message HeartbeatRequest {
@@ -52,7 +56,11 @@ message ScheduleRequest {
   uint64 name = 1;
   bytes args = 2;
   bytes kwargs = 3;
-  repeated uint64 uids = 4; 
+  repeated uint64 uids = 4;
+  // optional but in case the client wants to specify a node ID
+  // to send a computation to
+  uint64 nodeId = 5;
+  bool localityFlag = 6;
 }
 
 // returns a Future, which is just the UID for
@@ -78,13 +86,21 @@ message StoreRequest {
 
 message GetRequest {
   uint64 uid = 1;
-  bool testing = 2; 
+  bool testing = 2;
+  // normally is true, but is false whenever we want to just block
+  // for a task to complete
+  bool copy = 3;
+  // normally is true, but is false whenever we want to copy the
+  // object over but not cache it (so we can keep measuring the copy
+  // speed)
+  bool cache = 4;
 }
 
 message GetResponse {
   uint64 uid = 1; 
   bytes objectBytes = 2;
-  bool local = 3; 
+  bool local = 3;
+  uint64 size = 4;
 }
 
 message BandwidthResponse {

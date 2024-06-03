@@ -55,7 +55,7 @@ ENV PROJECT_ROOT=/app
 FROM base as driver
 
 # install necessary Python packages to run anything
-RUN python3 -m pip install dill cloudpickle --break-system-packages
+RUN python3 -m pip install cloudpickle posix_ipc --break-system-packages
 RUN cd python && python3 -m pip install -e . --break-system-packages
 
 # install basic necessities to actually do driver stuff

@@ -12,6 +12,7 @@ import (
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
     "github.com/rodrigo-castellon/babyray/config"
+    "github.com/rodrigo-castellon/babyray/util"
 
     "google.golang.org/grpc/status"
     "google.golang.org/grpc/codes"
@@ -26,7 +27,7 @@ func main() {
         log.Fatalf("failed to listen: %v", err)
     }
     _ = lis;
-    s := grpc.NewServer()
+    s := grpc.NewServer(util.GetServerOptions()...)
     pb.RegisterGCSFuncServer(s, NewGCSFuncServer())
     log.Printf("server listening at %v", lis.Addr())
     if err := s.Serve(lis); err != nil {

@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/rodrigo-castellon/babyray/config"
+	"github.com/rodrigo-castellon/babyray/customlog"
+	"github.com/rodrigo-castellon/babyray/util"
 	pb "github.com/rodrigo-castellon/babyray/pkg"
 	"google.golang.org/grpc"
 )
@@ -32,6 +34,7 @@ func LocalLog(format string, v ...interface{}) {
 }
 
 func main() {
+	customlog.Init()
 	cfg = config.GetConfig()                                // Load configuration
 	address := ":" + strconv.Itoa(cfg.Ports.LocalScheduler) // Prepare the network address
 	lis, err := net.Listen("tcp", address)
@@ -39,16 +42,16 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	_ = lis
-	s := grpc.NewServer()
+	s := grpc.NewServer(util.GetServerOptions()...)
 
 	// set up worker connection early
 	workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
-	workerConn, _ := grpc.Dial(workerAddress, grpc.WithInsecure())
+	workerConn, _ := grpc.Dial(workerAddress, util.GetDialOptions()...)
 
 	workerClient := pb.NewWorkerClient(workerConn)
 
 	globalSchedulerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GlobalScheduler, cfg.Ports.GlobalScheduler)
-	conn, _ := grpc.Dial(globalSchedulerAddress, grpc.WithInsecure())
+	conn, _ := grpc.Dial(globalSchedulerAddress, util.GetDialOptions()...)
 	globalSchedulerClient := pb.NewGlobalSchedulerClient(conn)
 	nodeId, _ := strconv.Atoi(os.Getenv("NODE_ID"))
 
@@ -75,14 +78,32 @@ type server struct {
 // Implement your service methods here.
 
 func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.ScheduleResponse, error) {
+
 	var worker_id int
 	worker_id, _ = strconv.Atoi(os.Getenv("NODE_ID"))
     uid := rand.Uint64()
 
+	// custom behavior if the client itself specifies where we should send this
+	// computation
+	if (req.NodeId != 0) {
+		LocalLog("Doing something special with req.NodeId = %v", req.NodeId)
+		go func() {
+            _, err := s.globalSchedulerClient.Schedule(s.globalCtx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs, Uids: req.Uids, NodeId: req.NodeId})
+            if err != nil {
+                LocalLog("cannot contact global scheduler")
+            } else {
+				// LocalLog("Just ran it on global!")
+			}
+        }()
+		return &pb.ScheduleResponse{Uid: uid}, nil
+	}
+
+	LocalLog("asking about the worker status")
 	scheduleLocally, _ := s.workerClient.WorkerStatus(ctx, &pb.StatusResponse{})
+	LocalLog("heard back from the worker status: %v", scheduleLocally.NumRunningTasks)
 
 	if scheduleLocally.NumRunningTasks < MAX_TASKS {
-		// LocalLog("Just running locally")
+		LocalLog("Just running locally")
 		go func() {
             _, err := s.workerClient.Run(s.globalCtx, &pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
             if err != nil {
@@ -93,9 +114,10 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
         }()
 		
 	} else {
-		// LocalLog("contacting global scheduler")
+		LocalLog("contacting global scheduler")
 		go func() {
-            _, err := s.globalSchedulerClient.Schedule(s.globalCtx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs, Uids: req.Uids})
+			LocalLog("THE REQ UIDS AT LOCAL SCHEDULER ARE %v", req.Uids)
+            _, err := s.globalSchedulerClient.Schedule(s.globalCtx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs, Uids: req.Uids, LocalityFlag: req.LocalityFlag})
             if err != nil {
                 LocalLog("cannot contact global scheduler")
             } else {
@@ -110,14 +132,14 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 
 func SendHeartbeats(ctx context.Context, globalSchedulerClient pb.GlobalSchedulerClient, nodeId uint64 ) {
 	workerAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalWorkerStart)
-	workerConn, err := grpc.Dial(workerAddress, grpc.WithInsecure())
+	workerConn, err := grpc.Dial(workerAddress, util.GetDialOptions()...)
 	if err != nil {
 		log.Fatalf("failed to connect to %s: %v", workerAddress, err)
 	}
     defer workerConn.Close()
 
 	lobsAddress := fmt.Sprintf("localhost:%d", cfg.Ports.LocalObjectStore)
-	lobsConn, err := grpc.Dial(lobsAddress, grpc.WithInsecure())
+	lobsConn, err := grpc.Dial(lobsAddress, util.GetDialOptions()...)
 	if err != nil {
 		log.Fatalf("failed to connect to %s: %v", lobsAddress, err)
 		
@@ -180,6 +202,7 @@ func SendHeartbeats(ctx context.Context, globalSchedulerClient pb.GlobalSchedule
 		// 	heartbeatRequest.AvgBandwidth,
 		// 	heartbeatRequest.NodeId)
 
+		// LocalLog("SENDING GLOBAL SCHEDULER A HEARTBEAT!!!")
 		globalSchedulerClient.Heartbeat(ctx, heartbeatRequest)
 	    time.Sleep(HEARTBEAT_WAIT)
 	}
