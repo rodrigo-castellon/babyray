@@ -50,7 +50,7 @@ func main() {
     pb.RegisterGlobalSchedulerServer(s, server)
     defer conn.Close()
     log.Printf("server listening at %v", lis.Addr())
-    go server.SendLiveNodes(ctx)
+    go server.LiveNodesHeartbeat(ctx)
     if err := s.Serve(lis); err != nil {
        log.Fatalf("failed to serve: %v", err)
     }
@@ -87,7 +87,7 @@ func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.
 }
 
 func (s *server) LiveNodesHeartbeat(ctx context.Context) (error) {
-    
+    ctx = context.Background()
     for {
         s.SendLiveNodes(ctx)
         time.Sleep(HEARTBEAT_WAIT)
@@ -102,6 +102,12 @@ func(s *server) SendLiveNodes(ctx context.Context) (error) {
         liveNodes[uid] =  time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT
        
     }
+    // LocalLog("sending RegisterLiveNodes() call now")
+    // go func() {
+    //     if _, err := s.gcsClient.RegisterLiveNodes(ctx, &pb.LiveNodesRequest{LiveNodes: liveNodes}); err != nil {
+    //         LocalLog("Error registering live nodes: %v", err)
+    //     }
+    // }()
     s.gcsClient.RegisterLiveNodes(ctx, &pb.LiveNodesRequest{LiveNodes: liveNodes})
     return nil
 }
@@ -169,6 +175,10 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
         }
 
         for loc, bytes := range locationToBytes {
+            // skip dead nodes
+            if heartbeat, _ := s.status[loc]; !(time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT) {
+                continue
+            }
             mu.RLock()
             queueingTime := float32(s.status[loc].numQueuedTasks) * s.status[loc].avgRunningTime
             transferTime := float32(total - bytes) * s.status[loc].avgBandwidth
@@ -185,6 +195,11 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
         // TODO: make iteration order random for maximum fairness
         mu.RLock()
         for id, heartbeat := range s.status {
+            // skip dead nodes
+            if !(time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT) {
+                continue
+            }
+
             if float32(heartbeat.numQueuedTasks) * heartbeat.avgRunningTime < minTime {
                 minId = id
                 minTime = float32(heartbeat.numQueuedTasks) * heartbeat.avgRunningTime

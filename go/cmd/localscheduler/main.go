@@ -103,7 +103,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 	if (req.NodeId != 0) {
 		LocalLog("Doing something special with req.NodeId = %v", req.NodeId)
 		go func() {
-            _, err := s.globalSchedulerClient.Schedule(s.globalCtx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs, Uids: req.Uids, NodeId: req.NodeId})
+            _, err := s.globalSchedulerClient.Schedule(s.globalCtx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs, Uids: req.Uids, NewObject: true, NodeId: req.NodeId})
             if err != nil {
                 LocalLog("cannot contact global scheduler")
             } else {

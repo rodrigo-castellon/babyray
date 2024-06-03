@@ -250,15 +250,27 @@ func (s *GCSObjServer) RegisterLineage(ctx context.Context, req *pb.GlobalSchedu
 
 func (s *GCSObjServer) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest) (*pb.StatusResponse, error) {
 
+	// LocalLog("got RegisterLiveNodes() call.")
+
 	s.liveNodes = req.LiveNodes
+	toSchedule := make(map[uint64]bool)
+	// toSchedule := make(map[uint64]bool)
+
 	for uid, node := range s.generating {
 		if !s.liveNodes[node] {
+			LocalLog("this node is no longer existent: %v", node)
 		   delete(s.generating, uid)
-		   s.globalSchedulerClient.Schedule(ctx, s.lineage[uid])
+		   toSchedule[uid] = true
+		//    s.globalSchedulerClient.Schedule(ctx, s.lineage[uid])
 		}
 	}
 
 	for uid, nodes := range s.objectLocations {
+		if _, ok := toSchedule[uid]; ok {
+			continue
+			// fmt.Printf("Key '%s' exists in the map with value %d\n", key, value)
+		}
+
 		allDead := true
 		for node := range nodes {
 			if s.liveNodes[uint64(node)] {
@@ -267,14 +279,29 @@ func (s *GCSObjServer) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesR
 			}
 		}
 		if allDead {
-			s.globalSchedulerClient.Schedule(ctx, s.lineage[uint64(uid)])
+			LocalLog("all of them are dead so we are re-scheduling this one")
+			toSchedule[uid] = true
+			// s.globalSchedulerClient.Schedule(ctx, s.lineage[uint64(uid)])
 		}
 		
+	}
+
+	for uid, _ := range toSchedule {
+		LocalLog("uid = %v, rescheduling", uid)
+		go func() {
+			_, err := s.globalSchedulerClient.Schedule(ctx, s.lineage[uid])
+			if err != nil {
+				LocalLog("cannot contact global scheduler")
+			} else {
+				// LocalLog("Just ran it on global!")
+			}
+		}()
 	}
 	return &pb.StatusResponse{Success: true}, nil
 }
 
 func (s *GCSObjServer) RegisterGenerating(ctx context.Context, req *pb.GeneratingRequest) (*pb.StatusResponse, error) {
+	LocalLog("trying to register node %v as a generating node", req.NodeId)
 	if id, ok := s.generating[req.Uid]; ok {
 		return &pb.StatusResponse{Success: false}, status.Error(codes.Internal, fmt.Sprintf("node %d is already generating uid %d", id, req.Uid))
 	}
