@@ -64,6 +64,7 @@ type GCSObjServer struct {
 	liveNodes      map[uint64]bool
 	generating     map[uint64]uint64   //object uid -> node id of original generator
 									   //used to determine when an original creation of a uid should be restarted
+	globalCtx context.Context
 }
 
 type SchedulerClient interface {
@@ -86,6 +87,7 @@ func NewGCSObjServer() *GCSObjServer {
 		globalSchedulerClient: globalSchedulerClient,
 		liveNodes:       make(map[uint64]bool),
 		generating:      make(map[uint64]uint64),
+		globalCtx: context.Background(),
 	}
 	return server
 }
@@ -248,50 +250,66 @@ func (s *GCSObjServer) RegisterLineage(ctx context.Context, req *pb.GlobalSchedu
 	return &pb.StatusResponse{Success: false}, nil
 }
 
+func (s *GCSObjServer) getNodes(uid uint64) []uint64 {
+	var nodes[]uint64
+	if node, ok := s.generating[uid]; ok {
+		nodes = append(nodes, node)
+	}
+
+	if objectNodes, ok := s.objectLocations[uid]; ok {
+		for _, node := range objectNodes {
+			nodes = append(nodes, node)
+		}
+	}
+
+	return nodes
+}
+
+func (s *GCSObjServer) allDead(nodes []uint64) bool {
+	for _, node := range nodes {
+		if s.liveNodes[node] {
+			return false
+		}
+	}
+	return true
+}
+
 func (s *GCSObjServer) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest) (*pb.StatusResponse, error) {
 
 	// LocalLog("got RegisterLiveNodes() call.")
 
 	s.liveNodes = req.LiveNodes
-	toSchedule := make(map[uint64]bool)
-	// toSchedule := make(map[uint64]bool)
 
-	for uid, node := range s.generating {
-		if !s.liveNodes[node] {
-			LocalLog("this node is no longer existent: %v", node)
-		   delete(s.generating, uid)
-		   toSchedule[uid] = true
-		//    s.globalSchedulerClient.Schedule(ctx, s.lineage[uid])
+	// if literally everything is dead: generating AND object locations
+	// then reschedule. but if there is at least one live node that is either
+	// gonna generate it or storing it then don't
+
+	var regenerateList[]uint64
+	allUids := make(map[uint64]bool)
+
+	for uid, _ := range s.generating {
+		allUids[uid] = true
+	}
+	for uid, _ := range s.objectLocations {
+		allUids[uid] = true
+	}
+
+	for uid, _ := range allUids {
+		nodes := s.getNodes(uid)
+
+		// LocalLog("the nodes gotten here is: %v", nodes)
+
+		if s.allDead(nodes) {
+			regenerateList = append(regenerateList, uid)
 		}
 	}
 
-	for uid, nodes := range s.objectLocations {
-		if _, ok := toSchedule[uid]; ok {
-			continue
-			// fmt.Printf("Key '%s' exists in the map with value %d\n", key, value)
-		}
-
-		allDead := true
-		for node := range nodes {
-			if s.liveNodes[uint64(node)] {
-				allDead = false
-				break
-			}
-		}
-		if allDead {
-			LocalLog("all of them are dead so we are re-scheduling this one")
-			toSchedule[uid] = true
-			// s.globalSchedulerClient.Schedule(ctx, s.lineage[uint64(uid)])
-		}
-		
-	}
-
-	for uid, _ := range toSchedule {
+	for _, uid := range regenerateList {
 		LocalLog("uid = %v, rescheduling", uid)
 		go func() {
-			_, err := s.globalSchedulerClient.Schedule(ctx, s.lineage[uid])
+			_, err := s.globalSchedulerClient.Schedule(s.globalCtx, s.lineage[uid])
 			if err != nil {
-				LocalLog("cannot contact global scheduler")
+				LocalLog("cannot contact global scheduler, err = %v", err)
 			} else {
 				// LocalLog("Just ran it on global!")
 			}
@@ -302,9 +320,9 @@ func (s *GCSObjServer) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesR
 
 func (s *GCSObjServer) RegisterGenerating(ctx context.Context, req *pb.GeneratingRequest) (*pb.StatusResponse, error) {
 	LocalLog("trying to register node %v as a generating node", req.NodeId)
-	if id, ok := s.generating[req.Uid]; ok {
-		return &pb.StatusResponse{Success: false}, status.Error(codes.Internal, fmt.Sprintf("node %d is already generating uid %d", id, req.Uid))
-	}
+	// if id, ok := s.generating[req.Uid]; ok {
+	// 	return &pb.StatusResponse{Success: false}, status.Error(codes.Internal, fmt.Sprintf("node %d is already generating uid %d", id, req.Uid))
+	// }
 	s.generating[req.Uid] = req.NodeId
 	return &pb.StatusResponse{Success: true}, nil
 }
