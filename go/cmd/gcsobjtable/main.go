@@ -99,7 +99,7 @@ func (s *GCSObjServer) flushToDisk() error {
 		return err
 	}
 	// Completely delete the current map in memory and start blank
-	s.objectLocations = make(map[uint64][]uint64) // orphaning the old map will get it garbage collected in Go
+	s.objectLocations = make(map[uint64][]uint64) // orphaning the old map will get it garbage collected
 	return nil
 }
 
