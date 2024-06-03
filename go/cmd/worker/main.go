@@ -119,6 +119,7 @@ func executeFunction(f []byte, args []byte, kwargs []byte) ([]byte, error) {
     cmd.Stdin = inputBuffer
 
     // Capture the output
+    LocalLog("Running the function here yo")
     output, err := cmd.Output()
     if err != nil {
         log.Fatalf("Error executing function: %v", err)
@@ -175,7 +176,7 @@ func (s *workerServer) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusR
         LocalLog("failed to hit gcs %v", err)
         return nil, err
     }
-
+    
     runningTime := float32(time.Since(start).Seconds())
     mu.Lock()
     averageRunningTime = EMA_PARAM*averageRunningTime + (1-EMA_PARAM)*runningTime

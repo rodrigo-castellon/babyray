@@ -22,6 +22,17 @@ const LIVE_NODE_TIMEOUT time.Duration = 400 * time.Millisecond
 const HEARTBEAT_WAIT = 100 * time.Millisecond
 var mu sync.RWMutex
 
+// LocalLog formats the message and logs it with a specific prefix
+func LocalLog(format string, v ...interface{}) {
+	var logMessage string
+	if len(v) == 0 {
+		logMessage = format // No arguments, use the format string as-is
+	} else {
+		logMessage = fmt.Sprintf(format, v...)
+	}
+	log.Printf("[localscheduler] %s", logMessage)
+}
+
 func main() {
     ctx := context.Background()
     cfg = config.GetConfig() // Load configuration
@@ -100,7 +111,7 @@ func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) 
     if os.Getenv("LOCALITY_AWARE") == "true" {
         localityFlag = true
     }
-
+    LocalLog("Got a global schedule request")
     // gives us back the node id of the worker
     node_id := getBestWorker(ctx, s, localityFlag, req.Uids)
     workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, node_id, cfg.Ports.LocalWorkerStart)
@@ -113,7 +124,7 @@ func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) 
     defer conn.Close()
 
     workerClient := pb.NewWorkerClient(conn)
-
+    LocalLog("Contacted the worker")
     if req.NewObject {
         s.gcsClient.RegisterGenerating(ctx, &pb.GeneratingRequest{Uid: req.Uid, NodeId: node_id})
     }

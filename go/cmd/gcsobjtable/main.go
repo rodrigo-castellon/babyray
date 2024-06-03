@@ -86,11 +86,7 @@ Assumes that s's mutex is locked.
 */
 func (s *GCSObjServer) getNodeId(uid uint64) (*uint64, bool) {
 	nodeIds, exists := s.objectLocations[uid]
-
-	if !exists {
-		if !s.liveNodes[s.generating[uid]] {
-			return nil, true
-		}
+	if !exists || len(nodeIds) == 0 {
 		return nil, false
 	}
 
@@ -104,8 +100,6 @@ func (s *GCSObjServer) getNodeId(uid uint64) (*uint64, bool) {
 	if len(nodesToReturn) == 0 {
 		return nil, true
 	}
-
-
 
 	// Note: policy is to pick a random one; in the future it will need to be locality-based
 	randomIndex := rand.Intn(len(nodesToReturn))
@@ -190,14 +184,16 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 	clientAddress := net.JoinHostPort(host, clientPort)
 
 	uid := req.Uid
+	LocalLog("Starting get Node ID")
 	nodeId, exists := s.getNodeId(uid)
+	LocalLog("finished get node ID")
 	if nodeId == nil {
 		// Add client to waiting list
 		if _, waiting := s.waitlist[uid]; !waiting {
 			s.waitlist[uid] = []string{} // Initialize slice if it doesn't exist
 		}
 		s.waitlist[uid] = append(s.waitlist[uid], clientAddress)
-
+		
 		if exists {
 			_, err := s.globalSchedulerClient.Schedule(ctx, s.lineage[uid])
 			if err != nil {
@@ -241,6 +237,7 @@ func (s *GCSObjServer) RegisterLineage(ctx context.Context, req *pb.GlobalSchedu
 }
 
 func (s *GCSObjServer) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest) (*pb.StatusResponse, error) {
+
 	s.liveNodes = req.LiveNodes
 	for uid, node := range s.generating {
 		if !s.liveNodes[node] {

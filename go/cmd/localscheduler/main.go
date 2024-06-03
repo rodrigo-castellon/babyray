@@ -93,7 +93,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 	if err != nil {
 		LocalLog("got error from WorkerStatus() in Sched: %v", err)
 	}
-	_ , err = s.gcsClient.RegisterLineage(ctx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
+	_ , err = s.gcsClient.RegisterLineage(ctx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs, Uids: req.Uids})
 	if err != nil {
 		LocalLog("cant hit gcs: %v", err)
 	}
@@ -112,7 +112,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 	} else {
 		// LocalLog("contacting global scheduler")
 		go func() {
-            _, err := s.globalSchedulerClient.Schedule(s.globalCtx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs, NewObject: true})
+            _, err := s.globalSchedulerClient.Schedule(s.globalCtx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs, NewObject: true, Uids: req.Uids})
             if err != nil {
                 LocalLog("cannot contact global scheduler")
             } else {
