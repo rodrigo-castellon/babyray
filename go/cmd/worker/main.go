@@ -14,6 +14,7 @@ import (
     "encoding/base64"
     "sync"
     "time"
+    "runtime"
 
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -72,6 +73,7 @@ func main() {
     pb.RegisterWorkerServer(s, &workerServer{
         funcClient: funcClient,
         storeClient: storeClient,
+        alive: true,
     })
 
     LocalLog("worker server listening at %v", lis.Addr())
@@ -84,6 +86,7 @@ type workerServer struct {
     pb.UnimplementedWorkerServer
     funcClient FuncClient
     storeClient StoreClient
+    alive bool
 }
 
 type FuncClient interface {
@@ -171,6 +174,15 @@ func (s *workerServer) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusR
         return nil, err
     }
 
+    LocalLog("finished executing function")
+
+    LocalLog("s.alive is %v", s.alive)
+
+    if (!s.alive) {
+        LocalLog("Worker is not alive, exiting...")
+        runtime.Goexit()
+    }
+
     _, err = s.storeClient.Store(ctx, &pb.StoreRequest{Uid: req.Uid, ObjectBytes: output})
     if err != nil {
         LocalLog("failed to hit gcs %v", err)
@@ -183,6 +195,18 @@ func (s *workerServer) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusR
     mu.Unlock()
 
     return &pb.StatusResponse{Success: true}, nil
+}
+
+func (s *workerServer) KillServer(ctx context.Context, req *pb.StatusResponse) (*pb.StatusResponse, error) {
+	LocalLog("GOT KILLED!")
+	s.alive = false
+    LocalLog("s.alive is now: %v", s.alive)
+	return &pb.StatusResponse{Success: true}, nil
+}
+
+func (s *workerServer) ReviveServer(ctx context.Context, req *pb.StatusResponse) (*pb.StatusResponse, error) {
+	s.alive = true
+	return &pb.StatusResponse{Success: true}, nil
 }
 
 func (s *workerServer) WorkerStatus(ctx context.Context, req *pb.StatusResponse) (*pb.WorkerStatusResponse, error) {

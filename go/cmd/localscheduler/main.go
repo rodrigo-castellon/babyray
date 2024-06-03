@@ -142,6 +142,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 }
 
 func (s *server) KillServer(ctx context.Context, req *pb.StatusResponse) (*pb.StatusResponse, error) {
+	LocalLog("GOT KILLED!")
 	s.alive = false
 	return &pb.StatusResponse{Success: true}, nil
 }
