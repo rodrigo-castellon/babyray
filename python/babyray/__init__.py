@@ -151,6 +151,26 @@ def kill_node(node_id):
     node_worker_gRPC.KillServer(rayclient_pb2.StatusResponse())
 
 
+def revive_node(node_id):
+    # revive node node_id
+
+    local_scheduler_channel = grpc.insecure_channel(
+        f"node{node_id}:{str(LOCAL_SCHEDULER_PORT)}"
+    )
+    node_local_scheduler_gRPC = rayclient_pb2_grpc.LocalSchedulerStub(
+        local_scheduler_channel
+    )
+
+    worker_channel = grpc.insecure_channel(
+        f"node{node_id}:{str(LOCAL_WORKER_PORT_START)}"
+    )
+
+    node_worker_gRPC = rayclient_pb2_grpc.WorkerStub(worker_channel)
+
+    node_local_scheduler_gRPC.ReviveServer(rayclient_pb2.StatusResponse())
+    node_worker_gRPC.ReviveServer(rayclient_pb2.StatusResponse())
+
+
 def demo():
     # Example function to simulate Ray's behavior
     @remote
