@@ -5,7 +5,11 @@ import (
 	"strings"
 )
 
-// TODO: Address the fact that SQLite does not hold uint64 that exceeds positive int64
+func setCacheSizeToZero(db *sql.DB) error {
+	_, err := db.Exec("PRAGMA cache_size = 0;")
+	return err
+}
+
 func createObjectLocationsTable(db *sql.DB) error {
 	createTableSQL := `CREATE TABLE IF NOT EXISTS object_locations (
         "object_uid" INTEGER NOT NULL,

@@ -80,6 +80,7 @@ func NewGCSObjServer(flushIntervalSec int) *GCSObjServer {
 	if err != nil {
 		log.Fatal(err)
 	}
+	setCacheSizeToZero(database)
 	// Creates table if it doesn't already exist
 	createObjectLocationsTable(database)
 
