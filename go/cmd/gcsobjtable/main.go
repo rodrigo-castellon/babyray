@@ -111,7 +111,28 @@ func NewGCSObjServer(flushIntervalSec int) *GCSObjServer {
 			}
 		}()
 	}
+
+	logMemoryUsage := true // TODO: REMOVE HARDCODE
+	if logMemoryUsage {
+		go func() {
+			for {
+				var memStats runtime.MemStats
+				runtime.ReadMemStats(&memStats)
+
+				// HeapAlloc: Bytes of allocated heap objects (heap memory in use). in MB
+				log.Printf("HeapAlloc: %v MB\n", bToMb(memStats.HeapAlloc))
+
+				// Sleep for 5 seconds before the next iteration
+				time.Sleep(5 * time.Second)
+			}
+		}()
+	}
+
 	return server
+}
+
+func bToMb(b uint64) float64 {
+	return float64(b) / 1024 / 1024
 }
 
 func (s *GCSObjServer) flushToDisk() error {
