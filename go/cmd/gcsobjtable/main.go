@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"runtime"
 	"strconv"
 	"sync"
 
@@ -121,6 +122,12 @@ func (s *GCSObjServer) flushToDisk() error {
 	}
 	// Completely delete the current map in memory and start blank
 	s.objectLocations = make(map[uint64][]uint64) // orphaning the old map will get it garbage collected
+	// Manually trigger garbage collection
+	garbage_collect := true // TODO: REMOVE HARDCODED
+	if garbage_collect {
+		runtime.GC()
+		fmt.Println("Garbage collection triggered")
+	}
 	return nil
 }
 
@@ -183,8 +190,6 @@ func (s *GCSObjServer) sendCallback(clientAddress string, uid uint64, nodeId uin
 func (s *GCSObjServer) NotifyOwns(ctx context.Context, req *pb.NotifyOwnsRequest) (*pb.StatusResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
-	log.Printf("WAS JUST NOTIFYOWNS()ED")
 
 	uid, nodeId := req.Uid, req.NodeId
 
@@ -257,11 +262,6 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 
 func (s *GCSObjServer) GetObjectLocations(ctx context.Context, req *pb.ObjectLocationsRequest) (*pb.ObjectLocationsResponse, error) {
 	locations := make(map[uint64]*pb.LocationByteTuple)
-	// log.Printf("DEEP PRINT!")
-	// log.Printf("length = %v", len(s.objectLocations))
-	// for k, v := range s.objectLocations {
-	// 	log.Printf("s.objectLocations[%v] = %v", k, v)
-	// }
 
 	for _, u := range req.Args {
 		if _, ok := s.objectLocations[uint64(u)]; ok {
