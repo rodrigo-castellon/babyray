@@ -2,18 +2,16 @@ import sys
 from babyray import (
     init,
     remote,
-    get,
-    shutdown,
 )
 import time
-import logging
+from utils import log
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+log("FIG10b: HELLO WORLD!")
 
 # Initialize babyray
 init()
+
+log("FIG10b: HELLO WORLD AGAIN I AM ANGRY!")
 
 # Define a dummy remote function
 @remote
@@ -45,38 +43,76 @@ def flush_gcs():
 
 # Number of tasks to submit
 num_tasks = 50_000_000
-batch_size = 100_000
 
 # Submit tasks without GCS flushing and measure memory usage
-logger.info("Starting tasks submission without GCS flushing...")
-for i in range(0, num_tasks, batch_size):
-    futures = [f.remote() for _ in range(batch_size)]
-    get(futures)
-    
+log("FIG10b: Starting tasks submission without GCS flushing...")
+start_time = time.time()
+elapsed_time = 0
+total_duration = 2 * 60 * 60  # 2 hours in seconds
+
+# Memory logging intervals
+initial_interval = 1  # seconds
+interval_increase_factor = 1.5  # Increase interval by this factor each step
+max_interval = 600  # Maximum interval of 10 minutes
+
+current_interval = initial_interval
+next_log_time = start_time + current_interval
+
+i = 0
+
+while elapsed_time < total_duration and i < num_tasks:
+    # Submit a single task
+    f.remote()
+    i += 1
+
     # Measure memory usage
-    usage = get_memory_usage()
-    logger.info(f"Memory usage without flush at batch {i // batch_size}: {usage} MB")
-    
+    current_time = time.time()
+    elapsed_time = current_time - start_time
+
+    usage = 0
+    if current_time >= next_log_time:
+        usage = get_memory_usage()
+        log(f"FIG10b: Memory usage without flush after {i} tasks: {usage} MB")
+
+        # Schedule next log time
+        current_interval = min(current_interval * interval_increase_factor, max_interval)
+        next_log_time = current_time + current_interval
+
     if usage > 8000:  # Stop if memory usage exceeds 8 GB
         break
 
 # Reset babyray
-shutdown()
 init()
 
 # Submit tasks with GCS flushing and measure memory usage
-logger.info("Starting tasks submission with GCS flushing...")
-for i in range(0, num_tasks, batch_size):
-    futures = [f.remote() for _ in range(batch_size)]
-    get(futures)
-    
+log("FIG10b: Starting tasks submission with GCS flushing...")
+start_time = time.time()
+elapsed_time = 0
+current_interval = initial_interval
+next_log_time = start_time + current_interval
+
+i = 0
+
+while elapsed_time < total_duration and i < num_tasks:
+    # Submit a single task
+    f.remote()
+    i += 1
+
     # Measure memory usage
-    usage = get_memory_usage()
-    logger.info(f"Memory usage with flush at batch {i // batch_size}: {usage} MB")
-    
+    current_time = time.time()
+    elapsed_time = current_time - start_time
+
+    if current_time >= next_log_time:
+        usage = get_memory_usage()
+        log(f"Memory usage with flush after {i} tasks: {usage} MB")
+
+        # Schedule next log time
+        current_interval = min(current_interval * interval_increase_factor, max_interval)
+        next_log_time = current_time + current_interval
+
     # Perform GCS flushing periodically
-    if i % (10 * batch_size) == 0:
+    if i % (10 * int(current_interval)) == 0:
         flush_gcs()
 
-# Shutdown babyray
-shutdown()
+    if elapsed_time >= total_duration:
+        break
