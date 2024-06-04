@@ -6,10 +6,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net"
+	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -40,6 +43,48 @@ func init() {
 
 func bufDialer(context.Context, string) (net.Conn, error) {
 	return lis.Dial()
+}
+
+func TestWriteObjectLocationsToAOF(t *testing.T) {
+	// Create a temporary file
+	tmpfile, err := ioutil.TempFile("", "test_object_locations_*.txt")
+	if err != nil {
+		t.Fatalf("Unable to create temp file: %v", err)
+	}
+	defer os.Remove(tmpfile.Name()) // Clean up the temp file after the test
+
+	// Close the file so WriteObjectLocations can open it
+	tmpfile.Close()
+
+	// Sample map for testing
+	objectLocations := map[uint64][]uint64{
+		1: {10, 20, 30},
+		2: {40, 50, 60},
+		3: {70, 80, 90},
+	}
+
+	// Call the function to write the map to the file
+	err = WriteObjectLocationsToAOF(tmpfile.Name(), objectLocations)
+	if err != nil {
+		t.Fatalf("WriteObjectLocations failed: %v", err)
+	}
+
+	// Read the file content
+	content, err := ioutil.ReadFile(tmpfile.Name())
+	if err != nil {
+		t.Fatalf("Unable to read temp file: %v", err)
+	}
+
+	// Expected content
+	expectedContent := `1: [10,20,30]
+2: [40,50,60]
+3: [70,80,90]
+`
+
+	// Check if the content matches the expected content
+	if strings.TrimSpace(string(content)) != strings.TrimSpace(expectedContent) {
+		t.Errorf("Content mismatch\nExpected:\n%s\nGot:\n%s", expectedContent, string(content))
+	}
 }
 
 func TestGetNodeId(t *testing.T) {

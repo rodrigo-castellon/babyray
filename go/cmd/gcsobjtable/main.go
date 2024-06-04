@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"os"
 	"time"
 
 	// "errors"
@@ -115,19 +117,68 @@ func NewGCSObjServer(flushIntervalSec int) *GCSObjServer {
 func (s *GCSObjServer) flushToDisk() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	garbage_collect := false     // TODO: REMOVE HARDCODED
+	flush_to_AOF_instead := true // TODO: REMOVE HARDCODED
+	aof_filename := "./aof.txt"  // TODO: REMOVE HARDCODED
 
-	err := insertOrUpdateObjectLocations(s.database, s.objectLocations)
-	if err != nil {
-		return err
+	if flush_to_AOF_instead {
+		WriteObjectLocationsToAOF(aof_filename, s.objectLocations)
+	} else {
+		// Flush to SQLite3 Disk Database
+		err := insertOrUpdateObjectLocations(s.database, s.objectLocations)
+		if err != nil {
+			return err
+		}
 	}
+
 	// Completely delete the current map in memory and start blank
 	s.objectLocations = make(map[uint64][]uint64) // orphaning the old map will get it garbage collected
-	// Manually trigger garbage collection
-	garbage_collect := true // TODO: REMOVE HARDCODED
+	// Manually trigger garbage collection if desired
 	if garbage_collect {
 		runtime.GC()
 		fmt.Println("Garbage collection triggered")
 	}
+	return nil
+}
+
+// WriteObjectLocationsToAOF appends the contents of the objectLocations map to a file
+func WriteObjectLocationsToAOF(filename string, objectLocations map[uint64][]uint64) error {
+	// Open file in append mode, create if it doesn't exist
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("error opening file: %w", err)
+	}
+	defer file.Close()
+
+	// Create a buffered writer
+	writer := bufio.NewWriter(file)
+
+	// Iterate over the map and write to file
+	for key, values := range objectLocations {
+		// Convert key to string
+		keyStr := strconv.FormatUint(key, 10)
+
+		// Convert values slice to a comma-separated string
+		var valuesStr string
+		for i, val := range values {
+			if i > 0 {
+				valuesStr += ","
+			}
+			valuesStr += strconv.FormatUint(val, 10)
+		}
+
+		// Write key and values to file
+		_, err := writer.WriteString(fmt.Sprintf("%s: [%s]\n", keyStr, valuesStr))
+		if err != nil {
+			return fmt.Errorf("error writing to file: %w", err)
+		}
+	}
+
+	// Flush the buffered writer
+	if err := writer.Flush(); err != nil {
+		return fmt.Errorf("error flushing buffer: %w", err)
+	}
+
 	return nil
 }
 
