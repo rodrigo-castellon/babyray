@@ -1,13 +1,17 @@
+/*
+Some TODOs:
+- GCS chain replication hasn't been done for GCS Object Table yet
+
+
+*/
+
 package main
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/binary"
 	"log"
 	"net"
 	"strconv"
-	"sync"
 
 	"github.com/rodrigo-castellon/babyray/config"
 	pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -35,32 +39,15 @@ func main() {
 	}
 }
 
-// server is used to implement your gRPC service.
-type GCSFuncServer struct {
+type GCSFuncServerProxy struct {
 	pb.UnimplementedGCSFuncServer
-	functionStore map[uint64][]byte
-	mu            sync.Mutex // Use a mutex to manage concurrent access
 }
 
-func NewGCSFuncServer() *GCSFuncServer {
-	return &GCSFuncServer{
-		functionStore: make(map[uint64][]byte),
-	}
+func NewGCSFuncServer() *GCSFuncServerProxy {
+	return &GCSFuncServerProxy{}
 }
 
-// Note: This is cryptographically random
-// That's a bit overkill, but that's ok bc functions are rarely registered (relative to executed)
-func generateUID() (uint64, error) {
-	var n uint64
-	err := binary.Read(rand.Reader, binary.BigEndian, &n)
-	if err != nil {
-		log.Println("Error generating random number:", err)
-		return 0, err // Return 0 and the error
-	}
-	return n, nil // Return the generated number and nil for the error
-}
-
-func (s *GCSFuncServer) RegisterFunc(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+func (s *GCSFuncServerProxy) RegisterFunc(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
 	// Lock and unlock the mutex to handle concurrent writes safely
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -78,7 +65,7 @@ func (s *GCSFuncServer) RegisterFunc(ctx context.Context, req *pb.RegisterReques
 	return &pb.RegisterResponse{Name: uid}, nil
 }
 
-func (s *GCSFuncServer) FetchFunc(ctx context.Context, req *pb.FetchRequest) (*pb.FetchResponse, error) {
+func (s *GCSFuncServerProxy) FetchFunc(ctx context.Context, req *pb.FetchRequest) (*pb.FetchResponse, error) {
 	s.mu.Lock()
 	serializedFunc, ok := s.functionStore[req.Name]
 	s.mu.Unlock()
