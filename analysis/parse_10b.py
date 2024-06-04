@@ -1,48 +1,54 @@
-import unittest
-from io import StringIO
+import re
+import csv
+from datetime import datetime
 
-def parse_log(log_data):
-    log_data = log_data.splitlines()
+def parse_log_line(line):
+    pattern = r'^worker\d+\-\d+\s+\|\s+(\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3})\s+FIG10b:\s+Memory\s+usage\s+without\s+flush\s+after\s+(\d+)\s+tasks:\s+(\d+\.\d+)\s+MB'
+    match = re.match(pattern, line)
+    if match:
+        timestamp = datetime.strptime(match.group(1), '%Y/%m/%d %H:%M:%S.%f')
+        tasks = int(match.group(2))
+        memory_usage = float(match.group(3))
+        return (timestamp, memory_usage)
+    else:
+        return None
 
-    output = []
-    for line in log_data:
-        try:
-            timestamp, memory_usage = line.split('FIG10b: Memory usage without flush after')[0].rstrip(), line.split('MB')[-1].strip()
-            output.append([timestamp, memory_usage])
-        except ValueError:
-            pass
+def parse_logs(log_data):
+    result = []
+    for line in log_data.split('\n'):
+        parsed = parse_log_line(line)
+        if parsed:
+            result.append(parsed)
+    return result
 
-    return output
+def write_to_csv(data, filename):
+    with open(filename, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['Timestamp', 'Memory Usage (MB)'])
+        for timestamp, memory_usage in data:
+            writer.writerow([timestamp, memory_usage])
 
-class TestParseLog(unittest.TestCase):
-    def test_parse_log(self):
-        # Test case 1: Valid log data
-        valid_log_data = """2024/06/04 01:44:07.510 FIG10b: Memory usage without flush after 123 tasks: 970.90234375 MB
-2024/06/04 01:44:08.529 FIG10b: Memory usage without flush after 245 tasks: 977.0 MB
-2024/06/04 01:44:09.530 FIG10b: Memory usage without flush after 373 tasks: 986.859375 MB
-2024/06/04 01:44:10.533 FIG10b: Memory usage without flush after 500 tasks: 987.625 MB
-"""
-        expected_output = [
-            ['2024/06/04 01:44:07.510', '970.90234375'],
-            ['2024/06/04 01:44:08.529', '977.0'],
-            ['2024/06/04 01:44:09.530', '986.859375'],
-            ['2024/06/04 01:44:10.533', '987.625']
-        ]
-        self.assertListEqual(parse_log(valid_log_data), expected_output)
+# Unit test
+def test_parse_log_line():
+    test_line = 'worker1-1  | 2024/06/04 05:02:21.134 FIG10b: Memory usage without flush after 1459 tasks: 1060.06640625 MB'
+    expected_output = (datetime(2024, 6, 4, 5, 2, 21, 134000), 1060.06640625)
+    assert parse_log_line(test_line) == expected_output
 
-        # Test case 2: Log data with malformed lines
-        malformed_log_data = """2024/06/04 01:44:07.510 FIG10b: Memory usage without flush after 123 tasks: 970.90234375 MB
-This is a malformed line
-2024/06/04 01:44:09.530 FIG10b: Memory usage without flush after 373 tasks: 986.859375 MB
-Another malformed line
-2024/06/04 01:44:10.533 FIG10b: Memory usage without flush after 500 tasks: 987.625 MB
-"""
-        expected_output = [
-            ['2024/06/04 01:44:07.510', '970.90234375'],
-            ['2024/06/04 01:44:09.530', '986.859375'],
-            ['2024/06/04 01:44:10.533', '987.625']
-        ]
-        self.assertListEqual(parse_log(malformed_log_data), expected_output)
-
+# Example usage
 if __name__ == '__main__':
-    unittest.main()
+    test_parse_log_line()  # Run the unit test
+    print("unit test worked")
+
+    with open('output_10b_run2_300s_flush_2b_memory_limit.txt', 'r') as f:
+        log_data = f.read()
+
+    parsed_logs = parse_logs(log_data)
+    write_to_csv(parsed_logs, 'output_10b_run2_300s_flush_2b_memory_limit_cleaned.csv')
+
+    # =================================
+
+    with open('output_10b_run3_40s_flush_2gb_memory_limit.txt', 'r') as f:
+        log_data = f.read()
+
+    parsed_logs = parse_logs(log_data)
+    write_to_csv(parsed_logs, 'output_10b_run3_40s_flush_2gb_memory_limit_cleaned.csv')
