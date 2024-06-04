@@ -117,7 +117,7 @@ func NewGCSObjServer(flushIntervalSec int) *GCSObjServer {
 func (s *GCSObjServer) flushToDisk() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	garbage_collect := false    // TODO: REMOVE HARDCODED
+	garbage_collect := true     // TODO: REMOVE HARDCODED
 	flush_to_AOF := true        // TODO: REMOVE HARDCODED
 	aof_filename := "./aof.txt" // TODO: REMOVE HARDCODED
 
