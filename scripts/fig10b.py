@@ -2,16 +2,16 @@ import sys
 from babyray import (
     init,
     remote,
+    get,
+    Future,
 )
 import time
 from utils import log
 
-log("FIG10b: HELLO WORLD!")
+log("FIG10b: HELLO WORLD I AM ANGRY!")
 
 # Initialize babyray
 init()
-
-log("FIG10b: HELLO WORLD AGAIN I AM ANGRY!")
 
 # Define a dummy remote function
 @remote
@@ -62,6 +62,7 @@ i = 0
 
 while elapsed_time < total_duration and i < num_tasks:
     # Submit a single task
+    #get(f.remote())
     f.remote()
     i += 1
 
@@ -81,38 +82,38 @@ while elapsed_time < total_duration and i < num_tasks:
     if usage > 8000:  # Stop if memory usage exceeds 8 GB
         break
 
-# Reset babyray
-init()
+# # Reset babyray
+# init()
 
-# Submit tasks with GCS flushing and measure memory usage
-log("FIG10b: Starting tasks submission with GCS flushing...")
-start_time = time.time()
-elapsed_time = 0
-current_interval = initial_interval
-next_log_time = start_time + current_interval
+# # Submit tasks with GCS flushing and measure memory usage
+# log("FIG10b: Starting tasks submission with GCS flushing...")
+# start_time = time.time()
+# elapsed_time = 0
+# current_interval = initial_interval
+# next_log_time = start_time + current_interval
 
-i = 0
+# i = 0
 
-while elapsed_time < total_duration and i < num_tasks:
-    # Submit a single task
-    f.remote()
-    i += 1
+# while elapsed_time < total_duration and i < num_tasks:
+#     # Submit a single task
+#     f.remote()
+#     i += 1
 
-    # Measure memory usage
-    current_time = time.time()
-    elapsed_time = current_time - start_time
+#     # Measure memory usage
+#     current_time = time.time()
+#     elapsed_time = current_time - start_time
 
-    if current_time >= next_log_time:
-        usage = get_memory_usage()
-        log(f"Memory usage with flush after {i} tasks: {usage} MB")
+#     if current_time >= next_log_time:
+#         usage = get_memory_usage()
+#         log(f"Memory usage with flush after {i} tasks: {usage} MB")
 
-        # Schedule next log time
-        current_interval = min(current_interval * interval_increase_factor, max_interval)
-        next_log_time = current_time + current_interval
+#         # Schedule next log time
+#         current_interval = min(current_interval * interval_increase_factor, max_interval)
+#         next_log_time = current_time + current_interval
 
-    # Perform GCS flushing periodically
-    if i % (10 * int(current_interval)) == 0:
-        flush_gcs()
+#     # Perform GCS flushing periodically
+#     if i % (10 * int(current_interval)) == 0:
+#         flush_gcs()
 
-    if elapsed_time >= total_duration:
-        break
+#     if elapsed_time >= total_duration:
+#         break
