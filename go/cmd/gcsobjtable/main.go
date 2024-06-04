@@ -117,12 +117,17 @@ func NewGCSObjServer(flushIntervalSec int) *GCSObjServer {
 func (s *GCSObjServer) flushToDisk() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	garbage_collect := false     // TODO: REMOVE HARDCODED
-	flush_to_AOF_instead := true // TODO: REMOVE HARDCODED
-	aof_filename := "./aof.txt"  // TODO: REMOVE HARDCODED
+	garbage_collect := false    // TODO: REMOVE HARDCODED
+	flush_to_AOF := true        // TODO: REMOVE HARDCODED
+	aof_filename := "./aof.txt" // TODO: REMOVE HARDCODED
 
-	if flush_to_AOF_instead {
-		WriteObjectLocationsToAOF(aof_filename, s.objectLocations)
+	// Can either flush to append-only file or to DB
+	if flush_to_AOF {
+		err := WriteObjectLocationsToAOF(aof_filename, s.objectLocations)
+		if err != nil {
+			return err
+		}
+		log.Printf("Successfully flushed to AOF!")
 	} else {
 		// Flush to SQLite3 Disk Database
 		err := insertOrUpdateObjectLocations(s.database, s.objectLocations)
