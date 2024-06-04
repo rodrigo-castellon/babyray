@@ -82,7 +82,7 @@ while elapsed_time < total_duration and i < num_tasks:
             current_interval = min(second_interval, max_interval)
         next_log_time = current_time + current_interval
 
-    if usage > 8000:  # Stop if memory usage exceeds 8 GB
+    if usage > 2000:  # Stop if memory usage exceeds 2 GB
         break
 
 
