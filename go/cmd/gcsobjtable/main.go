@@ -120,7 +120,7 @@ func NewGCSObjServer(flushIntervalSec int) *GCSObjServer {
 				runtime.ReadMemStats(&memStats)
 
 				// HeapAlloc: Bytes of allocated heap objects (heap memory in use). in MB
-				log.Printf("HeapAlloc: %v MB\n", bToMb(memStats.HeapAlloc))
+				log.Printf("%v\n", bToMb(memStats.HeapAlloc))
 
 				// Sleep for 5 seconds before the next iteration
 				time.Sleep(5 * time.Second)
