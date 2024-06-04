@@ -15,4 +15,4 @@ ports:
 dns:
   node_prefix: "node"
 gcs:
-  flush_interval_sec: 40 # put -1 to never flush
+  flush_interval_sec: 300 # put -1 to never flush
