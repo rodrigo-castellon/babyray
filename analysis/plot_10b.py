@@ -106,7 +106,8 @@ def attempt2():
     plt.legend(loc="lower right")
 
     # Show the plot
-    plt.grid(True)
+    # Save the plot as a high-quality PNG
+    plt.savefig("fig10b_graphs/attempt2_sharp.png", dpi=300)
     plt.show()
 
 if __name__ == '__main__':
