@@ -52,7 +52,8 @@ total_duration = 2 * 60 * 60  # 2 hours in seconds
 
 # Memory logging intervals
 initial_interval = 1  # seconds
-interval_increase_factor = 1.5  # Increase interval by this factor each step
+second_interval = 30  # seconds after initial period
+initial_period = 300  # seconds
 max_interval = 600  # Maximum interval of 10 minutes
 
 current_interval = initial_interval
@@ -62,7 +63,6 @@ i = 0
 
 while elapsed_time < total_duration and i < num_tasks:
     # Submit a single task
-    #get(f.remote())
     f.remote()
     i += 1
 
@@ -76,11 +76,15 @@ while elapsed_time < total_duration and i < num_tasks:
         log(f"FIG10b: Memory usage without flush after {i} tasks: {usage} MB")
 
         # Schedule next log time
-        current_interval = min(current_interval * interval_increase_factor, max_interval)
+        if elapsed_time < initial_period:
+            current_interval = initial_interval
+        else:
+            current_interval = min(second_interval, max_interval)
         next_log_time = current_time + current_interval
 
     if usage > 8000:  # Stop if memory usage exceeds 8 GB
         break
+
 
 # # Reset babyray
 # init()
