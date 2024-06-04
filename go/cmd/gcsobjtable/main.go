@@ -101,6 +101,8 @@ func NewGCSObjServer(flushIntervalSec int) *GCSObjServer {
 				err := server.flushToDisk()
 				if err != nil {
 					log.Printf("Error flushing to disk: %v", err)
+				} else {
+					log.Printf("Successfully flushed to disk!")
 				}
 			}
 		}()
