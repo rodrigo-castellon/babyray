@@ -35,17 +35,11 @@ def get_memory_usage():
     used_memory = total_memory - (free_memory + buffers + cached)
     return used_memory
 
-# Function to perform GCS flushing
-def flush_gcs():
-    # Assuming there is a function in babyray for GCS flushing
-    # Replace the following line with the actual flushing function if different
-    babyray._private.internal_api.global_gc()
-
 # Number of tasks to submit
 num_tasks = 50_000_000
 
 # Submit tasks without GCS flushing and measure memory usage
-log("FIG10b: Starting tasks submission without GCS flushing...")
+log("FIG10b: Starting tasks submission...")
 start_time = time.time()
 elapsed_time = 0
 total_duration = 2 * 60 * 60  # 2 hours in seconds
@@ -84,40 +78,3 @@ while elapsed_time < total_duration and i < num_tasks:
 
     if usage > 2000:  # Stop if memory usage exceeds 2 GB
         break
-
-
-# # Reset babyray
-# init()
-
-# # Submit tasks with GCS flushing and measure memory usage
-# log("FIG10b: Starting tasks submission with GCS flushing...")
-# start_time = time.time()
-# elapsed_time = 0
-# current_interval = initial_interval
-# next_log_time = start_time + current_interval
-
-# i = 0
-
-# while elapsed_time < total_duration and i < num_tasks:
-#     # Submit a single task
-#     f.remote()
-#     i += 1
-
-#     # Measure memory usage
-#     current_time = time.time()
-#     elapsed_time = current_time - start_time
-
-#     if current_time >= next_log_time:
-#         usage = get_memory_usage()
-#         log(f"Memory usage with flush after {i} tasks: {usage} MB")
-
-#         # Schedule next log time
-#         current_interval = min(current_interval * interval_increase_factor, max_interval)
-#         next_log_time = current_time + current_interval
-
-#     # Perform GCS flushing periodically
-#     if i % (10 * int(current_interval)) == 0:
-#         flush_gcs()
-
-#     if elapsed_time >= total_duration:
-#         break
