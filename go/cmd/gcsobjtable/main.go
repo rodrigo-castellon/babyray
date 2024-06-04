@@ -106,7 +106,7 @@ func NewGCSObjServer(flushIntervalSec int) *GCSObjServer {
 				if err != nil {
 					log.Printf("Error flushing to disk: %v", err)
 				} else {
-					log.Printf("Successfully flushed to disk!")
+					//log.Printf("Successfully flushed to disk!")
 				}
 			}
 		}()
@@ -148,7 +148,7 @@ func (s *GCSObjServer) flushToDisk() error {
 		if err != nil {
 			return err
 		}
-		log.Printf("Successfully flushed to AOF!")
+		//log.Printf("Successfully flushed to AOF!")
 	} else {
 		// Flush to SQLite3 Disk Database
 		err := insertOrUpdateObjectLocations(s.database, s.objectLocations)
@@ -162,7 +162,7 @@ func (s *GCSObjServer) flushToDisk() error {
 	// Manually trigger garbage collection if desired
 	if garbage_collect {
 		runtime.GC()
-		fmt.Println("Garbage collection triggered")
+		//log.Println("Garbage collection triggered")
 	}
 	return nil
 }
