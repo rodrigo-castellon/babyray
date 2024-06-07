@@ -1,26 +1,45 @@
-# server-side implementation for Python-based worker server
-
 import grpc
 from concurrent import futures
 import time
-import base64
-import subprocess
 import threading
-import os
 from datetime import datetime
 import cloudpickle as pickle
 from babyray import init, get, remote, Future
 
 from .constants import *
-
 from . import rayclient_pb2
 from . import rayclient_pb2_grpc
 
 MAX_CONCURRENT_TASKS = 10
 EMA_PARAM = 0.9
 
+
+class DebugSemaphore(threading.Semaphore):
+    def __init__(self, value=1):
+        super().__init__(value)
+        self._value = value
+        self._value_lock = threading.Lock()
+
+    def acquire(self, blocking=True, timeout=None):
+        with self._value_lock:
+            if super().acquire(blocking, timeout):
+                self._value -= 1
+                return True
+            return False
+
+    def release(self):
+        with self._value_lock:
+            self._value += 1
+            super().release()
+
+    def get_value(self):
+        with self._value_lock:
+            return self._value
+
+
 # Global variables
-semaphore = threading.Semaphore(MAX_CONCURRENT_TASKS)
+# semaphore = threading.Semaphore(MAX_CONCURRENT_TASKS)
+semaphore = DebugSemaphore(MAX_CONCURRENT_TASKS)
 num_running_tasks = 0
 num_queued_tasks = 0
 average_running_time = 0.1
@@ -28,8 +47,15 @@ mu = threading.Lock()
 
 MAX_MESSAGE_SIZE = 1024 * 1024 * 1024  # 1GB
 
+
+def block_forever():
+    while True:
+        time.sleep(100)
+
+
 gcs_func_gRPC = None
 lobs_gRPC = None
+server = None
 
 
 def local_log(*s):
@@ -49,7 +75,6 @@ def init_all_stubs():
         ("grpc.max_receive_message_length", MAX_MESSAGE_SIZE),
     ]
 
-    # so boilerplate-y
     gcs_func_channel = grpc.insecure_channel(
         f"node{GCS_NODE_ID}:{GCS_FUNCTION_TABLE_PORT}",
         options=channel_options,
@@ -67,16 +92,24 @@ def init_all_stubs():
 class WorkerServer(rayclient_pb2_grpc.WorkerServicer):
     def __init__(self):
         init()
+        self.alive = True
 
     def Run(self, request, context):
         global num_running_tasks, num_queued_tasks, average_running_time
 
+        if not self.alive:
+            block_forever()
+
         local_log("in Run() rn")
 
         with mu:
+            local_log("queueing up")
             num_queued_tasks += 1
+            local_log("the number of queued tasks is", num_queued_tasks)
 
+        local_log("now waiting for the sema, whose value is:", semaphore.get_value())
         with semaphore:
+            local_log("got through the semaphore")
             with mu:
                 num_queued_tasks -= 1
                 num_running_tasks += 1
@@ -92,6 +125,9 @@ class WorkerServer(rayclient_pb2_grpc.WorkerServicer):
                 kwargs_obj = pickle.loads(request.kwargs)
 
                 output = func_obj(*args_obj, **kwargs_obj)
+
+                if not self.alive:
+                    block_forever()
 
                 output_pickled = pickle.dumps(output)
                 local_log("Executed!")
@@ -120,26 +156,35 @@ class WorkerServer(rayclient_pb2_grpc.WorkerServicer):
 
     def WorkerStatus(self, request, context):
         global num_running_tasks, num_queued_tasks, average_running_time
-        # num_running_tasks, num_queued_tasks, average_running_time = 0, 0, 0.1
+        if not self.alive:
+            block_forever()
 
-        # local_log("HERES THE WORKER STATUS......... GONNA TRY TO ACQUIRE THE THING")
         with mu:
-            # local_log("returning......>!!!!")
             return rayclient_pb2.WorkerStatusResponse(
                 numRunningTasks=num_running_tasks,
                 numQueuedTasks=num_queued_tasks,
                 averageRunningTime=average_running_time,
             )
 
+    def KillServer(self, request, context):
+        # global task_threads
+        local_log("GOT KILLED")
+        self.alive = False
+        return rayclient_pb2.StatusResponse(success=True)
+
+    def ReviveServer(self, request, context):
+        local_log("GOT REVIVED!")
+        self.alive = True
+        return rayclient_pb2.StatusResponse(success=True)
+
 
 def serve():
+    global server
     init_all_stubs()
 
     server = grpc.server(
-        # let's only start dropping requests 10x in
         futures.ThreadPoolExecutor(max_workers=10 * MAX_CONCURRENT_TASKS)
     )
-    # server = grpc.server()
     rayclient_pb2_grpc.add_WorkerServicer_to_server(WorkerServer(), server)
 
     server_address = "0.0.0.0:50002"

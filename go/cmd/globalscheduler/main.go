@@ -8,9 +8,12 @@ import (
     "math/rand"
     "math"
    // "bytes"
-   "time"
+
+//    "os"
+//    "time"
 //    "os"
    "sync"
+   "time"
     "fmt"
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -21,47 +24,27 @@ import (
     // "github.com/go-zookeeper/zk"
 )
 var cfg *config.Config
-
+const LIVE_NODE_TIMEOUT time.Duration = 400 * time.Millisecond
+const HEARTBEAT_WAIT = 100 * time.Millisecond
 var mu sync.RWMutex
 
-// func connectToZookeeper(servers []string) (*zk.Conn, error) {
-//     var conn *zk.Conn
-//     var err error
-//     for i := 0; i < 10; i++ { // retry 10 times
-//         conn, _, err = zk.Connect(servers, time.Second*10)
-//         if err == nil {
-//             return conn, nil
-//         }
-//         log.Printf("Failed to connect to Zookeeper, retrying in 5 seconds... (attempt %d/10)", i+1)
-//         time.Sleep(5 * time.Second)
-//     }
-//     return nil, err
-// }
+const MAX_CONCURRENT_TASKS = 10
+
+// LocalLog formats the message and logs it with a specific prefix
+func LocalLog(format string, v ...interface{}) {
+	var logMessage string
+	if len(v) == 0 {
+		logMessage = format // No arguments, use the format string as-is
+	} else {
+		logMessage = fmt.Sprintf(format, v...)
+	}
+	log.Printf("[localscheduler] %s", logMessage)
+}
 
 func main() {
     customlog.Init()
-    cfg = config.LoadConfig() // Load configuration
-
-    // connect to zookeeper
-    // servers := []string{"zookeeper:2181"}
-    // // zkConn, _, err := zk.Connect(servers, time.Second)
-    // zkConn, err := connectToZookeeper(servers)
-    // if err != nil {
-    //     log.Fatalf("Unable to connect to Zookeeper: %v", err)
-    // }
-
-    // defer zkConn.Close()
-
-    // path := "/services/globalsched"
-    // data := []byte("node1")
-
-    // _, err = zkConn.Create(path, data, zk.FlagEphemeral, zk.WorldACL(zk.PermAll))
-    // if err != nil {
-    //     log.Fatalf("Unable to create znode: %v", err)
-    // }
-
-    // log.Println("Service registered with Zookeeper")
-
+    ctx := context.Background()
+    cfg = config.GetConfig() // Load configuration
     address := ":" + strconv.Itoa(cfg.Ports.GlobalScheduler) // Prepare the network address
 
     lis, err := net.Listen("tcp", address)
@@ -72,15 +55,18 @@ func main() {
     s := grpc.NewServer(util.GetServerOptions()...)
     gcsAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, cfg.NodeIDs.GCS, cfg.Ports.GCSObjectTable)
 	conn, _ := grpc.Dial(gcsAddress, util.GetDialOptions()...)
-    pb.RegisterGlobalSchedulerServer(s, &server{gcsClient: pb.NewGCSObjClient(conn), status: make(map[uint64]HeartbeatEntry)})
+    serverInstance := &server{gcsClient: pb.NewGCSObjClient(conn), status: make(map[uint64]HeartbeatEntry)}
+    pb.RegisterGlobalSchedulerServer(s, serverInstance)
     defer conn.Close()
     log.Printf("server listening at %v", lis.Addr())
+    go serverInstance.LiveNodesHeartbeat(ctx)
     if err := s.Serve(lis); err != nil {
        log.Fatalf("failed to serve: %v", err)
     }
 }
 
 type HeartbeatEntry struct {
+    timeReceived    time.Time
     numRunningTasks uint32
     numQueuedTasks uint32
     avgRunningTime float32
@@ -89,22 +75,56 @@ type HeartbeatEntry struct {
 // server is used to implement your gRPC service.
 type server struct {
    pb.UnimplementedGlobalSchedulerServer
-   gcsClient pb.GCSObjClient
+   gcsClient ObjClient
    status map[uint64]HeartbeatEntry
+}
+
+type ObjClient interface {
+    RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesRequest, opts ...grpc.CallOption) (*pb.StatusResponse, error) 
+    RequestLocation(ctx context.Context, req *pb.RequestLocationRequest, opts ...grpc.CallOption) (*pb.RequestLocationResponse, error)
+    RegisterGenerating(ctx context.Context, req *pb.GeneratingRequest,  opts ...grpc.CallOption) (*pb.StatusResponse, error)
+    GetObjectLocations(ctx context.Context, req *pb.ObjectLocationsRequest,  opts ...grpc.CallOption) (*pb.ObjectLocationsResponse, error) 
 }
 
 
 func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.StatusResponse, error) {
-    // log.Printf("heartbeat from %v", req.NodeId)
+    //log.Printf("heartbeat from %v", req.NodeId)
     mu.Lock()
     numQueuedTasks := req.QueuedTasks
-    if (req.RunningTasks == 10) {
+    if (req.RunningTasks == MAX_CONCURRENT_TASKS) {
         numQueuedTasks = numQueuedTasks + 1 // also need to wait for something currently running to finish
     }
 
-    s.status[req.NodeId] = HeartbeatEntry{numRunningTasks: req.RunningTasks, numQueuedTasks: numQueuedTasks, avgRunningTime: req.AvgRunningTime, avgBandwidth: req.AvgBandwidth}
+    s.status[req.NodeId] = HeartbeatEntry{timeReceived: time.Now(), numRunningTasks: req.RunningTasks, numQueuedTasks: numQueuedTasks, avgRunningTime: req.AvgRunningTime, avgBandwidth: req.AvgBandwidth}
     mu.Unlock()
     return &pb.StatusResponse{Success: true}, nil
+}
+
+func (s *server) LiveNodesHeartbeat(ctx context.Context) (error) {
+    ctx = context.Background()
+    for {
+        s.SendLiveNodes(ctx)
+        time.Sleep(HEARTBEAT_WAIT)
+    }
+    return nil
+
+}
+
+func(s *server) SendLiveNodes(ctx context.Context) (error) {
+    liveNodes := make(map[uint64]bool)
+    mu.RLock()
+    for uid, heartbeat := range s.status {
+        liveNodes[uid] =  time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT
+    }
+    mu.RUnlock()
+    // LocalLog("sending RegisterLiveNodes() call now")
+    // go func() {
+    //     if _, err := s.gcsClient.RegisterLiveNodes(ctx, &pb.LiveNodesRequest{LiveNodes: liveNodes}); err != nil {
+    //         LocalLog("Error registering live nodes: %v", err)
+    //     }
+    // }()
+    s.gcsClient.RegisterLiveNodes(ctx, &pb.LiveNodesRequest{LiveNodes: liveNodes})
+    return nil
 }
 
 func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) (*pb.StatusResponse, error) {
@@ -135,15 +155,12 @@ func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) 
     defer conn.Close()
 
     workerClient := pb.NewWorkerClient(conn)
-
-    log.Printf("gonna call Run() now")
-
-    // Example of creating a context with a timeout
-    // For some reason this custom context is necessary... ¯\_(ツ)_/¯
-    customCtx, cancel := context.WithTimeout(context.Background(), time.Hour)
-    defer cancel()
-
-    output_result, err := workerClient.Run(customCtx, &pb.RunRequest{Uid: req.Uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
+    LocalLog("Contacted the worker")
+    // if req.NewObject {
+    LocalLog("registering this as a generating node now.")
+    s.gcsClient.RegisterGenerating(ctx, &pb.GeneratingRequest{Uid: req.Uid, NodeId: node_id})
+    // }
+    output_result, err := workerClient.Run(ctx, &pb.RunRequest{Uid: req.Uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
     if err != nil || !output_result.Success {
         log.Fatalf(fmt.Sprintf("global scheduler failed to contact node %d. Err: %v", node_id, err))
     }
@@ -183,7 +200,25 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
             }
         }
 
-        for loc, bytes := range locationToBytes {
+        // Collect keys from the map
+        keys := make([]uint64, 0, len(s.status))
+        for id := range s.status {
+            keys = append(keys, id)
+        }
+
+        // Shuffle the keys
+        rand.Shuffle(len(keys), func(i, j int) {
+            keys[i], keys[j] = keys[j], keys[i]
+        })
+
+        for _, loc := range keys {
+
+        // for loc, bytes := range locationToBytes {
+            bytes := locationToBytes[loc]
+            // skip dead nodes
+            if heartbeat, _ := s.status[loc]; !(time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT) {
+                continue
+            }
             mu.RLock()
             queueingTime := float32(s.status[loc].numQueuedTasks) * s.status[loc].avgRunningTime
             transferTime := float32(total - bytes) / s.status[loc].avgBandwidth
@@ -216,6 +251,10 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
 
         for _, id := range keys {
             heartbeat := s.status[id]
+            if !(time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT) {
+                continue
+            }
+
             log.Printf("worker = %v; queued time = %v", id, float32(heartbeat.numQueuedTasks)*heartbeat.avgRunningTime)
             if float32(heartbeat.numQueuedTasks)*heartbeat.avgRunningTime < minTime {
                 minId = id

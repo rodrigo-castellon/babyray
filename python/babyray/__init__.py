@@ -87,7 +87,7 @@ class Future:
                 rayclient_pb2.GetRequest(uid=self.uid, copy=True, cache=cache)
             )
 
-            print(f"reading from shared memory: {self.uid}, {response.size}")
+            # print(f"reading from shared memory: {self.uid}, {response.size}")
 
             bytes_ = read_shared_memory(self.uid, response.size)
 
@@ -146,6 +146,15 @@ class RemoteFunction:
                     localityFlag=self.locality_flag,
                 )
             ).uid
+
+            # uid = local_scheduler_gRPC.Schedule(
+            #     rayclient_pb2.ScheduleRequest(
+            #         name=self.name,
+            #         args=pickle.dumps(args),
+            #         kwargs=pickle.dumps(kwargs),
+            #         uids=arg_uids,
+            #     )
+            # ).uid
             return Future(uid)
 
     def register(self):
@@ -181,6 +190,11 @@ def get(futures, copy=True, cache=True, pickle_load=True):
             get(future, copy=copy, cache=cache, pickle_load=pickle_load)
             for future in futures
         ]
+    elif isinstance(futures, tuple):
+        return tuple(
+            get(future, copy=copy, cache=cache, pickle_load=pickle_load)
+            for future in futures
+        )
     elif isinstance(futures, dict):
         return {
             k: get(future, copy=copy, cache=cache, pickle_load=pickle_load)
@@ -192,6 +206,46 @@ def get(futures, copy=True, cache=True, pickle_load=True):
             if hasattr(futures, "get")
             else futures
         )
+
+
+def kill_node(node_id):
+    # kill node node_id
+
+    local_scheduler_channel = grpc.insecure_channel(
+        f"node{node_id}:{str(LOCAL_SCHEDULER_PORT)}"
+    )
+    node_local_scheduler_gRPC = rayclient_pb2_grpc.LocalSchedulerStub(
+        local_scheduler_channel
+    )
+
+    worker_channel = grpc.insecure_channel(
+        f"node{node_id}:{str(LOCAL_WORKER_PORT_START)}"
+    )
+
+    node_worker_gRPC = rayclient_pb2_grpc.WorkerStub(worker_channel)
+
+    node_local_scheduler_gRPC.KillServer(rayclient_pb2.StatusResponse())
+    node_worker_gRPC.KillServer(rayclient_pb2.StatusResponse())
+
+
+def revive_node(node_id):
+    # revive node node_id
+
+    local_scheduler_channel = grpc.insecure_channel(
+        f"node{node_id}:{str(LOCAL_SCHEDULER_PORT)}"
+    )
+    node_local_scheduler_gRPC = rayclient_pb2_grpc.LocalSchedulerStub(
+        local_scheduler_channel
+    )
+
+    worker_channel = grpc.insecure_channel(
+        f"node{node_id}:{str(LOCAL_WORKER_PORT_START)}"
+    )
+
+    node_worker_gRPC = rayclient_pb2_grpc.WorkerStub(worker_channel)
+
+    node_local_scheduler_gRPC.ReviveServer(rayclient_pb2.StatusResponse())
+    node_worker_gRPC.ReviveServer(rayclient_pb2.StatusResponse())
 
 
 def demo():

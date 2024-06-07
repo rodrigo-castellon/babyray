@@ -22,6 +22,7 @@ message StatusResponse {
 service GlobalScheduler {
   rpc Schedule(GlobalScheduleRequest) returns (StatusResponse);
   rpc Heartbeat(HeartbeatRequest) returns (StatusResponse); 
+ 
 }
 
 message GlobalScheduleRequest {
@@ -29,11 +30,12 @@ message GlobalScheduleRequest {
   uint64 name = 2;
   bytes args = 3;
   bytes kwargs = 4;
-  repeated uint64 uids = 5;
+  repeated uint64 uids = 5; 
+  bool newObject = 6; 
   // optional but in case the client wants to specify a node ID
   // to send a computation to
-  uint64 nodeId = 6;
-  bool localityFlag = 7;
+  uint64 nodeId = 7;
+  bool localityFlag = 8;
 }
 
 message HeartbeatRequest {
@@ -45,11 +47,14 @@ message HeartbeatRequest {
 
 }
 
+
 /* END GLOBAL SCHEDULER */
 
 /* START WORKER NODE LOCAL SCHEDULER */
 service LocalScheduler {
   rpc Schedule(ScheduleRequest) returns (ScheduleResponse);
+  rpc KillServer(StatusResponse) returns (StatusResponse);
+  rpc ReviveServer(StatusResponse) returns (StatusResponse); 
 }
 
 message ScheduleRequest {
@@ -130,6 +135,8 @@ message CopyResponse {
 service Worker {
   rpc Run(RunRequest) returns (StatusResponse);
   rpc WorkerStatus(StatusResponse) returns (WorkerStatusResponse);
+  rpc KillServer(StatusResponse) returns (StatusResponse);
+  rpc ReviveServer(StatusResponse) returns (StatusResponse);
 }
 
 message RunRequest {
@@ -152,6 +159,9 @@ service GCSObj {
   rpc NotifyOwns(NotifyOwnsRequest) returns (StatusResponse);
   rpc RequestLocation(RequestLocationRequest) returns (RequestLocationResponse);
   rpc GetObjectLocations(ObjectLocationsRequest) returns (ObjectLocationsResponse); 
+  rpc RegisterLineage(GlobalScheduleRequest) returns (StatusResponse); 
+  rpc RegisterLiveNodes(LiveNodesRequest) returns (StatusResponse); 
+  rpc RegisterGenerating(GeneratingRequest) returns (StatusResponse); 
 }
 
 message NotifyOwnsRequest {
@@ -178,12 +188,22 @@ message LocationByteTuple {
 message ObjectLocationsResponse {
   map<uint64, LocationByteTuple> locations = 1; 
 }
+message LiveNodesRequest {
+  map<uint64, bool> liveNodes = 1; 
+}
+
+message GeneratingRequest {
+  uint64 uid = 1; 
+  uint64 nodeId = 2; 
+}
+
 /* END GCS OBJECT TABLE */
 
 /* START GCS FUNCTION TABLE */
 service GCSFunc {
   rpc RegisterFunc(RegisterRequest) returns (RegisterResponse);
   rpc FetchFunc(FetchRequest) returns (FetchResponse);
+
 }
 
 message RegisterRequest {

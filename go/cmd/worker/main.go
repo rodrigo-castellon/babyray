@@ -14,6 +14,7 @@ import (
     "encoding/base64"
     "sync"
     "time"
+    "runtime"
 
     "google.golang.org/grpc"
     pb "github.com/rodrigo-castellon/babyray/pkg"
@@ -75,6 +76,7 @@ func main() {
     pb.RegisterWorkerServer(s, &workerServer{
         funcClient: funcClient,
         storeClient: storeClient,
+        alive: true,
     })
 
     LocalLog("worker server listening at %v", lis.Addr())
@@ -87,6 +89,7 @@ type workerServer struct {
     pb.UnimplementedWorkerServer
     funcClient FuncClient
     storeClient StoreClient
+    alive bool
 }
 
 type FuncClient interface {
@@ -132,6 +135,7 @@ func executeFunction(f []byte, args []byte, kwargs []byte) ([]byte, error) {
     cmd.Stdin = inputBuffer
 
     // Capture the output
+    LocalLog("Running the function here yo")
     cmdExecStartTime := time.Now()
     output, err := cmd.Output()
     if err != nil {
@@ -160,6 +164,7 @@ func executeFunction(f []byte, args []byte, kwargs []byte) ([]byte, error) {
 // run executes the function by fetching it, running it, and storing the result.
 func (s *workerServer) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusResponse, error) {
     LocalLog("in Run() rn")
+    defer LocalLog("Finished running")
     mu.Lock()
     numQueuedTasks++
     mu.Unlock()
@@ -184,6 +189,7 @@ func (s *workerServer) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusR
     funcResponse, err := s.funcClient.FetchFunc(ctx, &pb.FetchRequest{Name: req.Name})
     LocalLog("the err was %v", err)
     if err != nil {
+        LocalLog("Failed to hit func table: %v", err)
         return nil, err
     }
 
@@ -191,16 +197,24 @@ func (s *workerServer) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusR
     output, err := executeFunction(funcResponse.SerializedFunc, req.Args, req.Kwargs)
     LocalLog("Executed!")
     if err != nil {
+        LocalLog("failed to exec func %v", err)
         return nil, err
     }
 
-    LocalLog("gonna store now")
+    LocalLog("finished executing function")
+
+    LocalLog("s.alive is %v", s.alive)
+
+    if (!s.alive) {
+        LocalLog("Worker is not alive, exiting...")
+        runtime.Goexit()
+    }
+
     _, err = s.storeClient.Store(ctx, &pb.StoreRequest{Uid: req.Uid, ObjectBytes: output})
     if err != nil {
-        LocalLog("store client returned an err: %v", err)
+        LocalLog("failed to hit gcs %v", err)
         return nil, err
     }
-    LocalLog("stored...")
 
     runningTime := float32(time.Since(start).Seconds())
     mu.Lock()
@@ -210,10 +224,22 @@ func (s *workerServer) Run(ctx context.Context, req *pb.RunRequest) (*pb.StatusR
     return &pb.StatusResponse{Success: true}, nil
 }
 
+func (s *workerServer) KillServer(ctx context.Context, req *pb.StatusResponse) (*pb.StatusResponse, error) {
+	LocalLog("GOT KILLED!")
+	s.alive = false
+    LocalLog("s.alive is now: %v", s.alive)
+	return &pb.StatusResponse{Success: true}, nil
+}
+
+func (s *workerServer) ReviveServer(ctx context.Context, req *pb.StatusResponse) (*pb.StatusResponse, error) {
+	s.alive = true
+	return &pb.StatusResponse{Success: true}, nil
+}
+
 func (s *workerServer) WorkerStatus(ctx context.Context, req *pb.StatusResponse) (*pb.WorkerStatusResponse, error) {
     mu.Lock()
     defer mu.Unlock()
-    // log.Printf("num queued tasks is currently: %v", numQueuedTasks)
+    //log.Printf("num queued tasks is currently: %v", numQueuedTasks)
     return &pb.WorkerStatusResponse{
         NumRunningTasks:    numRunningTasks,
         NumQueuedTasks:     numQueuedTasks,
