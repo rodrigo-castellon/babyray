@@ -67,7 +67,7 @@ func main() {
 	ctx := context.Background()
 	go server.SendHeartbeats(ctx, globalSchedulerClient, uint64(nodeId))
 
-	LocalLog("localsched server listening at %v", lis.Addr())
+	// LocalLog("localsched server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
@@ -90,23 +90,23 @@ type server struct {
 
 func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.ScheduleResponse, error) {
 
-	var worker_id int
-	worker_id, _ = strconv.Atoi(os.Getenv("NODE_ID"))
+	// var worker_id int
+	// worker_id, _ = strconv.Atoi(os.Getenv("NODE_ID"))
     uid := rand.Uint64()
 
 	_ , err := s.gcsClient.RegisterLineage(ctx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs, Uids: req.Uids})
 	if err != nil {
-		LocalLog("cant hit gcs: %v", err)
+		// LocalLog("cant hit gcs: %v", err)
 	}
 
 	// custom behavior if the client itself specifies where we should send this
 	// computation
 	if (req.NodeId != 0) {
-		LocalLog("Doing something special with req.NodeId = %v", req.NodeId)
+		// LocalLog("Doing something special with req.NodeId = %v", req.NodeId)
 		go func() {
             _, err := s.globalSchedulerClient.Schedule(s.globalCtx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs, Uids: req.Uids, NewObject: true, NodeId: req.NodeId})
             if err != nil {
-                LocalLog("cannot contact global scheduler")
+                // LocalLog("cannot contact global scheduler")
             } else {
 				// LocalLog("Just ran it on global!")
 			}
@@ -114,29 +114,29 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 		return &pb.ScheduleResponse{Uid: uid}, nil
 	}
 
-	LocalLog("asking about the worker status")
+	// LocalLog("asking about the worker status")
 	scheduleLocally, _ := s.workerClient.WorkerStatus(ctx, &pb.StatusResponse{})
-	LocalLog("heard back from the worker status: %v", scheduleLocally.NumRunningTasks)
+	// LocalLog("heard back from the worker status: %v", scheduleLocally.NumRunningTasks)
 
 	if scheduleLocally.NumRunningTasks < MAX_TASKS {
-		LocalLog("Just running locally")
+		// LocalLog("Just running locally")
 		go func() {
 			s.gcsClient.RegisterGenerating(ctx, &pb.GeneratingRequest{Uid: uid, NodeId: s.localNodeID})
             _, err := s.workerClient.Run(s.globalCtx, &pb.RunRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
             if err != nil {
-                LocalLog("cannot contact worker %d: %v", worker_id, err)
+                // LocalLog("cannot contact worker %d: %v", worker_id, err)
             } else {
                 // LocalLog("Just ran it!")
             }
         }()
 		
 	} else {
-		LocalLog("contacting global scheduler")
+		// LocalLog("contacting global scheduler")
 		go func() {
-			LocalLog("THE REQ UIDS AT LOCAL SCHEDULER ARE %v", req.Uids)
+			// LocalLog("THE REQ UIDS AT LOCAL SCHEDULER ARE %v", req.Uids)
             _, err := s.globalSchedulerClient.Schedule(s.globalCtx, &pb.GlobalScheduleRequest{Uid: uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs, Uids: req.Uids, NewObject: true, LocalityFlag: req.LocalityFlag})
             if err != nil {
-                LocalLog("cannot contact global scheduler")
+                // LocalLog("cannot contact global scheduler")
             } else {
 				// LocalLog("Just ran it on global!")
 			}
@@ -148,7 +148,7 @@ func (s *server) Schedule(ctx context.Context, req *pb.ScheduleRequest) (*pb.Sch
 }
 
 func (s *server) KillServer(ctx context.Context, req *pb.StatusResponse) (*pb.StatusResponse, error) {
-	LocalLog("GOT KILLED!")
+	// LocalLog("GOT KILLED!")
 	s.alive = false
 	return &pb.StatusResponse{Success: true}, nil
 }
@@ -186,8 +186,8 @@ func (s *server) SendHeartbeats(ctx context.Context, globalSchedulerClient pb.Gl
 		for {
 			status, err = workerClient.WorkerStatus(ctx, &pb.StatusResponse{})
 			if err != nil {
-				LocalLog("got error from WorkerStatus(): %v", err)
-				LocalLog("retrying in %v seconds", backoff)
+				// LocalLog("got error from WorkerStatus(): %v", err)
+				// LocalLog("retrying in %v seconds", backoff)
 				time.Sleep(time.Duration(backoff) * time.Second)
 				backoff *= 2
 				if backoff > 32 {
@@ -206,8 +206,8 @@ func (s *server) SendHeartbeats(ctx context.Context, globalSchedulerClient pb.Gl
 		for {
 			avgBandwidth, err  = lobsClient.AvgBandwidth(ctx, &pb.StatusResponse{})
 			if err != nil {
-				LocalLog("got error from AvgBand(): %v", err)
-				LocalLog("retrying in %v seconds", backoff)
+				// LocalLog("got error from AvgBand(): %v", err)
+				// LocalLog("retrying in %v seconds", backoff)
 				time.Sleep(time.Duration(backoff) * time.Second)
 				backoff *= 2
 				if backoff > 32 {

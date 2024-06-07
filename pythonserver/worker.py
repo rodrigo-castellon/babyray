@@ -100,16 +100,16 @@ class WorkerServer(rayclient_pb2_grpc.WorkerServicer):
         if not self.alive:
             block_forever()
 
-        local_log("in Run() rn")
+        # local_log("in Run() rn")
 
         with mu:
-            local_log("queueing up")
+            # local_log("queueing up")
             num_queued_tasks += 1
-            local_log("the number of queued tasks is", num_queued_tasks)
+            # local_log("the number of queued tasks is", num_queued_tasks)
 
-        local_log("now waiting for the sema, whose value is:", semaphore.get_value())
+        # local_log("now waiting for the sema, whose value is:", semaphore.get_value())
         with semaphore:
-            local_log("got through the semaphore")
+            # local_log("got through the semaphore")
             with mu:
                 num_queued_tasks -= 1
                 num_running_tasks += 1
@@ -130,18 +130,18 @@ class WorkerServer(rayclient_pb2_grpc.WorkerServicer):
                     block_forever()
 
                 output_pickled = pickle.dumps(output)
-                local_log("Executed!")
+                # local_log("Executed!")
 
-                local_log("gonna store now")
+                # local_log("gonna store now")
                 lobs_gRPC.Store(
                     rayclient_pb2.StoreRequest(
                         uid=request.uid, objectBytes=output_pickled
                     )
                 )
-                local_log("stored...")
+                # local_log("stored...")
 
                 running_time = time.time() - start
-                local_log(f"took this many seconds: {running_time:.3g}")
+                # local_log(f"took this many seconds: {running_time:.3g}")
 
                 with mu:
                     average_running_time = (
@@ -168,12 +168,12 @@ class WorkerServer(rayclient_pb2_grpc.WorkerServicer):
 
     def KillServer(self, request, context):
         # global task_threads
-        local_log("GOT KILLED")
+        # local_log("GOT KILLED")
         self.alive = False
         return rayclient_pb2.StatusResponse(success=True)
 
     def ReviveServer(self, request, context):
-        local_log("GOT REVIVED!")
+        # local_log("GOT REVIVED!")
         self.alive = True
         return rayclient_pb2.StatusResponse(success=True)
 

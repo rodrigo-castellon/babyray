@@ -58,7 +58,7 @@ func main() {
     serverInstance := &server{gcsClient: pb.NewGCSObjClient(conn), status: make(map[uint64]HeartbeatEntry)}
     pb.RegisterGlobalSchedulerServer(s, serverInstance)
     defer conn.Close()
-    log.Printf("server listening at %v", lis.Addr())
+  //  log.Printf("server listening at %v", lis.Addr())
     go serverInstance.LiveNodesHeartbeat(ctx)
     if err := s.Serve(lis); err != nil {
        log.Fatalf("failed to serve: %v", err)
@@ -134,9 +134,9 @@ func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) 
     //     localityFlag = true
     // }
 
-    log.Printf("locality aware? it's: %v", localityFlag)
+    // log.Printf("locality aware? it's: %v", localityFlag)
 
-    log.Printf("THE REQ UIDS ARE = %v", req.Uids)
+    // log.Printf("THE REQ UIDS ARE = %v", req.Uids)
 
     // gives us back the node id of the worker
     node_id := req.NodeId
@@ -144,20 +144,20 @@ func (s *server) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest ) 
         node_id = getBestWorker(ctx, s, localityFlag, req.Uids)
     }
 
-    log.Printf("best worker was node_id = %v", node_id)
+    // log.Printf("best worker was node_id = %v", node_id)
     workerAddress := fmt.Sprintf("%s%d:%d", cfg.DNS.NodePrefix, node_id, cfg.Ports.LocalWorkerStart)
 
     conn, err := grpc.Dial(workerAddress, util.GetDialOptions()...)
     if err != nil {
-        log.Printf("failed to connect to %s: %v", workerAddress, err)
+        // log.Printf("failed to connect to %s: %v", workerAddress, err)
         return nil, err
     }
     defer conn.Close()
 
     workerClient := pb.NewWorkerClient(conn)
-    LocalLog("Contacted the worker")
+    // LocalLog("Contacted the worker")
     // if req.NewObject {
-    LocalLog("registering this as a generating node now.")
+    // LocalLog("registering this as a generating node now.")
     s.gcsClient.RegisterGenerating(ctx, &pb.GeneratingRequest{Uid: req.Uid, NodeId: node_id})
     // }
     output_result, err := workerClient.Run(ctx, &pb.RunRequest{Uid: req.Uid, Name: req.Name, Args: req.Args, Kwargs: req.Kwargs})
@@ -175,8 +175,8 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
 
     minTime = math.MaxFloat32
     if (localityFlag && len(uids) > 0) {
-        log.Printf("LOCALITY FLAG IS ON!")
-        log.Printf("ASKING THE GCS FOR THESE OBJECTS: %v", uids)
+        // log.Printf("LOCALITY FLAG IS ON!")
+        // log.Printf("ASKING THE GCS FOR THESE OBJECTS: %v", uids)
         locationsResp, err := s.gcsClient.GetObjectLocations(ctx, &pb.ObjectLocationsRequest{Args: uids})
         if err != nil {
             log.Fatalf("Failed to ask gcs for object locations: %v", err)
@@ -193,7 +193,7 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
         total = 0
         for _, val := range locationsResp.Locations {
             locs := val.Locations
-            log.Printf("the locations resp val = %v", val)
+            // log.Printf("the locations resp val = %v", val)
             for _, loc := range locs {
                 locationToBytes[uint64(loc)] += val.Bytes
                 total += val.Bytes
@@ -224,7 +224,7 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
             transferTime := float32(total - bytes) / s.status[loc].avgBandwidth
             mu.RUnlock()
 
-            log.Printf("worker = %v; queueing and transfer = %v, %v", loc, queueingTime, transferTime)
+            // log.Printf("worker = %v; queueing and transfer = %v, %v", loc, queueingTime, transferTime)
 
             waitingTime := queueingTime + transferTime
             if waitingTime < minTime {
@@ -234,7 +234,7 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
             }
         }
     } else {
-        log.Printf("doing the statuses rn")
+        // log.Printf("doing the statuses rn")
         // TODO: make iteration order random for maximum fairness
         mu.RLock()
 
@@ -255,7 +255,7 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
                 continue
             }
 
-            log.Printf("worker = %v; queued time = %v", id, float32(heartbeat.numQueuedTasks)*heartbeat.avgRunningTime)
+            // log.Printf("worker = %v; queued time = %v", id, float32(heartbeat.numQueuedTasks)*heartbeat.avgRunningTime)
             if float32(heartbeat.numQueuedTasks)*heartbeat.avgRunningTime < minTime {
                 minId = id
                 minTime = float32(heartbeat.numQueuedTasks) * heartbeat.avgRunningTime

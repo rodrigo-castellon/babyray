@@ -202,7 +202,7 @@ func TestSendCallback_Hit(t *testing.T) {
 	s := grpc.NewServer()
 	mock := NewMockLocalObjStoreServer(1)
 	pb.RegisterLocalObjStoreServer(s, mock)
-	log.Printf("server listening at %v", lis.Addr())
+	// log.Printf("server listening at %v", lis.Addr())
 
 	// Run the server in a goroutine
 	go func() {

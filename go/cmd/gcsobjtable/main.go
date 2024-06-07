@@ -48,7 +48,7 @@ func main() {
 	_ = lis
 	s := grpc.NewServer(util.GetServerOptions()...)
 	pb.RegisterGCSObjServer(s, NewGCSObjServer())
-	log.Printf("server listening at %v", lis.Addr())
+	//log.Printf("server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
@@ -132,7 +132,7 @@ func (s *GCSObjServer) sendCallback(clientAddress string, uid uint64, nodeId uin
 	conn, err := grpc.Dial(clientAddress, util.GetDialOptions()...)
 	if err != nil {
 		// Log the error instead of returning it
-		log.Printf("Failed to connect back to client at %s: %v", clientAddress, err)
+	//	log.Printf("Failed to connect back to client at %s: %v", clientAddress, err)
 		return
 	}
 	defer conn.Close() // TODO: remove in some eventual universe
@@ -145,7 +145,7 @@ func (s *GCSObjServer) sendCallback(clientAddress string, uid uint64, nodeId uin
 	// Call LocationFound and handle any potential error
 	_, err = localObjStoreClient.LocationFound(ctx, &pb.LocationFoundCallback{Uid: uid, Location: nodeId})
 	if err != nil {
-		log.Printf("Failed to send LocationFound callback for UID %d to client at %s: %v", uid, clientAddress, err)
+	//	log.Printf("Failed to send LocationFound callback for UID %d to client at %s: %v", uid, clientAddress, err)
 	}
 }
 
@@ -153,7 +153,7 @@ func (s *GCSObjServer) NotifyOwns(ctx context.Context, req *pb.NotifyOwnsRequest
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Printf("WAS JUST NOTIFYOWNS()ED")
+	//log.Printf("WAS JUST NOTIFYOWNS()ED")
 
 	uid, nodeId := req.Uid, req.NodeId
 	delete(s.generating, uid)
@@ -202,10 +202,10 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 	clientAddress := net.JoinHostPort(host, clientPort)
 
 	uid := req.Uid
-	LocalLog("Starting get Node ID")
+	// LocalLog("Starting get Node ID")
 	nodeId := s.getNodeId(uid)
-	LocalLog("finished get node ID")
-	LocalLog("node id = %v", nodeId)
+	// LocalLog("finished get node ID")
+	// LocalLog("node id = %v", nodeId)
 	if nodeId == nil {
 		// Add client to waiting list
 		if _, waiting := s.waitlist[uid]; !waiting {
@@ -312,11 +312,11 @@ func (s *GCSObjServer) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesR
 	}
 
 	for _, uid := range regenerateList {
-		LocalLog("uid = %v, rescheduling", uid)
+		// LocalLog("uid = %v, rescheduling", uid)
 		go func() {
 			_, err := s.globalSchedulerClient.Schedule(s.globalCtx, s.lineage[uid])
 			if err != nil {
-				LocalLog("cannot contact global scheduler, err = %v", err)
+				// LocalLog("cannot contact global scheduler, err = %v", err)
 			} else {
 				// LocalLog("Just ran it on global!")
 			}
@@ -326,7 +326,7 @@ func (s *GCSObjServer) RegisterLiveNodes(ctx context.Context, req *pb.LiveNodesR
 }
 
 func (s *GCSObjServer) RegisterGenerating(ctx context.Context, req *pb.GeneratingRequest) (*pb.StatusResponse, error) {
-	LocalLog("trying to register node %v as a generating node", req.NodeId)
+	// LocalLog("trying to register node %v as a generating node", req.NodeId)
 	// if id, ok := s.generating[req.Uid]; ok {
 	// 	return &pb.StatusResponse{Success: false}, status.Error(codes.Internal, fmt.Sprintf("node %d is already generating uid %d", id, req.Uid))
 	// }
