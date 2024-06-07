@@ -13,8 +13,33 @@ from . import rayclient_pb2_grpc
 MAX_CONCURRENT_TASKS = 10
 EMA_PARAM = 0.9
 
+
+class DebugSemaphore(threading.Semaphore):
+    def __init__(self, value=1):
+        super().__init__(value)
+        self._value = value
+        self._value_lock = threading.Lock()
+
+    def acquire(self, blocking=True, timeout=None):
+        with self._value_lock:
+            if super().acquire(blocking, timeout):
+                self._value -= 1
+                return True
+            return False
+
+    def release(self):
+        with self._value_lock:
+            self._value += 1
+            super().release()
+
+    def get_value(self):
+        with self._value_lock:
+            return self._value
+
+
 # Global variables
-semaphore = threading.Semaphore(MAX_CONCURRENT_TASKS)
+# semaphore = threading.Semaphore(MAX_CONCURRENT_TASKS)
+semaphore = DebugSemaphore(MAX_CONCURRENT_TASKS)
 num_running_tasks = 0
 num_queued_tasks = 0
 average_running_time = 0.1
@@ -78,9 +103,13 @@ class WorkerServer(rayclient_pb2_grpc.WorkerServicer):
         local_log("in Run() rn")
 
         with mu:
+            local_log("queueing up")
             num_queued_tasks += 1
+            local_log("the number of queued tasks is", num_queued_tasks)
 
+        local_log("now waiting for the sema, whose value is:", semaphore.get_value())
         with semaphore:
+            local_log("got through the semaphore")
             with mu:
                 num_queued_tasks -= 1
                 num_running_tasks += 1

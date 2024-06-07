@@ -60,6 +60,7 @@ type GCSObjServer struct {
 	objectLocations map[uint64][]uint64 // object uid -> list of nodeIds as uint64
 	waitlist        map[uint64][]string // object uid -> list of IP addresses as string
 	mu              sync.Mutex          // lock should be used for both objectLocations and waitlist
+	lineageMu       sync.RWMutex        // lock should be used for s.lineage
 	objectSizes     map[uint64]uint64
 	lineage			map[uint64]*pb.GlobalScheduleRequest 
 	globalSchedulerClient SchedulerClient
@@ -211,16 +212,7 @@ func (s *GCSObjServer) RequestLocation(ctx context.Context, req *pb.RequestLocat
 			s.waitlist[uid] = []string{} // Initialize slice if it doesn't exist
 		}
 		s.waitlist[uid] = append(s.waitlist[uid], clientAddress)
-		
-		// if exists {
-		// 	_, err := s.globalSchedulerClient.Schedule(ctx, s.lineage[uid])
-		// 	if err != nil {
-		// 		log.Fatalf("unable to contact global scheduler")
-		// 	}
-		// } else {
-		// 	//log.Fatalf("asking for uid %d that we don't know exists", uid)
-		//}
-		//s.waitlist[uid] = append(s.waitlist[uid], clientAddress)
+
 		// Reply to this gRPC request
 		return &pb.RequestLocationResponse{
 			ImmediatelyFound: false,
@@ -253,10 +245,15 @@ func (s *GCSObjServer) GetObjectLocations(ctx context.Context, req *pb.ObjectLoc
 }
 
 func (s *GCSObjServer) RegisterLineage(ctx context.Context, req *pb.GlobalScheduleRequest) (*pb.StatusResponse, error) {
+	s.lineageMu.RLock()
 	if _, ok := s.lineage[req.Uid]; ok {
+		s.lineageMu.RUnlock()
 		return &pb.StatusResponse{Success: false}, status.Error(codes.Internal, "tried to register duplicate lineage")
 	}
+	s.lineageMu.RUnlock()
+	s.lineageMu.Lock()
 	s.lineage[req.Uid] = req
+	s.lineageMu.Unlock()
 	return &pb.StatusResponse{Success: false}, nil
 }
 

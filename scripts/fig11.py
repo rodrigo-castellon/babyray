@@ -5,29 +5,57 @@ import time
 
 from utils import *
 
+# (pseudo)code for figure 11a
 
 init()
 
+DELAY = 0.1  # 100ms, per the original paper
+BEGIN_INTERVAL = 50  # 50s, per the original paper
+SECOND_INTERVAL = 40  # ~40s, per the original paper
+THIRD_INTERVAL = 120  # ~120s, per the original paper
 
-# client-side code
 
-
-# ask for a node that is not ourself
 @remote
-def f():
-    time.sleep(5)
+def firstfunc():
+    # time.sleep(DELAY)
     return 0
 
 
-f.set_node(3)
+def create_chain(n):
 
-fut = f.remote()
+    funcs = [firstfunc]
+    for i in range(80):
 
-time.sleep(2)
+        @remote
+        def func():
+            time.sleep(DELAY)
+            out = get(funcs[-1].remote())
+            print("out", out)
+            return out + 1
 
-kill_node(3)
+        funcs.append(func)
 
-# here: watch the docker compose logs to see if things go the way we expect
+    return funcs
 
-out = get(fut)
-log("out", out)
+
+funcs = create_chain(30)
+funcs2 = create_chain(30)
+
+# probably need to manually define all of these because Python issues
+
+
+out = funcs[-1].remote()
+out2 = funcs2[-1].remote()
+
+output = get((out, out2))
+
+print("the output was", output)
+# out = func1.remote()
+# keep eye on logs from here on out
+# time.sleep(BEGIN_INTERVAL)
+# kill_node(3)
+# time.sleep(SECOND_INTERVAL)
+# kill_node(4)
+# time.sleep(THIRD_INTERVAL)
+# revive_node(3)
+# revive_node(4)

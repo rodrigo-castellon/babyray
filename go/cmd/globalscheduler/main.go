@@ -28,6 +28,8 @@ const LIVE_NODE_TIMEOUT time.Duration = 400 * time.Millisecond
 const HEARTBEAT_WAIT = 100 * time.Millisecond
 var mu sync.RWMutex
 
+const MAX_CONCURRENT_TASKS = 10
+
 // LocalLog formats the message and logs it with a specific prefix
 func LocalLog(format string, v ...interface{}) {
 	var logMessage string
@@ -89,11 +91,11 @@ func (s *server) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest ) (*pb.
     //log.Printf("heartbeat from %v", req.NodeId)
     mu.Lock()
     numQueuedTasks := req.QueuedTasks
-    if (req.RunningTasks == 10) {
+    if (req.RunningTasks == MAX_CONCURRENT_TASKS) {
         numQueuedTasks = numQueuedTasks + 1 // also need to wait for something currently running to finish
     }
 
-    s.status[req.NodeId] = HeartbeatEntry{timeReceived: time.Now(), numRunningTasks: req.RunningTasks, numQueuedTasks: req.QueuedTasks, avgRunningTime: req.AvgRunningTime, avgBandwidth: req.AvgBandwidth}
+    s.status[req.NodeId] = HeartbeatEntry{timeReceived: time.Now(), numRunningTasks: req.RunningTasks, numQueuedTasks: numQueuedTasks, avgRunningTime: req.AvgRunningTime, avgBandwidth: req.AvgBandwidth}
     mu.Unlock()
     return &pb.StatusResponse{Success: true}, nil
 }
@@ -110,10 +112,11 @@ func (s *server) LiveNodesHeartbeat(ctx context.Context) (error) {
 
 func(s *server) SendLiveNodes(ctx context.Context) (error) {
     liveNodes := make(map[uint64]bool)
+    mu.RLock()
     for uid, heartbeat := range s.status {
         liveNodes[uid] =  time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT
-       
     }
+    mu.RUnlock()
     // LocalLog("sending RegisterLiveNodes() call now")
     // go func() {
     //     if _, err := s.gcsClient.RegisterLiveNodes(ctx, &pb.LiveNodesRequest{LiveNodes: liveNodes}); err != nil {
@@ -197,7 +200,21 @@ func getBestWorker(ctx context.Context, s *server, localityFlag bool, uids []uin
             }
         }
 
-        for loc, bytes := range locationToBytes {
+        // Collect keys from the map
+        keys := make([]uint64, 0, len(s.status))
+        for id := range s.status {
+            keys = append(keys, id)
+        }
+
+        // Shuffle the keys
+        rand.Shuffle(len(keys), func(i, j int) {
+            keys[i], keys[j] = keys[j], keys[i]
+        })
+
+        for _, loc := range keys {
+
+        // for loc, bytes := range locationToBytes {
+            bytes := locationToBytes[loc]
             // skip dead nodes
             if heartbeat, _ := s.status[loc]; !(time.Since(heartbeat.timeReceived) < LIVE_NODE_TIMEOUT) {
                 continue

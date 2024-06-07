@@ -87,7 +87,7 @@ class Future:
                 rayclient_pb2.GetRequest(uid=self.uid, copy=True, cache=cache)
             )
 
-            print(f"reading from shared memory: {self.uid}, {response.size}")
+            # print(f"reading from shared memory: {self.uid}, {response.size}")
 
             bytes_ = read_shared_memory(self.uid, response.size)
 
@@ -190,6 +190,11 @@ def get(futures, copy=True, cache=True, pickle_load=True):
             get(future, copy=copy, cache=cache, pickle_load=pickle_load)
             for future in futures
         ]
+    elif isinstance(futures, tuple):
+        return tuple(
+            get(future, copy=copy, cache=cache, pickle_load=pickle_load)
+            for future in futures
+        )
     elif isinstance(futures, dict):
         return {
             k: get(future, copy=copy, cache=cache, pickle_load=pickle_load)

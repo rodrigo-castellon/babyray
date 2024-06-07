@@ -165,7 +165,7 @@ def test_varying_task_durations():
 
     assert results == durations
 
-'''
+
 def test_high_concurrency():
     @remote
     def f(x):
@@ -177,6 +177,6 @@ def test_high_concurrency():
 
     assert results == [i * i for i in range(num_tasks)]
 
-'''
+
 if __name__ == "__main__":
     pytest.main()
