@@ -1,0 +1,314 @@
+worker1-1  | 2024/06/04 17:51:35.961 FIG10b: HELLO WORLD I AM ANGRY!
+worker1-1  | 2024/06/04 17:51:36.000 FIG10b: Starting tasks submission...
+worker1-1  | 2024/06/04 17:51:37.003 FIG10b: Memory usage without flush after 111 tasks: 1066.48046875 MB
+worker1-1  | 2024/06/04 17:51:38.0042024/06/04 17:51:38.005 FIG10b: Memory usage without flush after 225 tasks: 1080.74609375 MB
+worker1-1  | Executed!2024/06/04 17:51:39.009 FIG10b: Memory usage without flush after 341 tasks: 1081.58203125 MB
+worker1-1  | 2024/06/04 17:51:40.011 FIG10b: Memory usage without flush after 461 tasks: 1082.59765625 MB
+worker1-1  | 2024/06/04 17:51:41.024 FIG10b: Memory usage without flush after 575 tasks: 1087.3671875 MB
+worker1-1  |  FIG10b: Memory usage without flush after 686 tasks: 1092.6953125 MB
+worker1-1  |  FIG10b: Memory usage without flush after 801 tasks: 1094.02734375 MB
+worker1-1  | 2024/06/04 17:51:44.051 FIG10b: Memory usage without flush after 905 tasks: 1093.44921875 MB
+worker1-1  | 2024/06/04 17:51:45.053 FIG10b: Memory usage without flush after 1009 tasks: 1094.83984375 MB
+worker1-1  | 2024/06/04 17:51:46.054 FIG10b: Memory usage without flush after 1105 tasks: 1096.97265625 MB
+worker1-1  | 2024/06/04 17:51:47.062 FIG10b: Memory usage without flush after 1226 tasks: 1100.5546875 MB
+worker1-1  |  [worker]2024/06/04 17:51:48.063 FIG10b: Memory usage without flush after 1343 tasks: 1101.35546875 MB
+worker1-1  | 2024/06/04 17:51:49.071 FIG10b: Memory usage without flush after 1451 tasks: 1103.0859375 MB
+worker1-1  | 2024/06/04 17:51:50.074 FIG10b: Memory usage without flush after 1577 tasks: 1103.578125 MB
+worker1-1  | [worker] 2024/06/04 17:51:51.076 FIG10b: Memory usage without flush after 1696 tasks: 1104.5546875 MB
+worker1-1  | 2024/06/04 17:51:52.077 FIG10b: Memory usage without flush after 1803 tasks: 1105.09375 MB
+worker1-1  | 2024/06/04 17:51:53.079 FIG10b: Memory usage without flush after 1927 tasks: 1104.55078125 MB
+worker1-1  | [worker] 2024/06/04 17:51:54.079 FIG10b: Memory usage without flush after 2036 tasks: 1105.546875 MB
+worker1-1  | [worker] stored...2024/06/04 17:51:55.113 FIG10b: Memory usage without flush after 2151 tasks: 1110.0390625 MB
+worker1-1  | stored...2024/06/04 17:51:56.116 FIG10b: Memory usage without flush after 2238 tasks: 1110.578125 MB
+worker1-1  | 2024/06/04 17:51:57.119 FIG10b: Memory usage without flush after 2354 tasks: 1109.95703125 MB
+worker1-1  | 2024/06/04 17:51:58.1212024/06/04 17:51:58.121 FIG10b: Memory usage without flush after 2437 tasks: 1109.3125 MB
+worker1-1  | 2024/06/04 17:51:59.125 FIG10b: Memory usage without flush after 2521 tasks: 1111.52734375 MB
+worker1-1  | 2024/06/04 17:52:00.1282024/06/04 17:52:00.128 [worker]  stored...FIG10b: Memory usage without flush after 2620 tasks: 1112.5 MB
+worker1-1  | 2024/06/04 17:52:01.130 FIG10b: Memory usage without flush after 2730 tasks: 1113.73046875 MB
+worker1-1  | [worker]2024/06/04 17:52:02.134in Run() rn FIG10b: Memory usage without flush after 2854 tasks: 1113.42578125 MB
+worker1-1  |  2024/06/04 17:52:03.1382024/06/04 17:52:03.138 FIG10b: Memory usage without flush after 2975 tasks: 1113.96484375 MB
+worker1-1  | 2024/06/04 17:52:04.146 FIG10b: Memory usage without flush after 3098 tasks: 1113.765625 MB
+worker1-1  | 2024/06/04 17:52:05.1492024/06/04 17:52:05.149 FIG10b: Memory usage without flush after 3217 tasks: 1115.2421875 MB
+worker1-1  | [worker]  2024/06/04 17:52:06.1582024/06/04 17:52:06.158  FIG10b: Memory usage without flush after 3341 tasks: 1115.1484375 MB
+worker1-1  | 2024/06/04 17:52:07.161 2024/06/04 17:52:07.162 FIG10b: Memory usage without flush after 3435 tasks: 1119.1953125 MB
+worker1-1  |  Executed! 2024/06/04 17:52:08.170 FIG10b: Memory usage without flush after 3562 tasks: 1119.265625 MB
+worker1-1  | 2024/06/04 17:52:09.179 FIG10b: Memory usage without flush after 3686 tasks: 1120.51953125 MB
+worker1-1  |  2024/06/04 17:52:10.187 FIG10b: Memory usage without flush after 3813 tasks: 1120.15234375 MB
+worker1-1  |  in Run() rn2024/06/04 17:52:11.188 FIG10b: Memory usage without flush after 3934 tasks: 1120.69140625 MB
+worker1-1  | 2024/06/04 17:52:12.204 FIG10b: Memory usage without flush after 4040 tasks: 1123.9296875 MB
+worker1-1  | 2024/06/04 17:52:13.204 FIG10b: Memory usage without flush after 4158 tasks: 1125.33984375 MB
+worker1-1  | [worker] 2024/06/04 17:52:14.206 FIG10b: Memory usage without flush after 4279 tasks: 1126.125 MB
+worker1-1  | 2024/06/04 17:52:15.2102024/06/04 17:52:15.210 FIG10b: Memory usage without flush after 4398 tasks: 1126.41796875 MB
+worker1-1  |  FIG10b: Memory usage without flush after 4509 tasks: 1126.48828125 MB
+worker1-1  | 2024/06/04 17:52:17.217 FIG10b: Memory usage without flush after 4636 tasks: 1127.2734375 MB
+worker1-1  | 2024/06/04 17:52:18.222 2024/06/04 17:52:18.223 FIG10b: Memory usage without flush after 4761 tasks: 1127.14453125 MB
+worker1-1  | 2024/06/04 17:52:19.227 FIG10b: Memory usage without flush after 4884 tasks: 1126.45703125 MB
+worker1-1  | [worker]2024/06/04 17:52:20.229[worker]2024/06/04 17:52:20.229 FIG10b: Memory usage without flush after 5006 tasks: 1126.51953125 MB
+worker1-1  | 2024/06/04 17:52:21.233 FIG10b: Memory usage without flush after 5128 tasks: 1126.5625 MB
+worker1-1  | took this many seconds: 0.01422024/06/04 17:52:22.244 FIG10b: Memory usage without flush after 5247 tasks: 1127.1328125 MB
+worker1-1  | 2024/06/04 17:52:23.2582024/06/04 17:52:23.258 FIG10b: Memory usage without flush after 5383 tasks: 1128.5703125 MB
+worker1-1  | 2024/06/04 17:52:24.259 FIG10b: Memory usage without flush after 5510 tasks: 1128.6015625 MB
+worker1-1  | 2024/06/04 17:52:25.2672024/06/04 17:52:25.267 FIG10b: Memory usage without flush after 5644 tasks: 1129.32421875 MB
+worker1-1  | 2024/06/04 17:52:26.273 FIG10b: Memory usage without flush after 5764 tasks: 1129.88671875 MB
+worker1-1  |  [worker]gonna store now2024/06/04 17:52:27.274 FIG10b: Memory usage without flush after 5887 tasks: 1129.6875 MB
+worker1-1  | 2024/06/04 17:52:28.2752024/06/04 17:52:28.275  2024/06/04 17:52:28.276 FIG10b: Memory usage without flush after 6014 tasks: 1129.9609375 MB
+worker1-1  | 2024/06/04 17:52:29.281 FIG10b: Memory usage without flush after 6145 tasks: 1130.45703125 MB
+worker1-1  | took this many seconds: 0.01622024/06/04 17:52:30.288 FIG10b: Memory usage without flush after 6271 tasks: 1130.7109375 MB
+worker1-1  | 2024/06/04 17:52:31.297 FIG10b: Memory usage without flush after 6396 tasks: 1130.2578125 MB
+worker1-1  |  [worker]in Run() rn 2024/06/04 17:52:32.304 FIG10b: Memory usage without flush after 6516 tasks: 1130.8046875 MB
+worker1-1  | 2024/06/04 17:52:33.305 FIG10b: Memory usage without flush after 6638 tasks: 1131.09375 MB
+worker1-1  | [worker] 2024/06/04 17:52:34.305 FIG10b: Memory usage without flush after 6759 tasks: 1131.171875 MB
+worker1-1  | 2024/06/04 17:52:35.306 2024/06/04 17:52:35.307 [worker]FIG10b: Memory usage without flush after 6890 tasks: 1131.17578125 MB 
+worker1-1  |  FIG10b: Memory usage without flush after 7021 tasks: 1131.42578125 MB
+worker1-1  | 2024/06/04 17:52:37.311 FIG10b: Memory usage without flush after 7131 tasks: 1131.3046875 MB
+worker1-1  | 2024/06/04 17:52:38.320 FIG10b: Memory usage without flush after 7258 tasks: 1131.81640625 MB2024/06/04 17:52:38.320 [lobs] STORED!!!
+worker1-1  | 2024/06/04 17:52:39.325 FIG10b: Memory usage without flush after 7392 tasks: 1131.5703125 MB
+worker1-1  |  took this many seconds: 0.0175[worker]2024/06/04 17:52:40.328 FIG10b: Memory usage without flush after 7519 tasks: 1132.1015625 MB
+worker1-1  | 2024/06/04 17:52:41.329 [worker]2024/06/04 17:52:41.330 FIG10b: Memory usage without flush after 7644 tasks: 1131.64453125 MB
+worker1-1  | 2024/06/04 17:52:42.336 FIG10b: Memory usage without flush after 7769 tasks: 1131.93359375 MB
+worker1-1  | 2024/06/04 17:52:43.337 FIG10b: Memory usage without flush after 7866 tasks: 1132.62109375 MB
+worker1-1  | 2024/06/04 17:52:44.339 FIG10b: Memory usage without flush after 7964 tasks: 1132.5703125 MB
+worker1-1  | [worker]2024/06/04 17:52:45.359 FIG10b: Memory usage without flush after 8064 tasks: 1133.00390625 MB
+worker1-1  | 2024/06/04 17:52:46.721 FIG10b: Memory usage without flush after 8078 tasks: 1133.15234375 MB
+worker1-1  | 2024/06/04 17:52:47.669 [worker] 2024/06/04 17:52:47.679 FIG10b: Memory usage without flush after 8093 tasks: 1133.328125 MB
+worker1-1  | 2024/06/04 17:52:48.682 2024/06/04 17:52:48.683 FIG10b: Memory usage without flush after 8175 tasks: 1132.875 MB
+worker1-1  | 2024/06/04 17:52:49.699 FIG10b: Memory usage without flush after 8270 tasks: 1132.80859375 MB
+worker1-1  | 2024/06/04 17:52:50.761 FIG10b: Memory usage without flush after 8363 tasks: 1133.30078125 MB
+worker1-1  |  2024/06/04 17:52:51.767 FIG10b: Memory usage without flush after 8466 tasks: 1134.76171875 MB
+worker1-1  | 2024/06/04 17:52:52.775 FIG10b: Memory usage without flush after 8586 tasks: 1135.74609375 MB
+worker1-1  | 2024/06/04 17:52:53.783 FIG10b: Memory usage without flush after 8691 tasks: 1135.81640625 MB
+worker1-1  | 2024/06/04 17:52:54.784 FIG10b: Memory usage without flush after 8799 tasks: 1135.265625 MB
+worker1-1  |  2024/06/04 17:52:55.788 FIG10b: Memory usage without flush after 8908 tasks: 1135.0546875 MB
+worker1-1  | [worker]2024/06/04 17:52:56.792 FIG10b: Memory usage without flush after 9029 tasks: 1136.5078125 MB
+worker1-1  |  stored... 2024/06/04 17:52:57.795 FIG10b: Memory usage without flush after 9152 tasks: 1136.1328125 MB
+worker1-1  |  FIG10b: Memory usage without flush after 9275 tasks: 1135.734375 MB
+worker1-1  | 2024/06/04 17:52:59.800 FIG10b: Memory usage without flush after 9401 tasks: 1136.77734375 MB
+worker1-1  | 2024/06/04 17:53:00.803 FIG10b: Memory usage without flush after 9508 tasks: 1137.28125 MB
+worker1-1  | 2024/06/04 17:53:01.806 FIG10b: Memory usage without flush after 9622 tasks: 1138.0078125 MB
+worker1-1  | 2024/06/04 17:53:02.808 FIG10b: Memory usage without flush after 9749 tasks: 1137.2109375 MB
+worker1-1  | 2024/06/04 17:53:03.820 FIG10b: Memory usage without flush after 9878 tasks: 1137.984375 MB
+worker1-1  | 2024/06/04 17:53:04.8202024/06/04 17:53:04.821 FIG10b: Memory usage without flush after 10001 tasks: 1138.98046875 MB
+worker1-1  | 2024/06/04 17:53:05.8242024/06/04 17:53:05.824 FIG10b: Memory usage without flush after 10122 tasks: 1139.765625 MB
+worker1-1  | 2024/06/04 17:53:06.827 FIG10b: Memory usage without flush after 10240 tasks: 1138.9453125 MB
+worker1-1  | [worker]2024/06/04 17:53:07.828 FIG10b: Memory usage without flush after 10357 tasks: 1139.26171875 MB
+worker1-1  | 2024/06/04 17:53:08.832 FIG10b: Memory usage without flush after 10481 tasks: 1139.578125 MB
+worker1-1  | 2024/06/04 17:53:09.841 FIG10b: Memory usage without flush after 10602 tasks: 1139.87109375 MB
+worker1-1  | [worker]2024/06/04 17:53:10.843 FIG10b: Memory usage without flush after 10719 tasks: 1140.90234375 MB
+worker1-1  | 2024/06/04 17:53:11.849 FIG10b: Memory usage without flush after 10834 tasks: 1141.93359375 MB
+worker1-1  | 2024/06/04 17:53:12.859 FIG10b: Memory usage without flush after 10930 tasks: 1141.7578125 MB
+worker1-1  | 2024/06/04 17:53:13.862 [worker] 2024/06/04 17:53:13.862 FIG10b: Memory usage without flush after 11014 tasks: 1142.51953125 MB
+worker1-1  |  [worker] 2024/06/04 17:53:14.866 FIG10b: Memory usage without flush after 11122 tasks: 1142.07421875 MB
+worker1-1  | in Run() rn2024/06/04 17:53:15.866 FIG10b: Memory usage without flush after 11255 tasks: 1140.20703125 MB
+worker1-1  | 2024/06/04 17:53:16.870 FIG10b: Memory usage without flush after 11366 tasks: 1140.734375 MB
+worker1-1  | 2024/06/04 17:53:17.872 FIG10b: Memory usage without flush after 11473 tasks: 1140.51171875 MB
+worker1-1  | 2024/06/04 17:53:18.877 FIG10b: Memory usage without flush after 11591 tasks: 1142.72265625 MB
+worker1-1  | 2024/06/04 17:53:19.879 [worker]2024/06/04 17:53:19.880 FIG10b: Memory usage without flush after 11693 tasks: 1140.58984375 MB
+worker1-1  | 2024/06/04 17:53:20.936 FIG10b: Memory usage without flush after 11792 tasks: 1141.75 MB
+worker1-1  |  2024/06/04 17:53:21.938 2024/06/04 17:53:21.938 FIG10b: Memory usage without flush after 11912 tasks: 1142.65625 MB
+worker1-1  | 2024/06/04 17:53:22.941 FIG10b: Memory usage without flush after 12036 tasks: 1143.30078125 MB
+worker1-1  | 2024/06/04 17:53:23.958 FIG10b: Memory usage without flush after 12161 tasks: 1143.16796875 MB
+worker1-1  | 2024/06/04 17:53:24.9622024/06/04 17:53:24.9632024/06/04 17:53:24.963 FIG10b: Memory usage without flush after 12281 tasks: 1143.296875 MB
+worker1-1  | 2024/06/04 17:53:25.966 FIG10b: Memory usage without flush after 12399 tasks: 1143.90234375 MB
+worker1-1  | 2024/06/04 17:53:26.968 FIG10b: Memory usage without flush after 12510 tasks: 1143.60546875 MB
+worker1-1  | 2024/06/04 17:53:27.969in Run() rn FIG10b: Memory usage without flush after 12632 tasks: 1143.95703125 MB
+worker1-1  |  [worker]2024/06/04 17:53:28.972 FIG10b: Memory usage without flush after 12746 tasks: 1144.84375 MB
+worker1-1  | [worker] 2024/06/04 17:53:29.977 FIG10b: Memory usage without flush after 12876 tasks: 1144.6796875 MB
+worker1-1  | [worker][worker]2024/06/04 17:53:30.984 FIG10b: Memory usage without flush after 12996 tasks: 1146.03515625 MB
+worker1-1  | 2024/06/04 17:53:31.9842024/06/04 17:53:31.984 [worker]  FIG10b: Memory usage without flush after 13126 tasks: 1145.625 MBin Run() rn
+worker1-1  | 2024/06/04 17:53:32.986 FIG10b: Memory usage without flush after 13234 tasks: 1146.79296875 MB
+worker1-1  | 2024/06/04 17:53:33.988 FIG10b: Memory usage without flush after 13349 tasks: 1154.3125 MB
+worker1-1  |  FIG10b: Memory usage without flush after 13456 tasks: 1154.5703125 MB
+worker1-1  | 2024/06/04 17:53:36.004 FIG10b: Memory usage without flush after 13576 tasks: 1156.3984375 MB
+worker1-1  |  FIG10b: Memory usage without flush after 13698 tasks: 1156.79296875 MB
+worker1-1  | 2024/06/04 17:53:38.010 FIG10b: Memory usage without flush after 13827 tasks: 1151.52734375 MB
+worker1-1  | 2024/06/04 17:53:39.015 FIG10b: Memory usage without flush after 13957 tasks: 1151.87109375 MB
+worker1-1  | 2024/06/04 17:53:40.017 FIG10b: Memory usage without flush after 14074 tasks: 1149.55078125 MB
+worker1-1  | 2024/06/04 17:53:41.020 FIG10b: Memory usage without flush after 14199 tasks: 1150.41796875 MB
+worker1-1  | 2024/06/04 17:53:42.032 FIG10b: Memory usage without flush after 14326 tasks: 1150.734375 MB
+worker1-1  | 2024/06/04 17:53:43.034 FIG10b: Memory usage without flush after 14451 tasks: 1150.578125 MB
+worker1-1  | 2024/06/04 17:53:44.035 2024/06/04 17:53:44.035 FIG10b: Memory usage without flush after 14573 tasks: 1150.9375 MB
+worker1-1  | 2024/06/04 17:53:45.035 2024/06/04 17:53:45.036 FIG10b: Memory usage without flush after 14696 tasks: 1151.0703125 MB
+worker1-1  | 2024/06/04 17:53:46.041 FIG10b: Memory usage without flush after 14809 tasks: 1151.46484375 MB
+worker1-1  | in Run() rn2024/06/04 17:53:47.042 FIG10b: Memory usage without flush after 14931 tasks: 1151.5703125 MB
+worker1-1  | 2024/06/04 17:53:48.045 FIG10b: Memory usage without flush after 15053 tasks: 1151.9296875 MB
+worker1-1  | 2024/06/04 17:53:49.046 FIG10b: Memory usage without flush after 15175 tasks: 1152.3125 MB
+worker1-1  | 2024/06/04 17:53:50.047 FIG10b: Memory usage without flush after 15301 tasks: 1144.1484375 MB
+worker1-1  | 2024/06/04 17:53:51.051 FIG10b: Memory usage without flush after 15421 tasks: 1145.4765625 MB
+worker1-1  | 2024/06/04 17:53:52.055  FIG10b: Memory usage without flush after 15550 tasks: 1146.1015625 MB
+worker1-1  |  2024/06/04 17:53:53.062 FIG10b: Memory usage without flush after 15671 tasks: 1146.44921875 MB
+worker1-1  | 2024/06/04 17:53:54.063 FIG10b: Memory usage without flush after 15786 tasks: 1146.38671875 MB
+worker1-1  | 2024/06/04 17:53:55.072 FIG10b: Memory usage without flush after 15913 tasks: 1146.64453125 MB
+worker1-1  | [worker]2024/06/04 17:53:56.077 FIG10b: Memory usage without flush after 16025 tasks: 1145.60546875 MB
+worker1-1  | 2024/06/04 17:53:57.089  2024/06/04 17:53:57.090 FIG10b: Memory usage without flush after 16137 tasks: 1146.7109375 MB
+worker1-1  |  2024/06/04 17:53:58.091 FIG10b: Memory usage without flush after 16233 tasks: 1146.19140625 MB
+worker1-1  | 2024/06/04 17:53:59.094 FIG10b: Memory usage without flush after 16290 tasks: 1147.15625 MB
+worker1-1  | 2024/06/04 17:54:00.098 FIG10b: Memory usage without flush after 16404 tasks: 1137.625 MB
+worker1-1  | 2024/06/04 17:54:01.105 FIG10b: Memory usage without flush after 16507 tasks: 1137.79296875 MB
+worker1-1  |  2024/06/04 17:54:02.120 FIG10b: Memory usage without flush after 16621 tasks: 1138.90625 MB
+worker1-1  | 2024/06/04 17:54:03.122 FIG10b: Memory usage without flush after 16739 tasks: 1139.12890625 MB
+worker1-1  | 2024/06/04 17:54:04.126 [worker] stored...2024/06/04 17:54:04.1262024/06/04 17:54:04.127 FIG10b: Memory usage without flush after 16849 tasks: 1138.421875 MB
+worker1-1  | [worker]2024/06/04 17:54:05.129 FIG10b: Memory usage without flush after 16966 tasks: 1139.22265625 MB
+worker1-1  | gonna store now 2024/06/04 17:54:06.1302024/06/04 17:54:06.130 FIG10b: Memory usage without flush after 17089 tasks: 1140.7890625 MB
+worker1-1  | stored...2024/06/04 17:54:07.130 FIG10b: Memory usage without flush after 17208 tasks: 1140.51171875 MB
+worker1-1  | 2024/06/04 17:54:08.1362024/06/04 17:54:08.137 FIG10b: Memory usage without flush after 17324 tasks: 1140.02734375 MB
+worker1-1  | 2024/06/04 17:54:09.150 FIG10b: Memory usage without flush after 17420 tasks: 1139.7578125 MB
+worker1-1  | 2024/06/04 17:54:10.160 FIG10b: Memory usage without flush after 17508 tasks: 1141.15234375 MB
+worker1-1  | [worker]2024/06/04 17:54:11.170 FIG10b: Memory usage without flush after 17603 tasks: 1139.875 MB
+worker1-1  |  [worker] 2024/06/04 17:54:12.172 FIG10b: Memory usage without flush after 17700 tasks: 1140.3125 MB
+worker1-1  |  [worker]2024/06/04 17:54:13.178 FIG10b: Memory usage without flush after 17810 tasks: 1140.9921875 MB
+worker1-1  | 2024/06/04 17:54:14.182 FIG10b: Memory usage without flush after 17911 tasks: 1140.7421875 MB
+worker1-1  | 2024/06/04 17:54:15.185 FIG10b: Memory usage without flush after 18022 tasks: 1140.453125 MB
+worker1-1  | 2024/06/04 17:54:16.186 FIG10b: Memory usage without flush after 18128 tasks: 1141.609375 MB
+worker1-1  | 2024/06/04 17:54:17.1862024/06/04 17:54:17.186 FIG10b: Memory usage without flush after 18243 tasks: 1141.55078125 MB
+worker1-1  | 2024/06/04 17:54:18.192 2024/06/04 17:54:18.193[worker]2024/06/04 17:54:18.193  FIG10b: Memory usage without flush after 18350 tasks: 1141.2890625 MB
+worker1-1  |  FIG10b: Memory usage without flush after 18464 tasks: 1141.28125 MB
+worker1-1  |  2024/06/04 17:54:20.2002024/06/04 17:54:20.200 FIG10b: Memory usage without flush after 18577 tasks: 1141.4765625 MB
+worker1-1  | [worker] 2024/06/04 17:54:21.208 FIG10b: Memory usage without flush after 18696 tasks: 1142.69140625 MB
+worker1-1  | 2024/06/04 17:54:22.218 FIG10b: Memory usage without flush after 18816 tasks: 1143.0 MB
+worker1-1  | 2024/06/04 17:54:23.219 FIG10b: Memory usage without flush after 18939 tasks: 1143.05859375 MB
+worker1-1  | 2024/06/04 17:54:24.227in Run() rn2024/06/04 17:54:24.228 FIG10b: Memory usage without flush after 19052 tasks: 1143.6640625 MB
+worker1-1  | 2024/06/04 17:54:25.231 FIG10b: Memory usage without flush after 19178 tasks: 1143.70703125 MB
+worker1-1  |  stored...2024/06/04 17:54:26.234 FIG10b: Memory usage without flush after 19301 tasks: 1144.0078125 MB
+worker1-1  | 2024/06/04 17:54:27.2532024/06/04 17:54:27.253 [worker]  Executed!FIG10b: Memory usage without flush after 19426 tasks: 1144.29296875 MB
+worker1-1  | 2024/06/04 17:54:28.256 FIG10b: Memory usage without flush after 19541 tasks: 1144.40234375 MB
+worker1-1  | 2024/06/04 17:54:29.260 2024/06/04 17:54:29.261 FIG10b: Memory usage without flush after 19636 tasks: 1144.85546875 MB
+worker1-1  | 2024/06/04 17:54:30.266 FIG10b: Memory usage without flush after 19714 tasks: 1145.16015625 MB
+worker1-1  | 2024/06/04 17:54:31.268 FIG10b: Memory usage without flush after 19825 tasks: 1147.01953125 MB
+worker1-1  | 2024/06/04 17:54:32.320 FIG10b: Memory usage without flush after 19938 tasks: 1146.8828125 MB
+worker1-1  | 2024/06/04 17:54:33.341 FIG10b: Memory usage without flush after 20060 tasks: 1146.9375 MB
+worker1-1  | 2024/06/04 17:54:34.346 FIG10b: Memory usage without flush after 20156 tasks: 1146.41796875 MB
+worker1-1  | 2024/06/04 17:54:35.395 FIG10b: Memory usage without flush after 20260 tasks: 1147.53125 MB
+worker1-1  | took this many seconds: 0.02142024/06/04 17:54:36.409 FIG10b: Memory usage without flush after 20364 tasks: 1147.203125 MB
+worker1-1  | 2024/06/04 17:54:37.413 FIG10b: Memory usage without flush after 20475 tasks: 1147.32421875 MB
+worker1-1  | 2024/06/04 17:54:38.418 [worker]2024/06/04 17:54:38.418 FIG10b: Memory usage without flush after 20557 tasks: 1147.59765625 MB
+worker1-1  | took this many seconds: 0.0115 2024/06/04 17:54:39.4182024/06/04 17:54:39.418 FIG10b: Memory usage without flush after 20673 tasks: 1147.4453125 MB
+worker1-1  | 2024/06/04 17:54:40.4292024/06/04 17:54:40.429 FIG10b: Memory usage without flush after 20773 tasks: 1147.625 MB
+worker1-1  | 2024/06/04 17:54:41.441 FIG10b: Memory usage without flush after 20873 tasks: 1149.32421875 MB
+worker1-1  |  2024/06/04 17:54:42.446 FIG10b: Memory usage without flush after 20968 tasks: 1149.02734375 MB
+worker1-1  | 2024/06/04 17:54:43.447 2024/06/04 17:54:43.447[worker] FIG10b: Memory usage without flush after 21083 tasks: 1149.37890625 MB
+worker1-1  | 2024/06/04 17:54:44.448 FIG10b: Memory usage without flush after 21185 tasks: 1149.0546875 MB
+worker1-1  | 2024/06/04 17:54:45.458 FIG10b: Memory usage without flush after 21273 tasks: 1149.53125 MB
+worker1-1  | 2024/06/04 17:54:46.4602024/06/04 17:54:46.460 FIG10b: Memory usage without flush after 21372 tasks: 1149.96484375 MB
+worker1-1  |  gonna store nowin Run() rn2024/06/04 17:54:47.461 FIG10b: Memory usage without flush after 21481 tasks: 1149.6015625 MB
+worker1-1  | 2024/06/04 17:54:48.467 FIG10b: Memory usage without flush after 21574 tasks: 1149.79296875 MB
+worker1-1  | 2024/06/04 17:54:49.4682024/06/04 17:54:49.468 FIG10b: Memory usage without flush after 21684 tasks: 1149.68359375 MB
+worker1-1  | 2024/06/04 17:54:50.471 FIG10b: Memory usage without flush after 21797 tasks: 1150.765625 MB
+worker1-1  | [worker]2024/06/04 17:54:51.4752024/06/04 17:54:51.4752024/06/04 17:54:51.475 FIG10b: Memory usage without flush after 21908 tasks: 1150.83203125 MB
+worker1-1  | 2024/06/04 17:54:52.476 [worker]gonna store now2024/06/04 17:54:52.477 FIG10b: Memory usage without flush after 22020 tasks: 1151.71875 MB
+worker1-1  | 2024/06/04 17:54:53.483 2024/06/04 17:54:53.4842024/06/04 17:54:53.485 FIG10b: Memory usage without flush after 22130 tasks: 1153.14453125 MB
+worker1-1  | 2024/06/04 17:54:54.487 FIG10b: Memory usage without flush after 22240 tasks: 1153.86328125 MB
+worker1-1  |  FIG10b: Memory usage without flush after 22345 tasks: 1152.5078125 MB
+worker1-1  |  Executed!2024/06/04 17:54:56.494 FIG10b: Memory usage without flush after 22446 tasks: 1152.77734375 MB
+worker1-1  | stored...2024/06/04 17:54:57.4982024/06/04 17:54:57.498 FIG10b: Memory usage without flush after 22554 tasks: 1153.44921875 MB
+worker1-1  | FIG10b: Memory usage without flush after 22658 tasks: 1154.15234375 MB
+worker1-1  | 2024/06/04 17:54:59.5082024/06/04 17:54:59.508 stored...2024/06/04 17:54:59.509 FIG10b: Memory usage without flush after 22764 tasks: 1153.2890625 MB
+worker1-1  | 2024/06/04 17:55:00.5132024/06/04 17:55:00.5142024/06/04 17:55:00.514 FIG10b: Memory usage without flush after 22866 tasks: 1153.59375 MB
+worker1-1  | 2024/06/04 17:55:01.516 FIG10b: Memory usage without flush after 22966 tasks: 1146.75390625 MB
+worker1-1  | 2024/06/04 17:55:02.522 FIG10b: Memory usage without flush after 23071 tasks: 1147.3984375 MB
+worker1-1  | 2024/06/04 17:55:03.5252024/06/04 17:55:03.5252024/06/04 17:55:03.525 [worker]2024/06/04 17:55:03.526 FIG10b: Memory usage without flush after 23170 tasks: 1147.75 MB
+worker1-1  | 2024/06/04 17:55:04.530 FIG10b: Memory usage without flush after 23265 tasks: 1148.02734375 MB
+worker1-1  |  2024/06/04 17:55:05.532gonna store now FIG10b: Memory usage without flush after 23373 tasks: 1148.5625 MB
+worker1-1  |  stored...2024/06/04 17:55:06.538 FIG10b: Memory usage without flush after 23476 tasks: 1148.30859375 MB
+worker1-1  |  2024/06/04 17:55:07.549 FIG10b: Memory usage without flush after 23579 tasks: 1149.0078125 MB
+worker1-1  | 2024/06/04 17:55:08.5552024/06/04 17:55:08.555 FIG10b: Memory usage without flush after 23686 tasks: 1149.26953125 MB
+worker1-1  | 2024/06/04 17:55:09.555  2024/06/04 17:55:09.5562024/06/04 17:55:09.556[worker] FIG10b: Memory usage without flush after 23793 tasks: 1149.5390625 MB
+worker1-1  |  FIG10b: Memory usage without flush after 23900 tasks: 1150.2421875 MB
+worker1-1  | Executed!2024/06/04 17:55:11.580 2024/06/04 17:55:11.580 FIG10b: Memory usage without flush after 24006 tasks: 1150.45703125 MB
+worker1-1  | 2024/06/04 17:55:12.5802024/06/04 17:55:12.581 FIG10b: Memory usage without flush after 24106 tasks: 1150.4765625 MB
+worker1-1  |  2024/06/04 17:55:13.586  FIG10b: Memory usage without flush after 24208 tasks: 1151.46484375 MBExecuted!
+worker1-1  |  2024/06/04 17:55:14.593 FIG10b: Memory usage without flush after 24318 tasks: 1151.48046875 MB
+worker1-1  | 2024/06/04 17:55:15.596 FIG10b: Memory usage without flush after 24429 tasks: 1151.9609375 MB
+worker1-1  | [worker] in Run() rn2024/06/04 17:55:16.597 FIG10b: Memory usage without flush after 24529 tasks: 1151.734375 MB
+worker1-1  | FIG10b: Memory usage without flush after 24629 tasks: 1152.2421875 MB
+worker1-1  | 2024/06/04 17:55:18.602 [worker]2024/06/04 17:55:18.602 FIG10b: Memory usage without flush after 24715 tasks: 1152.42578125 MB
+worker1-1  | 2024/06/04 17:55:19.6102024/06/04 17:55:19.611 FIG10b: Memory usage without flush after 24801 tasks: 1152.6953125 MB
+worker1-1  | 2024/06/04 17:55:20.617 FIG10b: Memory usage without flush after 24897 tasks: 1153.1640625 MB
+worker1-1  | 2024/06/04 17:55:21.618 FIG10b: Memory usage without flush after 24992 tasks: 1151.421875 MB
+worker1-1  | 2024/06/04 17:55:22.6212024/06/04 17:55:22.622 FIG10b: Memory usage without flush after 25089 tasks: 1148.91015625 MB
+worker1-1  |  2024/06/04 17:55:23.627 FIG10b: Memory usage without flush after 25187 tasks: 1150.38671875 MB
+worker1-1  | 2024/06/04 17:55:24.637 FIG10b: Memory usage without flush after 25293 tasks: 1150.31640625 MB
+worker1-1  | 2024/06/04 17:55:25.640 FIG10b: Memory usage without flush after 25387 tasks: 1150.5546875 MB
+worker1-1  | 2024/06/04 17:55:26.645 FIG10b: Memory usage without flush after 25477 tasks: 1150.83984375 MB
+worker1-1  | 2024/06/04 17:55:27.648 FIG10b: Memory usage without flush after 25573 tasks: 1150.34765625 MB
+worker1-1  | 2024/06/04 17:55:28.655 FIG10b: Memory usage without flush after 25666 tasks: 1150.8515625 MB
+worker1-1  |  2024/06/04 17:55:29.657 FIG10b: Memory usage without flush after 25762 tasks: 1150.8671875 MB
+worker1-1  | 2024/06/04 17:55:30.659 2024/06/04 17:55:30.660 FIG10b: Memory usage without flush after 25858 tasks: 1151.12109375 MB
+worker1-1  | 2024/06/04 17:55:31.668 FIG10b: Memory usage without flush after 25944 tasks: 1151.1484375 MB
+worker1-1  | 2024/06/04 17:55:32.6792024/06/04 17:55:32.679 FIG10b: Memory usage without flush after 26032 tasks: 1153.4609375 MB
+worker1-1  | 2024/06/04 17:55:33.6822024/06/04 17:55:33.683 FIG10b: Memory usage without flush after 26120 tasks: 1153.9921875 MB
+worker1-1  |  [worker] gonna store now2024/06/04 17:55:34.688 FIG10b: Memory usage without flush after 26207 tasks: 1153.80859375 MB
+worker1-1  | 2024/06/04 17:55:35.692 FIG10b: Memory usage without flush after 26277 tasks: 1153.6953125 MB
+worker1-1  | 2024/06/04 17:55:36.699 FIG10b: Memory usage without flush after 26352 tasks: 1153.81640625 MB
+worker1-1  | 2024/06/04 17:55:37.702 FIG10b: Memory usage without flush after 26423 tasks: 1153.94921875 MB
+worker1-1  |  2024/06/04 17:55:38.706 FIG10b: Memory usage without flush after 26520 tasks: 1153.72265625 MB
+worker1-1  | 2024/06/04 17:55:39.719 FIG10b: Memory usage without flush after 26600 tasks: 1153.56640625 MB
+worker1-1  | 2024/06/04 17:55:40.723 FIG10b: Memory usage without flush after 26699 tasks: 1163.3046875 MB
+worker1-1  | 2024/06/04 17:55:41.724 FIG10b: Memory usage without flush after 26786 tasks: 1164.203125 MB
+worker1-1  |  2024/06/04 17:55:42.725 FIG10b: Memory usage without flush after 26880 tasks: 1164.9296875 MB
+worker1-1  | 2024/06/04 17:55:43.733 FIG10b: Memory usage without flush after 26984 tasks: 1165.4140625 MB
+worker1-1  |  [worker]2024/06/04 17:55:44.7372024/06/04 17:55:44.737 FIG10b: Memory usage without flush after 27080 tasks: 1166.13671875 MB
+worker1-1  | 2024/06/04 17:55:45.745 FIG10b: Memory usage without flush after 27161 tasks: 1165.96484375 MB
+worker1-1  | 2024/06/04 17:55:46.746 FIG10b: Memory usage without flush after 27255 tasks: 1166.48046875 MB
+worker1-1  | 2024/06/04 17:55:47.748 FIG10b: Memory usage without flush after 27355 tasks: 1167.19140625 MB
+worker1-1  | 2024/06/04 17:55:48.7482024/06/04 17:55:48.748  [worker]2024/06/04 17:55:48.749 FIG10b: Memory usage without flush after 27456 tasks: 1167.42578125 MB
+worker1-1  | 2024/06/04 17:55:49.7532024/06/04 17:55:49.753 FIG10b: Memory usage without flush after 27563 tasks: 1172.82421875 MB
+worker1-1  | 2024/06/04 17:55:50.755 FIG10b: Memory usage without flush after 27659 tasks: 1172.80078125 MB
+worker1-1  | [worker]2024/06/04 17:55:51.758 2024/06/04 17:55:51.759 FIG10b: Memory usage without flush after 27762 tasks: 1173.64453125 MB
+worker1-1  |  2024/06/04 17:55:52.768 FIG10b: Memory usage without flush after 27859 tasks: 1175.81640625 MB
+worker1-1  | 2024/06/04 17:55:53.772 FIG10b: Memory usage without flush after 27947 tasks: 1177.01953125 MB
+worker1-1  | 2024/06/04 17:55:54.777 2024/06/04 17:55:54.777 FIG10b: Memory usage without flush after 28036 tasks: 1177.4609375 MB
+worker1-1  |  2024/06/04 17:55:55.7832024/06/04 17:55:55.783 FIG10b: Memory usage without flush after 28128 tasks: 1177.91796875 MB
+worker1-1  | 2024/06/04 17:55:56.7862024/06/04 17:55:56.786 FIG10b: Memory usage without flush after 28230 tasks: 1177.03125 MB 
+worker1-1  | 2024/06/04 17:55:57.7862024/06/04 17:55:57.787 FIG10b: Memory usage without flush after 28334 tasks: 1176.80078125 MB
+worker1-1  | 2024/06/04 17:55:58.791 FIG10b: Memory usage without flush after 28427 tasks: 1177.3046875 MB
+worker1-1  |  FIG10b: Memory usage without flush after 28494 tasks: 1177.78125 MB
+worker1-1  | 2024/06/04 17:56:00.803 FIG10b: Memory usage without flush after 28573 tasks: 1177.72265625 MB
+worker1-1  | 2024/06/04 17:56:01.807 FIG10b: Memory usage without flush after 28662 tasks: 1177.25390625 MB
+worker1-1  | 2024/06/04 17:56:02.809 [worker] 2024/06/04 17:56:02.810  FIG10b: Memory usage without flush after 28756 tasks: 1177.80078125 MB
+worker1-1  | 2024/06/04 17:56:03.820 FIG10b: Memory usage without flush after 28851 tasks: 1181.1171875 MB
+worker1-1  | 2024/06/04 17:56:04.8352024/06/04 17:56:04.835 FIG10b: Memory usage without flush after 28946 tasks: 1181.34765625 MB
+worker1-1  | 2024/06/04 17:56:05.8412024/06/04 17:56:05.841 FIG10b: Memory usage without flush after 29033 tasks: 1181.546875 MB
+worker1-1  | 2024/06/04 17:56:06.857 FIG10b: Memory usage without flush after 29129 tasks: 1181.5859375 MB
+worker1-1  | 2024/06/04 17:56:07.857 FIG10b: Memory usage without flush after 29212 tasks: 1182.09375 MB
+worker1-1  | 2024/06/04 17:56:08.863 FIG10b: Memory usage without flush after 29300 tasks: 1181.640625 MB
+worker1-1  | 2024/06/04 17:56:09.868 FIG10b: Memory usage without flush after 29414 tasks: 1182.57421875 MB
+worker1-1  | 2024/06/04 17:56:10.873 FIG10b: Memory usage without flush after 29521 tasks: 1183.7265625 MB
+worker1-1  | 2024/06/04 17:56:11.875 FIG10b: Memory usage without flush after 29623 tasks: 1183.546875 MB
+worker1-1  | 2024/06/04 17:56:12.8832024/06/04 17:56:12.883 [worker]  gonna store nowFIG10b: Memory usage without flush after 29732 tasks: 1183.8046875 MB
+worker1-1  | 2024/06/04 17:56:13.893 FIG10b: Memory usage without flush after 29839 tasks: 1179.33984375 MB
+worker1-1  | 2024/06/04 17:56:14.894 FIG10b: Memory usage without flush after 29939 tasks: 1179.7890625 MB
+worker1-1  | 2024/06/04 17:56:15.905 FIG10b: Memory usage without flush after 30042 tasks: 1180.2890625 MB
+worker1-1  | [worker]2024/06/04 17:56:16.920 FIG10b: Memory usage without flush after 30122 tasks: 1180.04296875 MB
+worker1-1  |  2024/06/04 17:56:17.9212024/06/04 17:56:17.922 FIG10b: Memory usage without flush after 30206 tasks: 1179.5859375 MB
+worker1-1  | 2024/06/04 17:56:18.923 FIG10b: Memory usage without flush after 30310 tasks: 1180.7734375 MB
+worker1-1  |    [worker]2024/06/04 17:56:19.930 FIG10b: Memory usage without flush after 30416 tasks: 1180.55859375 MB
+worker1-1  | 2024/06/04 17:56:20.930 [worker] stored...2024/06/04 17:56:20.931 FIG10b: Memory usage without flush after 30518 tasks: 1180.31640625 MB
+worker1-1  | [worker]2024/06/04 17:56:21.938 FIG10b: Memory usage without flush after 30626 tasks: 1181.28515625 MB
+worker1-1  | 2024/06/04 17:56:22.942 FIG10b: Memory usage without flush after 30726 tasks: 1180.00390625 MB
+worker1-1  | 2024/06/04 17:56:23.954 FIG10b: Memory usage without flush after 30815 tasks: 1182.046875 MB
+worker1-1  | 2024/06/04 17:56:24.958 FIG10b: Memory usage without flush after 30874 tasks: 1183.4375 MB
+worker1-1  | 2024/06/04 17:56:25.976 [worker]2024/06/04 17:56:25.977 FIG10b: Memory usage without flush after 30966 tasks: 1183.21875 MB
+worker1-1  | 2024/06/04 17:56:26.986[worker] FIG10b: Memory usage without flush after 31058 tasks: 1183.97265625 MB
+worker1-1  | [worker][worker]2024/06/04 17:56:27.987 FIG10b: Memory usage without flush after 31155 tasks: 1183.51171875 MB
+worker1-1  | gonna store nowtook this many seconds: 0.02612024/06/04 17:56:28.998 FIG10b: Memory usage without flush after 31251 tasks: 1184.0078125 MB
+worker1-1  | 2024/06/04 17:56:30.006 FIG10b: Memory usage without flush after 31365 tasks: 1183.65625 MB
+worker1-1  | 2024/06/04 17:56:31.0152024/06/04 17:56:31.015 FIG10b: Memory usage without flush after 31473 tasks: 1184.14453125 MB
+worker1-1  | 2024/06/04 17:56:32.0182024/06/04 17:56:32.018 FIG10b: Memory usage without flush after 31576 tasks: 1182.58984375 MB
+worker1-1  | 2024/06/04 17:56:33.022 FIG10b: Memory usage without flush after 31680 tasks: 1182.53125 MB
+worker1-1  | 2024/06/04 17:56:34.030 FIG10b: Memory usage without flush after 31787 tasks: 1186.67578125 MB
+worker1-1  | 2024/06/04 17:56:35.033 FIG10b: Memory usage without flush after 31900 tasks: 1185.92578125 MB
+worker1-1  | 2024/06/04 17:56:36.033 FIG10b: Memory usage without flush after 32003 tasks: 1174.68359375 MB
+worker1-1  | 2024/06/04 17:57:06.033 2024/06/04 17:57:06.0342024/06/04 17:57:06.034 FIG10b: Memory usage without flush after 35229 tasks: 1180.8984375 MB
+worker1-1  | 2024/06/04 17:57:36.0392024/06/04 17:57:36.040 FIG10b: Memory usage without flush after 38298 tasks: 1184.65234375 MB
+worker1-1  | 2024/06/04 17:58:06.046 FIG10b: Memory usage without flush after 41191 tasks: 1191.8828125 MB
+worker1-1  |  [worker] 2024/06/04 17:58:36.050 FIG10b: Memory usage without flush after 44182 tasks: 1196.6171875 MB
+worker1-1  | 2024/06/04 17:59:06.058 FIG10b: Memory usage without flush after 47052 tasks: 1204.25390625 MB
+worker1-1  | 2024/06/04 17:59:36.059 FIG10b: Memory usage without flush after 49891 tasks: 1207.82421875 MB
+worker1-1  | 2024/06/04 18:00:06.0692024/06/04 18:00:06.069 FIG10b: Memory usage without flush after 52681 tasks: 1214.05859375 MB
+worker1-1  | 2024/06/04 18:00:36.072 2024/06/04 18:00:36.072 FIG10b: Memory usage without flush after 55884 tasks: 1232.2421875 MB
+worker1-1  | 2024/06/04 18:01:06.075 FIG10b: Memory usage without flush after 59003 tasks: 1239.90234375 MB
+worker1-1  | 2024/06/04 18:01:36.080 FIG10b: Memory usage without flush after 62247 tasks: 1239.94140625 MB
+worker1-1  | 2024/06/04 18:02:06.084  [worker]2024/06/04 18:02:06.085 FIG10b: Memory usage without flush after 65488 tasks: 1240.8671875 MB
+worker1-1  | FIG10b: Memory usage without flush after 68727 tasks: 1243.9453125 MB
+worker1-1  | 2024/06/04 18:03:06.099[worker]2024/06/04 18:03:06.100 FIG10b: Memory usage without flush after 71805 tasks: 1250.90234375 MB
+worker1-1  | 2024/06/04 18:03:36.1072024/06/04 18:03:36.107 FIG10b: Memory usage without flush after 74937 tasks: 1256.14453125 MB

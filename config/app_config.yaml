@@ -15,5 +15,5 @@ ports:
 dns:
   node_prefix: "node"
 gcs:
-  flush_interval_sec: -1 # put -1 to never flush
+  flush_interval_sec: 1 # put -1 to never flush
   enable_chain_replication: true

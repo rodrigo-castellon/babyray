@@ -6,10 +6,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net"
+	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -40,6 +43,48 @@ func init() {
 
 func bufDialer(context.Context, string) (net.Conn, error) {
 	return lis.Dial()
+}
+
+func TestWriteObjectLocationsToAOF(t *testing.T) {
+	// Create a temporary file
+	tmpfile, err := ioutil.TempFile("", "test_object_locations_*.txt")
+	if err != nil {
+		t.Fatalf("Unable to create temp file: %v", err)
+	}
+	defer os.Remove(tmpfile.Name()) // Clean up the temp file after the test
+
+	// Close the file so WriteObjectLocations can open it
+	tmpfile.Close()
+
+	// Sample map for testing
+	objectLocations := map[uint64][]uint64{
+		1: {10, 20, 30},
+		2: {40, 50, 60},
+		3: {70, 80, 90},
+	}
+
+	// Call the function to write the map to the file
+	err = WriteObjectLocationsToAOF(tmpfile.Name(), objectLocations)
+	if err != nil {
+		t.Fatalf("WriteObjectLocations failed: %v", err)
+	}
+
+	// Read the file content
+	content, err := ioutil.ReadFile(tmpfile.Name())
+	if err != nil {
+		t.Fatalf("Unable to read temp file: %v", err)
+	}
+
+	// Expected content
+	expectedContent := `1: [10,20,30]
+2: [40,50,60]
+3: [70,80,90]
+`
+
+	// Check if the content matches the expected content
+	if strings.TrimSpace(string(content)) != strings.TrimSpace(expectedContent) {
+		t.Errorf("Content mismatch\nExpected:\n%s\nGot:\n%s", expectedContent, string(content))
+	}
 }
 
 func TestGetNodeId(t *testing.T) {
@@ -397,7 +442,7 @@ func TestSendCallback_Hit(t *testing.T) {
 	s := grpc.NewServer()
 	mock := NewMockLocalObjStoreServer(1)
 	pb.RegisterLocalObjStoreServer(s, mock)
-	log.Printf("server listening at %v", lis.Addr())
+	// log.Printf("server listening at %v", lis.Addr())
 
 	// Run the server in a goroutine
 	go func() {
@@ -550,6 +595,64 @@ func TestRequestLocation(t *testing.T) {
 	if resp.ImmediatelyFound {
 		t.Errorf("Expected location not to be found immediately, but it was found")
 	}
+}
+
+type mockSchedulerClient struct {
+	pb.GlobalSchedulerClient
+	requestsReceived map[uint64]*pb.GlobalScheduleRequest
+}
+
+func (m *mockSchedulerClient) Schedule(ctx context.Context , req *pb.GlobalScheduleRequest, opts ...grpc.CallOption ) (*pb.StatusResponse, error) {
+	m.requestsReceived[req.Uid] = req
+	return nil, nil
+}
+func (m *mockSchedulerClient) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest, opts ...grpc.CallOption ) (*pb.StatusResponse, error) {
+	return nil, nil
+}
+func (m *mockSchedulerClient) LiveNodesHeartbeat(ctx context.Context) (error)  {
+	return nil
+}
+func (m *mockSchedulerClient) SendLiveNodes(ctx context.Context) {
+	return nil
+}
+func TestNodeDiesWhileGenerating(t *testing.T) {
+	/*
+		-Worker tells GCS that its generating
+		-Global Scheduler tells it that that node is dead
+		-another node asks for object
+		-global scheduler should receive a schedule request for that object
+	*/
+	ctx = context.Background()
+	req := &pb.GlobalScheduleRequest{Uid: 200, Name: "func_name"}
+	m := mockSchedulerClient {
+		requestsReceived: make(map[uint64]bool), 
+	}
+
+	s := GCSObjServer {
+		generating: make(map[uint64]uint64),
+		globalSchedulerClient: m, 
+		lineage: make(map[uint64]*pb.GlobalScheduleRequest),
+		liveNodes: make(map[uint64]bool), 
+	}
+
+	s.RegisterLineage(ctx, req)
+
+	s.RegisterGenerating(ctx, &pb.GeneratingRequest{Uid: 200, NodeId: 5})
+
+	//Node 5 is assumed to be dead b/c we're not sending heartbeats. 
+
+	s.RequestLocation(ctx, &pb.RequestLocationRequest{Uid: 200})
+
+	if val, ok := m.requestsReceived[200]; !ok || val.Name != "func_name"{
+		t.Errorf("Global scheduler never received new schedule request")
+	}
+
+
+
+
+
+
+	
 }
 
 // // MockGCSObjServer inherits GCSObjServer and overrides sendCallback

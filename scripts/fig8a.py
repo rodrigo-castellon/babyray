@@ -12,7 +12,7 @@ init()
 
 # worker 1:
 # - create object #1
-# - schedule 10 sleeper tasks
+# - schedule MAX_CONCURRENT_TASKS sleeper tasks
 # - while True: time doing get(task(object #1)) or get(task(object #2))
 # worker 2:
 # - create object #2
@@ -23,6 +23,7 @@ import random
 # 100KB to start
 # BYTEARR_SIZE = 100_000
 BYTEARR_SIZE = 200_000_000  # 100_000_000  # 100 MB
+MAX_CONCURRENT_TASKS = 50
 
 
 # just create a local bytearray of size n
@@ -47,7 +48,7 @@ def sleeper_func():
 # sleeper functions are to ensure that any task we try to run will go to the
 # global scheduler first (instead of routed only locally)
 log("running sleeper functions")
-for i in range(11):
+for i in range(MAX_CONCURRENT_TASKS + 1):
     sleeper_func.remote()
     log("wtf", i)
 

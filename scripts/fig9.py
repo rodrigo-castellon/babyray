@@ -58,6 +58,6 @@ for size in sizes:
         iops = 1 / elapsed
         thpt = iops * size
 
-        log(f"RES:{size},{iops},{thpt}")
+        log(f"RES:{size},{elapsed},{iops},{thpt}")
 
 log("DONE!")

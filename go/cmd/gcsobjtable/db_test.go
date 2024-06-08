@@ -7,6 +7,29 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+func TestSetCacheSizeToZero(t *testing.T) {
+	db, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open database: %v", err)
+	}
+	defer db.Close()
+
+	err = setCacheSizeToZero(db)
+	if err != nil {
+		t.Errorf("Failed to set cache size to zero: %v", err)
+	}
+
+	var cacheSize int
+	err = db.QueryRow("PRAGMA cache_size;").Scan(&cacheSize)
+	if err != nil {
+		t.Fatalf("Failed to query cache size: %v", err)
+	}
+
+	if cacheSize != 0 {
+		t.Errorf("Cache size is not zero, got: %d", cacheSize)
+	}
+}
+
 func TestCreateObjectLocationsTable(t *testing.T) {
 	// Use an in-memory SQLite database for testing
 	database, err := sql.Open("sqlite3", ":memory:")

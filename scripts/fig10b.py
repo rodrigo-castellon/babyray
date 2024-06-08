@@ -55,26 +55,31 @@ next_log_time = start_time + current_interval
 
 i = 0
 
-while elapsed_time < total_duration and i < num_tasks:
-    # Submit a single task
-    f.remote()
-    i += 1
+old_way = True
+if old_way:
+    while elapsed_time < total_duration and i < num_tasks:
+        # Submit a single task
+        f.remote()
+        i += 1
 
-    # Measure memory usage
-    current_time = time.time()
-    elapsed_time = current_time - start_time
+        # Measure memory usage
+        current_time = time.time()
+        elapsed_time = current_time - start_time
 
-    usage = 0
-    if current_time >= next_log_time:
-        usage = get_memory_usage()
-        log(f"FIG10b: Memory usage without flush after {i} tasks: {usage} MB")
+        usage = 0
+        if current_time >= next_log_time:
+            usage = get_memory_usage()
+            log(f"FIG10b: Memory usage without flush after {i} tasks: {usage} MB")
 
-        # Schedule next log time
-        if elapsed_time < initial_period:
-            current_interval = initial_interval
-        else:
-            current_interval = min(second_interval, max_interval)
-        next_log_time = current_time + current_interval
+            # Schedule next log time
+            if elapsed_time < initial_period:
+                current_interval = initial_interval
+            else:
+                current_interval = min(second_interval, max_interval)
+            next_log_time = current_time + current_interval
 
-    if usage > 2000:  # Stop if memory usage exceeds 2 GB
-        break
+        if usage > 2000:  # Stop if memory usage exceeds 2 GB
+            break
+else:
+    while True:
+        f.remote()
