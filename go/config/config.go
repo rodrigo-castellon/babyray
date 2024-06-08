@@ -32,7 +32,8 @@ type Config struct {
 		NodePrefix string `yaml:"node_prefix"`
 	} `yaml:"dns"`
 	GCS struct {
-		FlushIntervalSec int `yaml:"flush_interval_sec"`
+		FlushIntervalSec       int  `yaml:"flush_interval_sec"`
+		EnableChainReplication bool `yaml:"enable_chain_replication"`
 	}
 }
 
