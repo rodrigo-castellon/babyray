@@ -38,7 +38,7 @@ func LocalLog(format string, v ...interface{}) {
 	} else {
 		logMessage = fmt.Sprintf(format, v...)
 	}
-	log.Printf("[localscheduler] %s", logMessage)
+	log.Printf("[global scheduler] %s", logMessage)
 }
 
 func main() {

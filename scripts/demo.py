@@ -75,15 +75,6 @@ def task_locality():
 
 def fault_tolerance():
     # Fault Tolerance
-    # schedule task A on worker 2 = node 3
-    # _ = input("Scheduling task A on worker 2 [ENTER]:")
-    # task_A.set_node(3)
-    # out_A = task_A.remote()
-
-    # kill node 1
-    # _ = input("Kill Worker 2 [ENTER]:")
-    # kill_node(3)
-
     _ = input("Run task B, which depends on task A [ENTER]:")
     out_B = task_B.remote()
 
@@ -94,8 +85,8 @@ def fault_tolerance():
 
 
 def scripting():
-    # bottom_up()
-    # task_locality()
+    bottom_up()
+    task_locality()
     fault_tolerance()
 
 

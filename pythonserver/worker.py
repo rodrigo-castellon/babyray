@@ -4,6 +4,7 @@ import time
 import threading
 from datetime import datetime
 import cloudpickle as pickle
+import os
 from babyray import init, get, remote, Future
 
 from .constants import *
@@ -124,6 +125,13 @@ class WorkerServer(rayclient_pb2_grpc.WorkerServicer):
                 args_obj = pickle.loads(request.args)
                 kwargs_obj = pickle.loads(request.kwargs)
 
+                try:
+                    local_log(
+                        f"executing function \"{func_obj.__name__}\"on worker #{int(os.environ['NODE_ID']) - 1}"
+                    )
+                except Exception as e:
+                    local_log("got exception:", e)
+
                 output = func_obj(*args_obj, **kwargs_obj)
 
                 if not self.alive:
@@ -168,7 +176,7 @@ class WorkerServer(rayclient_pb2_grpc.WorkerServicer):
 
     def KillServer(self, request, context):
         # global task_threads
-        # local_log("GOT KILLED")
+        local_log("GOT KILLED")
         self.alive = False
         return rayclient_pb2.StatusResponse(success=True)
 
