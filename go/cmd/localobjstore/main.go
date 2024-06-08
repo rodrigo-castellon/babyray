@@ -25,7 +25,7 @@ const DEFAULT_AVG_BANDWIDTH = 0.1 // to start with
 
 func createSharedMemory(name string, size int) ([]byte, int, error) {
     // Create a shared memory segment
-	LocalLog("WERE GONNA CREATE A /DEV FILE WITH THIS NAME: %s", "/dev/shm/"+name)
+	// LocalLog("WERE GONNA CREATE A /DEV FILE WITH THIS NAME: %s", "/dev/shm/"+name)
     shmFd, err := syscall.Open("/dev/shm/"+name, syscall.O_CREAT|syscall.O_RDWR, 0666)
     if err != nil {
         return nil, -1, err
@@ -42,14 +42,14 @@ func createSharedMemory(name string, size int) ([]byte, int, error) {
         return nil, -1, err
     }
 
-	LocalLog("/DEV FILE CREATED!")
+	// LocalLog("/DEV FILE CREATED!")
 
     return shmAddr, shmFd, nil
 }
 
 // Function to open and read from a shared memory segment
 func readSharedMemory(name string, size int) ([]byte, error) {
-	LocalLog("WERE GONNA READ A /DEV FILE WITH THIS NAME: %s", "/dev/shm/"+name)
+	// LocalLog("WERE GONNA READ A /DEV FILE WITH THIS NAME: %s", "/dev/shm/"+name)
 	// Open the shared memory object
 	shmFd, err := syscall.Open("/dev/shm/"+name, syscall.O_RDWR, 0666)
 	if err != nil {
@@ -121,7 +121,7 @@ func startServer(port string) (*grpc.Server, error) {
 	pb.RegisterLocalObjStoreServer(s, &server{localObjectStore: make(map[uint64][]byte), objectSizes: make(map[uint64]uint64), localObjectChannels: make(map[uint64]chan *pb.LocationFoundCallback), gcsObjClient: pb.NewGCSObjClient(conn), localNodeID: uint64(nodeId), avgBandwidth: DEFAULT_AVG_BANDWIDTH})
 
 
-	LocalLog("lobs server listening at %v", lis.Addr())
+	// LocalLog("lobs server listening at %v", lis.Addr())
 	go func() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
@@ -153,12 +153,12 @@ func (s *server) Store(ctx context.Context, req *pb.StoreRequest) (*pb.StatusRes
 		return nil, err
 	}
 
-	LocalLog("NOW ATTEMPTING TO COPY OBJECT BYTES INTO SHARED MEMORY SLICE")
+	// LocalLog("NOW ATTEMPTING TO COPY OBJECT BYTES INTO SHARED MEMORY SLICE")
 
 	copy(shmSlice, req.ObjectBytes)
 
 
-	LocalLog("COPIED!")
+	// LocalLog("COPIED!")
 
 	mu.Lock()
 	// s.localObjectStore[req.Uid] = req.ObjectBytes
@@ -166,7 +166,7 @@ func (s *server) Store(ctx context.Context, req *pb.StoreRequest) (*pb.StatusRes
 	s.objectSizes[req.Uid] = size;
 	mu.Unlock()
 
-	LocalLog("STORED!!!")
+	// LocalLog("STORED!!!")
 
 	s.gcsObjClient.NotifyOwns(ctx, &pb.NotifyOwnsRequest{Uid: req.Uid, NodeId: s.localNodeID, ObjectSize: size})
 	return &pb.StatusResponse{Success: true}, nil
@@ -176,10 +176,10 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
 	mu.RLock()
 	if val, ok := s.objectSizes[req.Uid]; ok {
 		mu.RUnlock()
-		LocalLog("ITS IN OBJECT SIZES!")
+		// LocalLog("ITS IN OBJECT SIZES!")
 		return &pb.GetResponse{Uid: req.Uid, ObjectBytes: []byte{}, Local: true, Size: val}, nil
 	}
-	LocalLog("THE UID WAS NOT IN OBJECT SIZES: %v", req.Uid)
+	// LocalLog("THE UID WAS NOT IN OBJECT SIZES: %v", req.Uid)
 	// if val, ok := s.localObjectStore[req.Uid]; ok {
 	// 	mu.RUnlock()
 	// 	return &pb.GetResponse{Uid: req.Uid, ObjectBytes: val, Local: true}, nil
@@ -281,7 +281,7 @@ func (s *server) Copy(ctx context.Context, req *pb.CopyRequest) (*pb.CopyRespons
 
 	data, err := readSharedMemory(strconv.FormatUint(req.Uid, 10), int(size))
 	if err != nil {
-		LocalLog("got err from read: %v", err)
+		// LocalLog("got err from read: %v", err)
 		return nil, err
 	}
 

@@ -1,6 +1,6 @@
 .PHONY: all go py clean build servers docker
 
-PYTHON ?= python
+PYTHON ?= python3
 
 all: go py build docker
 

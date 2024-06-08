@@ -128,7 +128,7 @@ func TestWorkerRun(t *testing.T) {
     _ = resp
     _ = err
 
-    log.Printf("%v", resp)
+    // log.Printf("%v", resp)
     // if err != nil {
     //     t.Errorf("Run failed: %v", err)
     // } else if !resp.Success {
