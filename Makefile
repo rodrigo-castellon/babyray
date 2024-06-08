@@ -25,27 +25,27 @@ servers: gcsfunctable gcsobjtable globalscheduler localobjstore localscheduler w
 
 gcsfunctable:
 	@echo "Building GCS Function Table Server..."
-	cd go && go build -o bin/gcsfunctable cmd/gcsfunctable/main.go
+	cd go && go build -o bin/gcsfunctable cmd/gcsfunctable/*.go
 
 gcsobjtable:
 	@echo "Building GCS Object Table Server..."
-	cd go && go build -o bin/gcsobjtable cmd/gcsobjtable/main.go
+	cd go && go build -o bin/gcsobjtable cmd/gcsobjtable/*.go
 
 globalscheduler:
 	@echo "Building Global Scheduler Server..."
-	cd go && go build -o bin/globalscheduler cmd/globalscheduler/main.go
+	cd go && go build -o bin/globalscheduler cmd/globalscheduler/*.go
 
 localobjstore:
 	@echo "Building Local Object Store Server..."
-	cd go && go build -o bin/localobjstore cmd/localobjstore/main.go
+	cd go && go build -o bin/localobjstore cmd/localobjstore/*.go
 
 localscheduler:
 	@echo "Building Local Scheduler Server..."
-	cd go && go build -o bin/localscheduler cmd/localscheduler/main.go
+	cd go && go build -o bin/localscheduler cmd/localscheduler/*.go
 
 worker:
 	@echo "Building Worker Server..."
-	cd go && go build -o bin/worker cmd/worker/main.go
+	cd go && go build -o bin/worker cmd/worker/*.go
 
 docker:
 	docker build --build-arg CONFIG=base -t ray-node:base .

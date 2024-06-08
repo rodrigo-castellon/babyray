@@ -198,3 +198,5 @@ go/cmd/gcsobjtable/gcsobjtable
 python/babyray/rayclient_pb2_grpc.py-e
 go/cmd/localobjstore/localobjstore
 go/cmd/localscheduler/localscheduler
+gcsobjtable.db
+.DS_Store

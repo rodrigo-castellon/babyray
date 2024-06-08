@@ -14,3 +14,5 @@ ports:
   global_scheduler: 50000
 dns:
   node_prefix: "node"
+gcs:
+  flush_interval_sec: 1 # put -1 to never flush

@@ -4,8 +4,15 @@ ARG CONFIG=base
 # Base stage for common setup
 FROM golang as base
 
-RUN apt update
-RUN apt install -y protobuf-compiler
+# Install gcc and other necessary tools
+# we need gcc for Golang SQLite bc uses C code
+RUN apt-get update && \
+    apt-get install -y gcc && \ 
+    apt-get install -y protobuf-compiler && \
+    apt-get clean
+
+# Set CGO_ENABLED=1 , we need this for Golang SQLite bc uses C code
+ENV CGO_ENABLED=1
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
@@ -28,6 +35,10 @@ RUN python3 -m pip install grpcio --break-system-packages
 
 RUN python3 -m pip install grpcio-tools --break-system-packages
 
+# For figure10b
+# RUN python3 -m pip install matplotlib
+
+# 
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
 RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 

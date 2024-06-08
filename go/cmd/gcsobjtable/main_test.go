@@ -3,15 +3,21 @@ package main
 import (
 	"bytes"
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net"
+	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/rodrigo-castellon/babyray/config"
 	pb "github.com/rodrigo-castellon/babyray/pkg"
 	"google.golang.org/grpc"
@@ -27,7 +33,7 @@ func init() {
 	cfg = config.GetConfig() // Load configuration
 	lis = bufconn.Listen(bufSize)
 	s := grpc.NewServer()
-	pb.RegisterGCSObjServer(s, NewGCSObjServer())
+	pb.RegisterGCSObjServer(s, NewGCSObjServer(-1))
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("Server exited with error: %v", err)
@@ -39,20 +45,61 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 	return lis.Dial()
 }
 
+func TestWriteObjectLocationsToAOF(t *testing.T) {
+	// Create a temporary file
+	tmpfile, err := ioutil.TempFile("", "test_object_locations_*.txt")
+	if err != nil {
+		t.Fatalf("Unable to create temp file: %v", err)
+	}
+	defer os.Remove(tmpfile.Name()) // Clean up the temp file after the test
+
+	// Close the file so WriteObjectLocations can open it
+	tmpfile.Close()
+
+	// Sample map for testing
+	objectLocations := map[uint64][]uint64{
+		1: {10, 20, 30},
+		2: {40, 50, 60},
+		3: {70, 80, 90},
+	}
+
+	// Call the function to write the map to the file
+	err = WriteObjectLocationsToAOF(tmpfile.Name(), objectLocations)
+	if err != nil {
+		t.Fatalf("WriteObjectLocations failed: %v", err)
+	}
+
+	// Read the file content
+	content, err := ioutil.ReadFile(tmpfile.Name())
+	if err != nil {
+		t.Fatalf("Unable to read temp file: %v", err)
+	}
+
+	// Expected content
+	expectedContent := `1: [10,20,30]
+2: [40,50,60]
+3: [70,80,90]
+`
+
+	// Check if the content matches the expected content
+	if strings.TrimSpace(string(content)) != strings.TrimSpace(expectedContent) {
+		t.Errorf("Content mismatch\nExpected:\n%s\nGot:\n%s", expectedContent, string(content))
+	}
+}
+
 func TestGetNodeId(t *testing.T) {
 	// Seed the random number generator for reproducibility in tests
 	rand.Seed(1)
 
 	// Initialize the GCSObjServer
-	server := &GCSObjServer{
-		objectLocations: make(map[uint64][]uint64),
-		waitlist:        make(map[uint64][]string),
-		mu:              sync.Mutex{},
-	}
+	server := NewGCSObjServer(-1)
 
 	// Test case: UID exists with multiple NodeIds
 	server.objectLocations[1] = []uint64{100, 101, 102}
-	nodeId, exists := server.getNodeId(1)
+	nodeId, exists, err := server.getNodeId(1)
+	if err != nil {
+		t.Fatalf("failed test with unexpected error: %v", err)
+	}
 	if !exists {
 		t.Errorf("Expected UID 1 to exist")
 	}
@@ -62,7 +109,10 @@ func TestGetNodeId(t *testing.T) {
 
 	// Test case: UID exists with a single NodeId
 	server.objectLocations[2] = []uint64{200}
-	nodeId, exists = server.getNodeId(2)
+	nodeId, exists, err = server.getNodeId(2)
+	if err != nil {
+		t.Fatalf("failed test with unexpected error: %v", err)
+	}
 	if !exists {
 		t.Errorf("Expected UID 2 to exist")
 	}
@@ -71,7 +121,10 @@ func TestGetNodeId(t *testing.T) {
 	}
 
 	// Test case: UID does not exist
-	nodeId, exists = server.getNodeId(3)
+	nodeId, exists, err = server.getNodeId(3)
+	if err != nil {
+		t.Fatalf("failed test with unexpected error: %v", err)
+	}
 	if exists {
 		t.Errorf("Expected UID 3 to not exist")
 	}
@@ -81,7 +134,10 @@ func TestGetNodeId(t *testing.T) {
 
 	// Test case: UID exists but with an empty NodeId list
 	server.objectLocations[4] = []uint64{}
-	nodeId, exists = server.getNodeId(4)
+	nodeId, exists, err = server.getNodeId(4)
+	if err != nil {
+		t.Fatalf("failed test with unexpected error: %v", err)
+	}
 	if exists {
 		t.Errorf("Expected UID 4 to not exist due to empty NodeId list")
 	}
@@ -93,7 +149,7 @@ func TestGetNodeId(t *testing.T) {
 // Test the getNodeId function
 func TestGetNodeId_2(t *testing.T) {
 	// Initialize the server
-	server := NewGCSObjServer()
+	server := NewGCSObjServer(-1)
 
 	// Seed the random number generator to produce consistent results
 	rand.Seed(time.Now().UnixNano())
@@ -117,7 +173,10 @@ func TestGetNodeId_2(t *testing.T) {
 		}
 
 		// Call getNodeId
-		nodeId, exists := server.getNodeId(tc.uid)
+		nodeId, exists, err := server.getNodeId(tc.uid)
+		if err != nil {
+			t.Fatalf("failed test with unexpected error: %v", err)
+		}
 
 		// Check if the result is nil or not as expected
 		if tc.expectNil && nodeId != nil {
@@ -137,6 +196,187 @@ func TestGetNodeId_2(t *testing.T) {
 		if nodeId != nil && !contains(tc.nodeIds, *nodeId) {
 			t.Errorf("NodeId %d is not in expected nodeIds %v for uid %d", *nodeId, tc.nodeIds, tc.uid)
 		}
+	}
+}
+
+func TestGetNodeId_CacheMissWithError(t *testing.T) {
+	// Create sqlmock database connection and mock object
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("An error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+
+	// Define the mock expectation: when querying the database, it should return an error
+	mock.ExpectQuery("SELECT node_id FROM object_locations WHERE object_uid = ?").
+		WithArgs(3).
+		WillReturnError(errors.New("database error"))
+
+	// Initialize the server with the mocked database
+	server := &GCSObjServer{
+		objectLocations: make(map[uint64][]uint64),
+		waitlist:        make(map[uint64][]string),
+		mu:              sync.Mutex{},
+		database:        db,
+	}
+
+	// Test case: Cache miss with error
+	_, exists, err := server.getNodeId(3)
+	if err == nil {
+		t.Errorf("Expected error, but got nil")
+	}
+	if exists {
+		t.Errorf("Expected UID 3 to not exist")
+	}
+
+	// Ensure all expectations were met
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There were unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetNodeId_CacheMissWithEmptyResult(t *testing.T) {
+	// Create sqlmock database connection and mock object
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("An error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+
+	// Define the mock expectation: when querying the database, it should return no rows
+	mock.ExpectQuery("SELECT node_id FROM object_locations WHERE object_uid = ?").
+		WithArgs(2).
+		WillReturnRows(sqlmock.NewRows([]string{"node_id"}))
+
+	// Initialize the server with the mocked database
+	server := &GCSObjServer{
+		objectLocations: make(map[uint64][]uint64),
+		waitlist:        make(map[uint64][]string),
+		mu:              sync.Mutex{},
+		database:        db,
+	}
+
+	// Test case: Cache miss with empty result
+	nodeId, exists, err := server.getNodeId(2)
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
+	if exists {
+		t.Errorf("Expected UID 2 to not exist")
+	}
+	if nodeId != nil {
+		t.Errorf("Expected nodeId to be nil, got %v", nodeId)
+	}
+
+	// Ensure all expectations were met
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There were unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetNodeId_CacheMissWithResult(t *testing.T) {
+	// Create sqlmock database connection and mock object
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("An error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+
+	// Define the mock expectation: when querying the database, it should return specific rows
+	rows := sqlmock.NewRows([]string{"node_id"}).AddRow(100).AddRow(101).AddRow(102)
+	mock.ExpectQuery("SELECT node_id FROM object_locations WHERE object_uid = ?").
+		WithArgs(1).
+		WillReturnRows(rows)
+
+	// Initialize the server with the mocked database
+	server := &GCSObjServer{
+		objectLocations: make(map[uint64][]uint64),
+		waitlist:        make(map[uint64][]string),
+		mu:              sync.Mutex{},
+		database:        db,
+	}
+
+	// Test case: Cache miss with result
+	nodeId, exists, err := server.getNodeId(1)
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
+	if !exists {
+		t.Errorf("Expected UID 1 to exist")
+	}
+	if nodeId == nil || (*nodeId != 100 && *nodeId != 101 && *nodeId != 102) {
+		t.Errorf("Expected nodeId to be one of [100, 101, 102], got %v", nodeId)
+	}
+
+	// Ensure all expectations were met
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There were unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetNodeId_CacheMissWithResult_RealDB(t *testing.T) {
+	// Set up in-memory SQLite database for testing
+	database, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open SQLite database: %v", err)
+	}
+	defer database.Close()
+
+	// Create the table schema
+	createObjectLocationsTable(database)
+
+	// Insert test data
+	_, err = database.Exec(`INSERT INTO object_locations (object_uid, node_id) VALUES (1, 100), (1, 101), (1, 102)`)
+	if err != nil {
+		t.Fatalf("Failed to insert test data: %v", err)
+	}
+
+	// Initialize the server
+	server := NewGCSObjServer(-1)
+	server.database = database
+
+	// Test case: Cache miss with result
+	nodeId, exists, err := server.getNodeId(1)
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
+	if !exists {
+		t.Errorf("Expected UID 1 to exist")
+	}
+	if nodeId == nil || (*nodeId != 100 && *nodeId != 101 && *nodeId != 102) {
+		t.Errorf("Expected nodeId to be one of [100, 101, 102], got %v", nodeId)
+	}
+}
+
+func TestGetNodeId_CacheMissWithEmptyResult_RealDB(t *testing.T) {
+	// Set up in-memory SQLite database for testing
+	database, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open SQLite database: %v", err)
+	}
+	defer database.Close()
+
+	// Create the table schema
+	createObjectLocationsTable(database)
+
+	// Initialize the server
+	server := &GCSObjServer{
+		objectLocations: make(map[uint64][]uint64),
+		waitlist:        make(map[uint64][]string),
+		mu:              sync.Mutex{},
+		database:        database,
+	}
+
+	// Test case: Cache miss with empty result
+	nodeId, exists, err := server.getNodeId(2)
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
+	if exists {
+		t.Errorf("Expected UID 2 to not exist")
+	}
+	if nodeId != nil {
+		t.Errorf("Expected nodeId to be nil, got %v", nodeId)
 	}
 }
 
@@ -623,4 +863,75 @@ func contains(slice []uint64, value uint64) bool {
 		}
 	}
 	return false
+}
+
+func TestFlushToDisk(t *testing.T) {
+	// Set up in-memory SQLite database for testing
+	database, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open SQLite database: %v", err)
+	}
+	defer database.Close()
+
+	// Create the table schema
+	createObjectLocationsTable(database)
+
+	// Create the server object with a short flush interval for testing
+	server := &GCSObjServer{
+		objectLocations: make(map[uint64][]uint64),
+		waitlist:        make(map[uint64][]string),
+		mu:              sync.Mutex{},
+		database:        database,
+		ticker:          nil,
+	}
+
+	// Populate the objectLocations map
+	server.objectLocations[1] = []uint64{100, 101, 102}
+	server.objectLocations[2] = []uint64{200, 201}
+
+	// Call the flushToDisk method
+	err = server.flushToDisk()
+	if err != nil {
+		t.Fatalf("flushToDisk failed: %v", err)
+	}
+
+	// Verify the data has been written to the database
+	rows, err := database.Query("SELECT object_uid, node_id FROM object_locations")
+	if err != nil {
+		t.Fatalf("Failed to query database: %v", err)
+	}
+	defer rows.Close()
+
+	// Read the results
+	results := make(map[uint64][]uint64)
+	for rows.Next() {
+		var objectUID uint64
+		var nodeID uint64
+		if err := rows.Scan(&objectUID, &nodeID); err != nil {
+			t.Fatalf("Failed to scan row: %v", err)
+		}
+		results[objectUID] = append(results[objectUID], nodeID)
+	}
+
+	// Expected results
+	expectedResults := map[uint64][]uint64{
+		1: {100, 101, 102},
+		2: {200, 201},
+	}
+
+	// Compare the results
+	if len(results) != len(expectedResults) {
+		t.Fatalf("Expected %d results, got %d", len(expectedResults), len(results))
+	}
+
+	for objectUID, nodeIDs := range expectedResults {
+		if len(results[objectUID]) != len(nodeIDs) {
+			t.Fatalf("Expected %d nodeIDs for object %d, got %d", len(nodeIDs), objectUID, len(results[objectUID]))
+		}
+		for i, nodeID := range nodeIDs {
+			if results[objectUID][i] != nodeID {
+				t.Fatalf("Expected nodeID %d for object %d, got %d", nodeID, objectUID, results[objectUID][i])
+			}
+		}
+	}
 }

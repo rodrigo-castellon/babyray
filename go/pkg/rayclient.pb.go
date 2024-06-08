@@ -441,6 +441,13 @@ type GetRequest struct {
 
 	Uid     uint64 `protobuf:"varint,1,opt,name=uid,proto3" json:"uid,omitempty"`
 	Testing bool   `protobuf:"varint,2,opt,name=testing,proto3" json:"testing,omitempty"`
+	// normally is true, but is false whenever we want to just block
+	// for a task to complete
+	Copy bool `protobuf:"varint,3,opt,name=copy,proto3" json:"copy,omitempty"`
+	// normally is true, but is false whenever we want to copy the
+	// object over but not cache it (so we can keep measuring the copy
+	// speed)
+	Cache bool `protobuf:"varint,4,opt,name=cache,proto3" json:"cache,omitempty"`
 }
 
 func (x *GetRequest) Reset() {
@@ -489,6 +496,20 @@ func (x *GetRequest) GetTesting() bool {
 	return false
 }
 
+func (x *GetRequest) GetCopy() bool {
+	if x != nil {
+		return x.Copy
+	}
+	return false
+}
+
+func (x *GetRequest) GetCache() bool {
+	if x != nil {
+		return x.Cache
+	}
+	return false
+}
+
 type GetResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -497,6 +518,7 @@ type GetResponse struct {
 	Uid         uint64 `protobuf:"varint,1,opt,name=uid,proto3" json:"uid,omitempty"`
 	ObjectBytes []byte `protobuf:"bytes,2,opt,name=objectBytes,proto3" json:"objectBytes,omitempty"`
 	Local       bool   `protobuf:"varint,3,opt,name=local,proto3" json:"local,omitempty"`
+	Size        uint64 `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
 }
 
 func (x *GetResponse) Reset() {
@@ -550,6 +572,13 @@ func (x *GetResponse) GetLocal() bool {
 		return x.Local
 	}
 	return false
+}
+
+func (x *GetResponse) GetSize() uint64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
 }
 
 type BandwidthResponse struct {
